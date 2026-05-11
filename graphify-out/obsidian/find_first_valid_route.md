@@ -1,0 +1,16 @@
+---
+source_file: "fork260509-soybean-admin-rust/server/service/src/admin/sys_auth_service.rs"
+type: "code"
+community: "Community None"
+tags:
+  - graphify/code
+  - graphify/EXTRACTED
+  - community/Community_None
+---
+
+# find_first_valid_route
+
+## Connections
+- [[find_first_valid_route]] - `calls` [EXTRACTED]
+
+#graphify/code #graphify/EXTRACTED #community/Community_None

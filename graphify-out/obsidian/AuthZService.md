@@ -1,0 +1,87 @@
+---
+source_file: "fork260509-soybean-admin-nestjs/backend/libs/infra/casbin/src/services/authz.service.ts"
+type: "code"
+community: "Community None"
+location: "L14"
+tags:
+  - graphify/code
+  - graphify/EXTRACTED
+  - community/Community_None
+---
+
+# AuthZService
+
+## Connections
+- [[.addFunction()_1]] - `method` [EXTRACTED]
+- [[.addGroupingPolicies()_1]] - `method` [EXTRACTED]
+- [[.addGroupingPolicy()_1]] - `method` [EXTRACTED]
+- [[.addNamedGroupingPolicies()_1]] - `method` [EXTRACTED]
+- [[.addNamedGroupingPolicy()_1]] - `method` [EXTRACTED]
+- [[.addNamedPolicies()_1]] - `method` [EXTRACTED]
+- [[.addNamedPolicy()_1]] - `method` [EXTRACTED]
+- [[.addPermissionForUser()_1]] - `method` [EXTRACTED]
+- [[.addPolicies()_2]] - `method` [EXTRACTED]
+- [[.addPolicy()_2]] - `method` [EXTRACTED]
+- [[.addRoleForUser()_1]] - `method` [EXTRACTED]
+- [[.batchEnforce()_1]] - `method` [EXTRACTED]
+- [[.constructor()_111]] - `method` [EXTRACTED]
+- [[.deletePermission()_1]] - `method` [EXTRACTED]
+- [[.deletePermissionForUser()_1]] - `method` [EXTRACTED]
+- [[.deletePermissionsForUser()_1]] - `method` [EXTRACTED]
+- [[.deleteRole()_2]] - `method` [EXTRACTED]
+- [[.deleteRoleForUser()_1]] - `method` [EXTRACTED]
+- [[.deleteRolesForUser()_1]] - `method` [EXTRACTED]
+- [[.deleteUser()_2]] - `method` [EXTRACTED]
+- [[.enforce()_1]] - `method` [EXTRACTED]
+- [[.enforceEx()_1]] - `method` [EXTRACTED]
+- [[.enforceExWithMatcher()_1]] - `method` [EXTRACTED]
+- [[.enforceWithMatcher()_1]] - `method` [EXTRACTED]
+- [[.getAllActions()_1]] - `method` [EXTRACTED]
+- [[.getAllNamedActions()_1]] - `method` [EXTRACTED]
+- [[.getAllNamedObjects()_1]] - `method` [EXTRACTED]
+- [[.getAllNamedRoles()_1]] - `method` [EXTRACTED]
+- [[.getAllNamedSubjects()_1]] - `method` [EXTRACTED]
+- [[.getAllObjects()_1]] - `method` [EXTRACTED]
+- [[.getAllRoles()_1]] - `method` [EXTRACTED]
+- [[.getAllSubjects()_1]] - `method` [EXTRACTED]
+- [[.getFilteredGroupingPolicy()_1]] - `method` [EXTRACTED]
+- [[.getFilteredNamedGroupingPolicy()_1]] - `method` [EXTRACTED]
+- [[.getFilteredNamedPolicy()_1]] - `method` [EXTRACTED]
+- [[.getFilteredPolicy()_1]] - `method` [EXTRACTED]
+- [[.getGroupingPolicy()_1]] - `method` [EXTRACTED]
+- [[.getImplicitPermissionsForUser()_1]] - `method` [EXTRACTED]
+- [[.getImplicitResourcesForUser()]] - `method` [EXTRACTED]
+- [[.getImplicitRolesForUser()_1]] - `method` [EXTRACTED]
+- [[.getImplicitUsersForPermission()_1]] - `method` [EXTRACTED]
+- [[.getNamedGroupingPolicy()_1]] - `method` [EXTRACTED]
+- [[.getNamedPolicy()_1]] - `method` [EXTRACTED]
+- [[.getPermissionsForUser()_1]] - `method` [EXTRACTED]
+- [[.getPolicy()_1]] - `method` [EXTRACTED]
+- [[.getRolesForUser()_1]] - `method` [EXTRACTED]
+- [[.getUsersForRole()_1]] - `method` [EXTRACTED]
+- [[.hasGroupingPolicy()_1]] - `method` [EXTRACTED]
+- [[.hasNamedGroupingPolicy()_1]] - `method` [EXTRACTED]
+- [[.hasNamedPolicy()_1]] - `method` [EXTRACTED]
+- [[.hasPermissionForUser()_1]] - `method` [EXTRACTED]
+- [[.hasPolicy()_1]] - `method` [EXTRACTED]
+- [[.hasRoleForUser()_1]] - `method` [EXTRACTED]
+- [[.loadPolicy()_2]] - `method` [EXTRACTED]
+- [[.removeFilteredGroupingPolicy()_1]] - `method` [EXTRACTED]
+- [[.removeFilteredNamedGroupingPolicy()_1]] - `method` [EXTRACTED]
+- [[.removeFilteredNamedPolicy()_1]] - `method` [EXTRACTED]
+- [[.removeFilteredPolicy()_2]] - `method` [EXTRACTED]
+- [[.removeGroupingPolicies()_1]] - `method` [EXTRACTED]
+- [[.removeGroupingPolicy()_1]] - `method` [EXTRACTED]
+- [[.removeNamedGroupingPolicies()_1]] - `method` [EXTRACTED]
+- [[.removeNamedGroupingPolicy()_1]] - `method` [EXTRACTED]
+- [[.removeNamedPolicies()_1]] - `method` [EXTRACTED]
+- [[.removeNamedPolicy()_1]] - `method` [EXTRACTED]
+- [[.removePolicies()_2]] - `method` [EXTRACTED]
+- [[.removePolicy()_2]] - `method` [EXTRACTED]
+- [[.updateGroupingPolicy()_1]] - `method` [EXTRACTED]
+- [[.updateNamedGroupingPolicy()_1]] - `method` [EXTRACTED]
+- [[.updateNamedPolicy()_1]] - `method` [EXTRACTED]
+- [[.updatePolicy()_1]] - `method` [EXTRACTED]
+- [[authz.service.ts]] - `contains` [EXTRACTED]
+
+#graphify/code #graphify/EXTRACTED #community/Community_None

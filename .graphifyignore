@@ -25,6 +25,8 @@ graphify-out/
 target/
 .specify/
 .claude/
+CLAUDE.md
+README.md
 
 # ============================================================
 # Lock files（純資料、無語意可抽,且檔案非常大）

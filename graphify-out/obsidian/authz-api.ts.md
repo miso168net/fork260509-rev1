@@ -1,0 +1,85 @@
+---
+source_file: "fork260509-soybean-admin-nestjs/backend/libs/infra/casbin/src/services/authz-api.ts"
+type: "code"
+community: "Community None"
+location: "L1"
+tags:
+  - graphify/code
+  - graphify/EXTRACTED
+  - community/Community_None
+---
+
+# authz-api.ts
+
+## Connections
+- [[addFunction()]] - `contains` [EXTRACTED]
+- [[addGroupingPolicies()]] - `contains` [EXTRACTED]
+- [[addGroupingPolicy()]] - `contains` [EXTRACTED]
+- [[addNamedGroupingPolicies()]] - `contains` [EXTRACTED]
+- [[addNamedGroupingPolicy()]] - `contains` [EXTRACTED]
+- [[addNamedPolicies()]] - `contains` [EXTRACTED]
+- [[addNamedPolicy()]] - `contains` [EXTRACTED]
+- [[addPermissionForUser()]] - `contains` [EXTRACTED]
+- [[addPolicies()]] - `contains` [EXTRACTED]
+- [[addPolicy()]] - `contains` [EXTRACTED]
+- [[addRoleForUser()]] - `contains` [EXTRACTED]
+- [[batchEnforce()]] - `contains` [EXTRACTED]
+- [[deletePermission()]] - `contains` [EXTRACTED]
+- [[deletePermissionForUser()]] - `contains` [EXTRACTED]
+- [[deletePermissionsForUser()]] - `contains` [EXTRACTED]
+- [[deleteRole()]] - `contains` [EXTRACTED]
+- [[deleteRoleForUser()]] - `contains` [EXTRACTED]
+- [[deleteRolesForUser()]] - `contains` [EXTRACTED]
+- [[deleteUser()]] - `contains` [EXTRACTED]
+- [[enforce()]] - `contains` [EXTRACTED]
+- [[enforceEx()]] - `contains` [EXTRACTED]
+- [[enforceExWithMatcher()]] - `contains` [EXTRACTED]
+- [[enforceWithMatcher()]] - `contains` [EXTRACTED]
+- [[getAllActions()]] - `contains` [EXTRACTED]
+- [[getAllNamedActions()]] - `contains` [EXTRACTED]
+- [[getAllNamedObjects()]] - `contains` [EXTRACTED]
+- [[getAllNamedRoles()]] - `contains` [EXTRACTED]
+- [[getAllNamedSubjects()]] - `contains` [EXTRACTED]
+- [[getAllObjects()]] - `contains` [EXTRACTED]
+- [[getAllRoles()]] - `contains` [EXTRACTED]
+- [[getAllSubjects()]] - `contains` [EXTRACTED]
+- [[getFilteredGroupingPolicy()]] - `contains` [EXTRACTED]
+- [[getFilteredNamedGroupingPolicy()]] - `contains` [EXTRACTED]
+- [[getFilteredNamedPolicy()]] - `contains` [EXTRACTED]
+- [[getFilteredPolicy()]] - `contains` [EXTRACTED]
+- [[getGroupingPolicy()]] - `contains` [EXTRACTED]
+- [[getImplicitPermissionsForUser()]] - `contains` [EXTRACTED]
+- [[getImplicitResourcesForUser()]] - `contains` [EXTRACTED]
+- [[getImplicitRolesForUser()]] - `contains` [EXTRACTED]
+- [[getImplicitUsersForPermission()]] - `contains` [EXTRACTED]
+- [[getNamedGroupingPolicy()]] - `contains` [EXTRACTED]
+- [[getNamedPolicy()]] - `contains` [EXTRACTED]
+- [[getPermissionsForUser()]] - `contains` [EXTRACTED]
+- [[getPolicy()]] - `contains` [EXTRACTED]
+- [[getRolesForUser()]] - `contains` [EXTRACTED]
+- [[getUsersForRole()]] - `contains` [EXTRACTED]
+- [[hasGroupingPolicy()]] - `contains` [EXTRACTED]
+- [[hasNamedGroupingPolicy()]] - `contains` [EXTRACTED]
+- [[hasNamedPolicy()]] - `contains` [EXTRACTED]
+- [[hasPermissionForUser()]] - `contains` [EXTRACTED]
+- [[hasPolicy()]] - `contains` [EXTRACTED]
+- [[hasRoleForUser()]] - `contains` [EXTRACTED]
+- [[loadPolicy()]] - `contains` [EXTRACTED]
+- [[removeFilteredGroupingPolicy()]] - `contains` [EXTRACTED]
+- [[removeFilteredNamedGroupingPolicy()]] - `contains` [EXTRACTED]
+- [[removeFilteredNamedPolicy()]] - `contains` [EXTRACTED]
+- [[removeFilteredPolicy()]] - `contains` [EXTRACTED]
+- [[removeGroupingPolicies()]] - `contains` [EXTRACTED]
+- [[removeGroupingPolicy()]] - `contains` [EXTRACTED]
+- [[removeNamedGroupingPolicies()]] - `contains` [EXTRACTED]
+- [[removeNamedGroupingPolicy()]] - `contains` [EXTRACTED]
+- [[removeNamedPolicies()]] - `contains` [EXTRACTED]
+- [[removeNamedPolicy()]] - `contains` [EXTRACTED]
+- [[removePolicies()]] - `contains` [EXTRACTED]
+- [[removePolicy()]] - `contains` [EXTRACTED]
+- [[updateGroupingPolicy()]] - `contains` [EXTRACTED]
+- [[updateNamedGroupingPolicy()]] - `contains` [EXTRACTED]
+- [[updateNamedPolicy()]] - `contains` [EXTRACTED]
+- [[updatePolicy()]] - `contains` [EXTRACTED]
+
+#graphify/code #graphify/EXTRACTED #community/Community_None

@@ -1,0 +1,19 @@
+---
+source_file: "fork260509-soybean-admin-rust/migration/src/schemas/m20241023_091204_create_sys_tokens.rs"
+type: "code"
+community: "Community None"
+location: "L4"
+tags:
+  - graphify/code
+  - graphify/EXTRACTED
+  - community/Community_None
+---
+
+# Migration
+
+## Connections
+- [[.down()_19]] - `method` [EXTRACTED]
+- [[.up()_19]] - `method` [EXTRACTED]
+- [[m20241023_091204_create_sys_tokens.rs]] - `contains` [EXTRACTED]
+
+#graphify/code #graphify/EXTRACTED #community/Community_None

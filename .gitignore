@@ -42,8 +42,7 @@ fork260509-soybean-admin-rust/
 # graphify 中可重產與個人化的內容（只保留 graph.json + GRAPH_REPORT.md）
 # ============================================================
 graphify-out/cache/
-# obsidian/ 內是 ~4000+ 個函式 .md 筆記，外層 git 不追蹤（fork260509 §2 慣例）
-graphify-out/obsidian/
+graphify-out/obsidian/.obsidian/
 graphify-out/.graphify_python
 graphify-out/.graphify_root
 graphify-out/.graphify_*.json
@@ -51,8 +50,6 @@ graphify-out/.needs_update
 # cost.json 是個人 token 用量帳單；manifest.json 是個人 incremental 基準（mtime/hash 因機而異）
 graphify-out/cost.json
 graphify-out/manifest.json
-# graph.html 是 graphify 跑出來的互動視覺化（10MB+ 內嵌 JS），可由 graph.json 重產
-graphify-out/graph.html
 
 # ============================================================
 # Secrets / env
