@@ -326,15 +326,17 @@ git submodule update --init --recursive
 
 ### 9.5 升級 fork branch 到最新（拉 upstream rebase 後）
 
-> ⚠️ **前置設定**：rev1 預設 fork 源倉**只有 origin remote**（指 miso168net fork），**沒設 upstream**。第一次跑前在源倉內補設：
+> ⚠️ **前置設定**：fork 源倉需要設定 upstream remote 指向 soybeanjs 官方。**rev1 目前機器已設好**（含 push 保護）；若日後新機器或重建源倉，補設步驟：
 > ```bash
 > cd fork260509-soybean-admin-base
 > git remote add upstream https://github.com/soybeanjs/soybean-admin.git
+> git remote set-url --push upstream no_push    # 保護：避免誤推到 upstream
 > cd ../fork260509-soybean-admin-rust
 > git remote add upstream https://github.com/soybeanjs/soybean-admin-rust.git
+> git remote set-url --push upstream no_push
 > cd ..
 > ```
-> （upstream URL 以 soybeanjs 官方 repo 為準；fetch 前用 `git remote -v` 確認。）
+> （fetch 前用 `git remote -v` 確認：push 應顯示 `no_push`、fetch 應顯示 soybeanjs URL。）
 
 ```bash
 cd base-web
