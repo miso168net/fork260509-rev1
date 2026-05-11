@@ -117,7 +117,7 @@ fork260509-rev1/                            ← workspace root（傘狀 repo rev
 |---|---|---|
 | Web (對外) | `:8080` | `:11080` |
 | Rust API（內部，僅 dev 期間 host 直連用） | `:10001` | `:11081` |
-| Postgres | `:5432`（既有 compose 內） | `:15432`（容器內同名，host 暴露衝突時改 `:5442`） |
+| Postgres | host `:5432` ↔ container `:5432` | container 內仍 `:5432`（不改）；host 暴露 `15432:5432` |
 | docker compose project name | `new-admin`（預設由目錄名衍生） | `rev1-admin`（透過 `COMPOSE_PROJECT_NAME` 環境變數設定） |
 
 **目前現況**（rev1 提議尚未套用）：
