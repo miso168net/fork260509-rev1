@@ -1,1 +1,117 @@
-.specify/extensions/.cache/
+# ============================================================
+# Claude Code credentials — never commit to git
+# Shared credentials = Anthropic ToS violation
+# Each team member uses their own Claude account
+# ============================================================
+.claude/.credentials.json
+.claude/credentials.json
+.claude/projects/
+.claude/todos/
+.claude/statsig/
+.claude/shell-snapshots/
+.claude/ide/
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+.claude.json
+.claude.json.backup
+.credentials.json
+
+# ============================================================
+# 工作區根目錄 .gitignore
+# 此 repo 的目的：追蹤跨倉研究產出（docs / graph / 整合計畫）
+# 4 個 fork 子專案有自己的 git remote，不在此追蹤
+# ============================================================
+
+# --- fork 來源倉（worktree 的源頭，必須留在本機；不在外層追蹤）---
+fork260509-soybean-admin-base/
+fork260509-soybean-admin-docs/
+fork260509-soybean-admin-nestjs/
+fork260509-soybean-admin-rust/
+
+# --- worktree + submodule 並存 ---
+# base-web/  是 fork260509-soybean-admin-base  的 rev1-admin-base-web 分支 worktree
+# rust-api/  是 fork260509-soybean-admin-rust  的 rev1-admin-rust-api 分支 worktree
+# 外層 git 把它們當 submodule（gitlink + .gitmodules），追蹤當前使用的 fork SHA。
+# **故意不在這裡擋** — 擋了 git 就 add 不進來。詳細操作手冊見 CLAUDE.md §9
+
+# --- graphify 中可重產與個人化的內容（只保留 graph.json + GRAPH_REPORT.md）---
+graphify-out/cache/
+# obsidian/ 內是 ~4000+ 個函式 .md 筆記，外層 git 不追蹤（fork260509 §2 慣例）
+graphify-out/obsidian/
+graphify-out/.graphify_python
+graphify-out/.graphify_root
+graphify-out/.graphify_*.json
+graphify-out/.needs_update
+# cost.json 是個人 token 用量帳單；manifest.json 是個人 incremental 基準（mtime/hash 因機而異）
+graphify-out/cost.json
+graphify-out/manifest.json
+# graph.html 是 graphify 跑出來的互動視覺化（10MB+ 內嵌 JS），可由 graph.json 重產
+graphify-out/graph.html
+
+# ============================================================
+# Secrets / env
+# ============================================================
+.env
+.env.local
+.env.*.local
+deploy/.env
+*.pem
+*.key
+.dev.vars
+
+# ============================================================
+# Docker / dev container 個人 override
+# ============================================================
+docker-compose.override.yml
+.devcontainer/devcontainer.local.json
+
+# ============================================================
+# Node / pnpm / TypeScript
+# ============================================================
+node_modules/
+.pnpm-store/
+dist/
+coverage/
+.vitest-cache/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ============================================================
+# Python（graphify 工具暫存）
+# ============================================================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# ============================================================
+# IDE
+# ============================================================
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.shared.json
+.idea/
+*.swp
+*.swo
+*~
+
+# ============================================================
+# OS
+# ============================================================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ============================================================
+# Logs / 暫存 / 殘骸
+# ============================================================
+*.log
+logs/
+*.tmp
+*.bak
+.cache/
+*.orig
+*.rej
