@@ -1,7 +1,7 @@
 # CLAUDE.md — workspace 指引
 
 > 此檔覆寫並補充全域 `~/.claude/CLAUDE.md`。專案特定規則優先；通用規則沿用全域。
-> 本工作區是 `fork260509` 的 **rev1 重建**：相同設計骨幹、不同命名（短名 base/rust、長名 rev1-）。
+> 本工作區是 `fork260509` 的 **rev1 重建**：相同設計骨幹、不同命名（短名 base-web/rust-api、長名 rev1-）。
 
 ---
 
@@ -40,21 +40,24 @@ fork260509-rev1/                            ← workspace root（傘狀 repo rev
 ├── CLAUDE.md                              ← 本檔（workspace 指引）
 ├── .gitignore                             ← 排除 fork 源倉與 graphify cache（不排除 base-web/rust-api，它們是 submodule）
 ├── .gitattributes                         ← LF 強制（避免 Windows host autocrlf 把 .sh/.yaml/.conf 改 CRLF）
+├── .graphifyignore                        ← graphify 掃描排除（worktrees / lock files / meta 文件 CLAUDE.md README.md / 等）
 ├── .gitmodules                            ← base-web / rust-api 的 submodule 設定（指 fork remote）
 ├── .claude/                               ← Claude Code 設定（hook + settings.json，credentials gitignored）
 │   ├── settings.json                      ← SessionStart hook 註冊
-│   └── hook-git-submodule-SOP.sh          ← 每次 session 開頭執行的 SOP 檢查
+│   ├── hook-git-submodule-SOP.sh          ← 每次 session 開頭執行的 SOP 檢查
+│   └── skills/                            ← 本地 skill 集合
 ├── .specify/                              ← spec-kit 安裝結構（templates / scripts / memory / extensions / integrations / workflows）
-├── docs/             (尚未建立)            ← 未來：整合設計產出（INTEGRATION-RESEARCH.md、INTEGRATION-PLAN.md、INTEGRATION-CHECKLIST.md）
+├── docs/                                  ← 設計補充文件（GRAPHIFY-NOTES.md 已建；INTEGRATION-RESEARCH.md / INTEGRATION-PLAN.md 待建）
 ├── specs/            (尚未建立)            ← 未來：spec-kit feature spec 目錄
-├── graphify-out/                          ← 知識圖譜輸出（外層 git 只追蹤 graph.json + GRAPH_REPORT.md）
+├── graphify-out/                          ← 知識圖譜輸出（外層 git 追蹤 GRAPH_REPORT.md + graph.json + graph.html + obsidian/ 內 notes；只排除個人化/可重產項目）
 │   ├── GRAPH_REPORT.md                    ← 含 god nodes / surprises / suggested questions
 │   ├── graph.json                         ← 結構化圖譜資料（可被 graphify query 查）
+│   ├── graph.html                         ← 互動視覺化（3MB+ 內嵌 JS，刻意 git-tracked）
+│   ├── obsidian/                          ← Obsidian vault（5000+ markdown notes + graph.canvas，刻意 git-tracked）
+│   │   └── .obsidian/          (gitignored, Obsidian app 本機 config，個人化)
 │   ├── manifest.json           (gitignored, --update 增量基準，個人化)
 │   ├── cost.json               (gitignored, token 用量帳單，個人化)
-│   ├── cache/                  (gitignored, LLM 擷取快取，可重產)
-│   ├── obsidian/               (gitignored, Obsidian 筆記)
-│   └── graph.html              (gitignored, 互動視覺化)
+│   └── cache/                  (gitignored, LLM 擷取快取，可重產)
 ├── fork260509-soybean-admin-base/         ← Vue 3 starter，base-web worktree 源倉（gitignored，本機必留）
 ├── fork260509-soybean-admin-docs/         ← 文件站（gitignored，整合不用，僅參考）
 ├── fork260509-soybean-admin-nestjs/       ← NestJS backend + Vue frontend（gitignored，整合不用，僅參考）
@@ -68,12 +71,10 @@ fork260509-rev1/                            ← workspace root（傘狀 repo rev
 - `base-web/` `rust-api/` 是 worktree + submodule 雙重身分（見 §1 與 §9 操作手冊）— 外層 commit 只記 SHA pin、不記檔案 diff；別人 clone 用 `--recurse-submodules`。
 - `fork260509-*` 4 個源倉 gitignored，但**本機必須留著**（worktree 源倉）；別台機器若用 submodule clone 重來則不需要這 4 個源倉。
 - Vue 源倉 GitHub repo 名稱 = `fork260509-soybean-admin-base`（從原 `fork260509-soybean-admin` rename 而來，舊 URL 仍 redirect）。
-- 知識圖譜報告 `GRAPH_REPORT.md` 只存在 `graphify-out/`，docs/ 不放 symlink（Windows TortoiseGit 對 symlink 處理異常）。要看就直接開 `graphify-out/GRAPH_REPORT.md`。
-- 外層 git 追蹤：`CLAUDE.md`、`.gitignore`、`.gitattributes`、`.gitmodules`、`.claude/{settings.json, hook-git-submodule-SOP.sh}`、`.specify/`（spec-kit 結構）、`graphify-out/{graph.json, GRAPH_REPORT.md}`、以及 `base-web` `rust-api` 兩個 gitlink SHA。
+- 知識圖譜輸出 `GRAPH_REPORT.md` / `graph.json` / `graph.html` 都只存在 `graphify-out/`；要看就直接開 `graphify-out/GRAPH_REPORT.md`，或瀏覽器開 `graphify-out/graph.html` 看互動圖。
+- 外層 git 追蹤：`CLAUDE.md`、`.gitignore`、`.gitattributes`、`.graphifyignore`、`.gitmodules`、`.claude/{settings.json, hook-git-submodule-SOP.sh, skills/}`、`.specify/`（spec-kit 結構）、`graphify-out/{graph.json, GRAPH_REPORT.md, graph.html, obsidian/}`（graph.html 與 obsidian vault 內 markdown notes 都 tracked）、以及 `base-web` `rust-api` 兩個 gitlink SHA。
 
 ## 3. 知識圖譜（graphify）
-
-圖譜已建好（3,616 nodes / 3,543 edges / 1058 communities，跨 4 個 fork — 從 fork260509 抄入，可作 rev1 設計起點參考）。
 
 **使用方式**：
 - 查問題：在 workspace root 執行 `graphify query "你的問題"` — 走 BFS 預設、`--dfs` 改 DFS、`--budget N` 限 token
@@ -81,28 +82,16 @@ fork260509-rev1/                            ← workspace root（傘狀 repo rev
 - 找路徑：`graphify path "節點A" "節點B"`
 - 增量更新：`graphify update`（會用 `manifest.json` 比對變更）
 
-**已知圖譜限制**（重要 — 推論前要記得）：
-- **NestJS DI 結構在圖中是破碎的**：AST extractor 看不懂 `@Module({ imports, providers })` decorator 也沒解 ES6 `import`。22 個 NestJS module + ~1900 個 .ts file-level node 是孤立的。問 NestJS 部分時要直接讀檔，別只信圖。
-- **Vue component composition 也破碎**：182 個 `.vue` 元件孤立（因為 `<template>` 標籤對應到 import 元件的關係沒被抓）。
-- **Rust 部分圖譜可信**：god nodes / cohesion / bridges 都站得住腳。
-- **PNG 流程圖（如 router-guard-flow.png）擷取準確 ~94%**，但**沒連到實作**：33 個流程節點與 `router/guard/route.ts` 的 4 個函式之間 0 邊。
-- **`get_db_connection()` 的 48 條 INFERRED edge 方向是反的**（實際是 caller→callee，圖譜寫成 callee→caller）。
+> 📖 **圖譜現況統計** 與 **已知抽取限制** 等細節 — **推論前必讀** [`docs/GRAPHIFY-NOTES.md`](docs/GRAPHIFY-NOTES.md)。
 
-> rev1 的 base-web 來源是 `example` 分支（不是 `main`），與 fork260509 的圖譜抓取點不完全一致。具體 file structure 上的 GAP 分析需要對 rev1 的 worktree 重做。
+## 4. 整合計畫（rev1 待獨立制訂）
 
-## 4. 整合計畫的高層決策（從 fork260509/docs/INTEGRATION-PLAN.md 帶過來的泛用部分）
-
-| 主題 | 決策 |
-|---|---|
-| 倉儲結構 | 傘狀 monorepo `rev1-admin-root/{base-web, rust-api, deploy, docs}` — `base-web/` 與 `rust-api/` 同時是 git worktree（本機操作）+ git submodule（外層記 SHA pin） |
-| Reverse proxy | nginx（解 CORS via 同源）— 不在 Rust 加 CorsLayer |
-| Database 連線 | 不用 pgbouncer，Sea-ORM 內建 pool 即可 |
-| Refresh token | DB-backed（用既有 `sys_tokens` 表）— 不用 stateless JWT |
-| Migration | init container（`docker compose run --rm migration`） |
-| Dev workflow | docker compose 起 infra+rust-api，host 跑 `pnpm dev`（vite proxy 到 :10001） |
-| Prod workflow | 全 docker compose；對外只暴露 base-web :8080 |
-
-> GAP 清單（fork260509 對 main 分支做過的 ~10 個 GAP 分析）**未帶入 rev1** — rev1 的 base-web 基於 `example` 分支，GAP 內容可能不同，需重做分析。
+> ⚠️ rev1 的整合計畫**尚未建立** — `docs/INTEGRATION-RESEARCH.md` / `docs/INTEGRATION-PLAN.md` 都待後續建立。
+>
+> **rev1 重建計劃方向會跟 fork260509 完全不同**，所以：
+> - fork260509 過去的整合決策（nginx 同源 / Sea-ORM pool / DB-backed refresh token / migration init container / docker compose 部署形態 …）**不視為 rev1 預設值**，需在 rev1 docs/INTEGRATION-PLAN.md 內獨立評估。
+> - 唯一已固化的結構性決策屬於 §1 工作區形態：傘狀 monorepo + base-web/rust-api worktree+submodule 雙重身分 — 這是 git-level 既成事實，不屬整合計畫範疇。
+> - GAP 清單也須重做：fork260509 的 ~10 個 GAP 是對 main 分支做的，rev1 base-web 基於 `example` 分支，GAP 內容與優先序都會不同。
 
 ## 5. 操作參考資料 (Operational Reference)
 
@@ -118,13 +107,23 @@ fork260509-rev1/                            ← workspace root（傘狀 repo rev
 | `Administrator` | admin | 同上 |
 | `GeneralUser` | 一般 | 同上 |
 
-3 個 user 共用同一個 argon2id 雜湊。**fork260509 已驗證**：plaintext = `123456`，README 文件提到 `Soybean@123.` 是錯的。rev1 的 rust-api 從同一 upstream main 分支建，行為應一致，但建議 rev1 第一個 login flow feature 跑完時再次動態驗證。
+3 個 user 共用同一個 argon2id 雜湊；plaintext = `123456`（migration 檔案直接埋的測試帳號雜湊，逆推驗證過）。rev1 第一個 login flow feature 跑通時建議再次動態驗證。
 
-### 5.2 對外 endpoint（待 deploy/ 建好後生效）
+### 5.2 對外 endpoint 與 port 規劃（rev1 提議，待 INTEGRATION-PLAN 確認）
 
-- base-web：`http://localhost:8080`（變數 `WEB_PORT` 預設 8080）
-- rust-api（同源）：`http://localhost:8080/api/*` → nginx 反代到 `rev1-admin-rust-api:10001`
-- Login API：`POST /api/auth/login` body `{"identifier": "Soybean", "password": "123456"}`
+> 以下 port 編排為 rev1 提議值（刻意避開 fork260509 既有 port，方便兩個 workspace 並存）；正式定案在 `docs/INTEGRATION-PLAN.md`、實際套用在 `deploy/` 建立並改 `application.yaml` 時生效。
+
+| 角色 | 參考專案 fork260509（既有） | rev1 提議 |
+|---|---|---|
+| Web (對外) | `:8080` | `:11080` |
+| Rust API（內部，僅 dev 期間 host 直連用） | `:10001` | `:11081` |
+| Postgres | `:5432`（既有 compose 內） | `:15432`（容器內同名，host 暴露衝突時改 `:5442`） |
+| docker compose project name | `new-admin`（預設由目錄名衍生） | `rev1-admin`（透過 `COMPOSE_PROJECT_NAME` 環境變數設定） |
+
+**目前現況**（rev1 提議尚未套用）：
+- `rust-api/server/resources/application.yaml` 仍是 fork260509 預設：`server.port: 10001`、database 走 `pgbouncer:6432`
+- 直連 rust-api（dev 場景，未經 reverse proxy）：`POST http://127.0.0.1:10001/api/auth/login` body `{"identifier": "Soybean", "password": "123456"}`
+- 套用 rev1 port 規劃前須先建 `deploy/`、改 `application.yaml` 與 compose 配置
 
 ## 6. 開發守則（workspace-specific）
 
@@ -150,18 +149,17 @@ git push                                      # 推到外層 rev1-admin-root rem
 第二段的 outer commit 訊息**建議帶 SHA 與 fork 提交標題**，以後在外層 log 看得懂：
 
 ```
-bump base-web to abc1234: GAP-0a fix success code
-bump rust-api to def5678: GAP-1 add refresh handler
+bump base-web to abc1234: <fork 提交主旨一行>
+bump rust-api to def5678: <fork 提交主旨一行>
 ```
 
 ### 6.2 其他守則
 
-1. **改 fork 源倉**（如要拉 upstream rebase）：`cd fork260509-soybean-admin-base && git fetch upstream && git rebase ...`。worktree 自動跟著走（共用 .git database）；之後仍要回外層 `git add base-web && git commit` 更新 pin。
+1. **改 fork 源倉**（如要拉 upstream rebase）：rev1 預設 fork 源倉**只有 origin remote**（指 miso168net fork），沒設 upstream — 第一次跑前須在源倉內補設（見 §9.5）。設好後 `cd fork260509-soybean-admin-base && git fetch upstream && git rebase ...`，worktree 自動跟著走（共用 .git database）；之後仍要回外層 `git add base-web && git commit` 更新 pin。
 2. **CLAUDE.md / docs/ 改動**：在外層 `rev1-admin-root` repo 改、commit、push（單段 commit，不需第二段）。
-3. **不要在 docs/ 重新建 symlink** 指向 graphify-out/（Windows TortoiseGit 對 symlink 處理會出問題）。GRAPH_REPORT.md 唯一位置就是 `graphify-out/GRAPH_REPORT.md`，要在 docs/ 看到「凍結快照」就 `cp graphify-out/GRAPH_REPORT.md docs/` 並 commit 為實檔。
-4. **graphify 重跑前**：先讀 `graphify-out/cost.json` 看是否真有需要（一次 ~440K input / 190K output token）。多數時候 `graphify update` 即可。
-5. **不要改 `graphify-out/cache/`**：那是 graphify 內部的 LLM 擷取結果快取，手改會破壞下次 update 的 diff。
-6. **新功能設計問題**先用 `graphify query "..."` 試 — 但 NestJS / Vue component 部分要警覺圖譜盲點（§3），且 rev1 base-web 來源是 example 分支與圖譜抓取點不一致。
+3. **graphify 重跑前**：先讀 `graphify-out/cost.json` 看是否真有需要（rev1 2026-05-12 update：~490K input / ~122K output token；累計 ~931K / ~311K）。多數時候 `graphify update` 即可。
+4. **不要改 `graphify-out/cache/`**：那是 graphify 內部的 LLM 擷取結果快取，手改會破壞下次 update 的 diff。
+5. **新功能設計問題**先用 `graphify query "..."` 試 — 但 NestJS / Vue component 部分要警覺圖譜盲點（§3），且 rev1 base-web 來源是 example 分支與圖譜抓取點不一致。
 
 ### 6.3 Commit message 規範
 
@@ -179,16 +177,16 @@ bump rust-api to def5678: GAP-1 add refresh handler
 
 | type | 用途 | 範例 |
 |---|---|---|
-| `feat` | 新功能 | `feat(rust-api): 加入 POST /auth/refreshToken` |
-| `fix` | 修 bug | `fix(base-web): 修正 success code 對齊（0000 → 200）` |
-| `docs` | 純文件改動 | `docs: INTEGRATION-PLAN §3 補上 submodule 註冊流程` |
+| `feat` | 新功能 | `feat(rust-api): 加入 <endpoint>` |
+| `fix` | 修 bug | `fix(base-web): 修正 <模組> 的 <症狀>` |
+| `docs` | 純文件改動 | `docs: CLAUDE.md §X 補上 <主題>` |
 | `chore` | 雜項（設定、submodule pin、依賴） | `chore: 註冊 base-web/rust-api 為 submodule` |
-| `refactor` | 重構（不改功能、不修 bug） | `refactor(rust-api): 抽出 token 產生器 helper` |
+| `refactor` | 重構（不改功能、不修 bug） | `refactor(rust-api): 抽出 <helper>` |
 | `style` | 格式調整（不影響邏輯） | `style: 統一 .env 排版` |
-| `perf` | 效能優化 | `perf(rust-api): get_db_connection 加 lazy init` |
-| `test` | 增加測試 | `test(rust-api): refresh handler 單元測試` |
-| `build` | 建置系統 / 外部依賴 | `build(base-web): 升 vite 8.0.8 → 8.1.0` |
-| `ci` | CI 設定 | `ci: 加入 base-web build workflow` |
+| `perf` | 效能優化 | `perf(rust-api): <fn> 加 lazy init` |
+| `test` | 增加測試 | `test(rust-api): <feature> 單元測試` |
+| `build` | 建置系統 / 外部依賴 | `build(base-web): 升 vite <舊版> → <新版>` |
+| `ci` | CI 設定 | `ci: 加入 <pipeline> workflow` |
 | `revert` | 還原 commit | `revert: 撤回 chore: 註冊 submodule` |
 
 **scope 建議**（本專案）：`base-web` / `rust-api` / `deploy` / `docs` / `graphify` / `submodule` 等；可省略。
@@ -197,15 +195,14 @@ bump rust-api to def5678: GAP-1 add refresh handler
 
 第一段（worktree 內，正常 conventional commit）：
 ```
-feat(rust-api): 加入 POST /auth/refreshToken
+feat(rust-api): 加入 <endpoint 或功能>
 
-實作 refresh token 處理器，使用 sys_tokens 表查詢 + rotate。
-~80 行 Rust。
+<body：簡述實作方式、檔案範圍、行數量級>
 ```
 
 第二段（外層更新 SHA pin，用 `chore(submodule)`）：
 ```
-chore(submodule): bump rust-api 到 abc1234 — refresh handler
+chore(submodule): bump rust-api 到 abc1234 — <fork 提交主旨>
 ```
 
 > outer commit 訊息**務必帶上短 SHA 與 fork 提交主旨**，這樣外層 log 一眼看出每次 pin 移動對應哪個改動。
@@ -229,10 +226,7 @@ git log --oneline -5                  # 最近 5 個外層 commit，看 pin 變�
 - ❌ 不要 `git submodule add ../<...> base-web`：這會嘗試 clone 進 base-web/、與既有 worktree 衝突。submodule 設定要**手寫 .gitmodules**（見 §9）。
 - ❌ 不要在 worktree 裡跑 `git push` 不指定 remote/branch — `cd base-web` 預設推到 fork260509-soybean-admin-base，可能誤推到非預期分支；用 `git push origin rev1-admin-base-web` 顯式指定。
 - ❌ 不要忘記第二段 commit：worktree 內改完 push 完，**一定要回外層 `git add base-web && git commit`** 更新 pin，否則外層下次 commit 才會包進去（容易混淆 SHA 對應關係）。
-- ❌ 不要在 Rust `application.yaml` 直接改 hardcode（建議用 envsubst template，後續 deploy/ feature 時統一處理）。
-- ❌ 不要在 Rust 加 CorsLayer（決策走 nginx 同源；改 CorsLayer 會讓 prod 路徑分歧）。
-- ❌ 不要碰 `fork260509-soybean-admin-docs/` 與 `fork260509-soybean-admin-nestjs/`（不在整合範圍內，留作參考）。
-- ℹ️ `README.md` 是給人類首次 onboarding 用的（特別是新機器 setup）；CLAUDE.md 是給 dev assistant 內部用的。兩者目的不同，不要混合 — 若 README 章節變多到開始重疊 CLAUDE.md 內容，把細節留 CLAUDE，README 只放「快速開始 + 指引到 CLAUDE」。
+- ❌ 不要直接編輯 `fork260509-soybean-admin-*/` 四個源倉的檔案：base 與 rust 兩個應透過 `base-web/` / `rust-api/` worktree 改；docs / nestjs 兩個目前未列入 rev1 整合範圍（依 §4 disclaimer 待 INTEGRATION-PLAN 確認，可能納入也可能維持參考）。
 
 ## 8. 進度追蹤
 
@@ -241,17 +235,17 @@ git log --oneline -5                  # 最近 5 個外層 commit，看 pin 變�
 - ✅ **已完成**：
   - Outer GitHub repo (`miso168net/fork260509-rev1`) 建立
   - 4 個 fork 源倉本機 clone
-  - `.gitignore` / `.gitattributes` / `.claude/{settings.json, hook-git-submodule-SOP.sh}` / `.specify/`（spec-kit 結構）就位
-  - `base-web/` worktree（從 `fork260509-soybean-admin-base` 的 `example` 分支建 `rev1-admin-base-web`）
-  - `rust-api/` worktree（從 `fork260509-soybean-admin-rust` 的 `main` 分支建 `rev1-admin-rust-api`）
+  - `.gitignore` / `.gitattributes` / `.graphifyignore` / `.claude/{settings.json, hook-git-submodule-SOP.sh, skills/}` / `.specify/`（spec-kit 結構）就位
+  - `base-web/` worktree（從 `fork260509-soybean-admin-base` 的 `example` 分支建 `rev1-admin-base-web`，**已推 origin/rev1-admin-base-web**）
+  - `rust-api/` worktree（從 `fork260509-soybean-admin-rust` 的 `main` 分支建 `rev1-admin-rust-api`，**已推 origin/rev1-admin-rust-api**）
   - `.gitmodules` 註冊兩個 submodule
-  - graphify-out（從 fork260509 抄入，4 個源倉的圖譜可作起點參考）
+  - 首批 outer commits 已 push（`87f4dd4 初始化 rev1-admin-root` / `e47dc1d bump SHA` / `7a13ede 加入 .graphifyignore`）
+  - graphify-out（2026-05-12 完成 fork260509 → rev1 路徑遷移與 incremental update）
 - ⏳ **待補**：
-  - 推 `rev1-admin-base-web` / `rev1-admin-rust-api` 分支到各自 fork remote
-  - 第一次 outer commit（register submodules + workspace 指引）
-  - constitution 建立（如果要走 spec-kit 流程）
-  - GAP 重新分析（rev1 的 example 分支與 fork260509 main 分支有差，需重評估）
-  - `docs/` / `deploy/` / `specs/` 都尚未建立
+  - `docs/INTEGRATION-RESEARCH.md` / `docs/INTEGRATION-PLAN.md` 獨立制訂（rev1 重建方向；不繼承 fork260509 決策）
+  - constitution 建立（若要走 spec-kit 流程）
+  - GAP 重新分析（rev1 base-web 基於 `example` 分支，GAP 內容與優先序須重做）
+  - `deploy/` / `specs/` 尚未建立
 
 ## 9. Submodule 操作手冊（給未來 Claude session）
 
@@ -331,6 +325,16 @@ git submodule update --init --recursive
 ```
 
 ### 9.5 升級 fork branch 到最新（拉 upstream rebase 後）
+
+> ⚠️ **前置設定**：rev1 預設 fork 源倉**只有 origin remote**（指 miso168net fork），**沒設 upstream**。第一次跑前在源倉內補設：
+> ```bash
+> cd fork260509-soybean-admin-base
+> git remote add upstream https://github.com/soybeanjs/soybean-admin.git
+> cd ../fork260509-soybean-admin-rust
+> git remote add upstream https://github.com/soybeanjs/soybean-admin-rust.git
+> cd ..
+> ```
+> （upstream URL 以 soybeanjs 官方 repo 為準；fetch 前用 `git remote -v` 確認。）
 
 ```bash
 cd base-web
