@@ -179,7 +179,7 @@
 
 ### §4.2 抽離項清單 × stub 行為 × 升級路徑
 
-**繼承 DESIGN-A §4.2**（identical） — 5 條抽離項清單：sendCaptcha / verifyCaptcha / `/auth/error` / `batchDeleteUser` / `/mock/getLastTime`；stub 行為、UI 影響（test/demo/admin role gate）、升級路徑（換真實作 + Casbin 擴 allow）與 DESIGN-A 完全一致。
+**繼承 DESIGN-A §4.2**（identical） — 5 條抽離項清單：sendCaptcha / verifyCaptcha / `/auth/error` / `batchDeleteUser` / `/mock/getLastTime`；stub 行為、UI 影響（test/demo/admin role gate）、升級路徑（換真實作 + Casbin 擴 allow）與 DESIGN-A 完全一致。**5 條中 `batchDeleteUser` 由 F9 `systemManage-alias-router` 統一交付、其餘 4 條由 F11 `extracted-stubs` 統一交付**。
 
 ---
 
@@ -196,8 +196,8 @@ JWT secret / Casbin enforcement / user info 等項目在 DESIGN-B 內為「進�
 **繼承 DESIGN-A §5.2** 全部三個子節（identical）：
 
 - **§5.2.1 Audit log 完整性** — 業務 + audit 同 transaction；audit 範疇邊界（DB 原子單位內事實 vs 跨資源 side effect）；補償機制（Outbox / TTL fallback / 定期 full reload / Subscriber health check）— DESIGN-B 形態下 outbox 仍適用（為未來水平擴展準備）、TTL fallback 仍適用（為進程內 cache 兜底）、定期 reload 仍適用、subscriber health check 在無 subscriber 時不必需
-- **§5.2.2 Soft delete 衍生** — 三項風險（filter 忘記、UNIQUE 撞軟刪 row、Casbin policy orphan）與緩解全同 A
-- **§5.2.3 Cleanup job 安全 + Audit log 成長** — cleanup job 獨立 credential、threshold config、dry-run、idempotent；audit log 表 partition by month、retention 策略 — 全同 A
+- **§5.2.2 Soft delete 衍生** — 三項風險（filter 忘記、UNIQUE 撞軟刪 row、Casbin policy orphan）與緩解全同 DESIGN-A
+- **§5.2.3 Cleanup job 安全 + Audit log 成長** — cleanup job 獨立 credential、threshold config、dry-run、idempotent；audit log 表 partition by month、retention 策略 — 全同 DESIGN-A
 
 ---
 
@@ -213,7 +213,7 @@ JWT secret / Casbin enforcement / user info 等項目在 DESIGN-B 內為「進�
 | F3 | `soft-delete-infrastructure` | entity 表 migration、Sea-ORM scoped finder、partial unique index、Casbin orphan cleanup | 繼承 DESIGN-A F3（identical） |
 | F4 | `response-shape-alignment` | 路線 II + camelCase + user info DTO | 繼承 DESIGN-A F4（identical） |
 | **Phase 2：核心 auth + RBAC menu（P2）** ||||
-| F5 | `auth-login-and-dynamic-menu` | `/auth/{login, getUserInfo}` + `/route/getUserRoutes` + Casbin enforce + **redis pub-sub channel `casbin:policy:invalidate` 跨 rust instance cache invalidation 機制（強制：DESIGN-B v1 即支援水平擴展）** | 繼承 DESIGN-A F5 + 擴大 scope（新增 pub-sub channel；DESIGN-A 中此 channel 在 F10 nestjs bridge 內，DESIGN-B 改放 F5 是因為 Casbin enforce 在 F5 首次啟用） |
+| F5 | `auth-login-and-dynamic-menu` | `/auth/{login, getUserInfo}` + `/route/getUserRoutes` + Casbin enforce + **redis pub-sub channel `casbin:policy:invalidate` 跨 rust instance cache invalidation 機制（強制：DESIGN-B v1 即支援水平擴展）** | 繼承 DESIGN-A F5 + 擴大 scope（新增 pub-sub channel；DESIGN-A 中 Casbin pub-sub 設計見 §3.3「Casbin policy 表」，落地時點為 F10 nestjs bridge；DESIGN-B 改放 F5 是因為 Casbin enforce 在 F5 首次啟用） |
 | F6 | `route-guard` | `/route/{getConstantRoutes, isRouteExist}` + base vue-router guard | 繼承 DESIGN-A F6（identical） |
 | **Phase 3：主流業務 endpoint（P3）** ||||
 | F7 | `manage-crud-alignment` | manage/* 4 module CRUD shape 對齊 + audit + 軟刪 + Menu CRUD | 繼承 DESIGN-A F7（identical） |
@@ -224,7 +224,7 @@ JWT secret / Casbin enforcement / user info 等項目在 DESIGN-B 內為「進�
 | F11 | `extracted-stubs` | 4 條抽離項 stub + Casbin policy | 繼承 DESIGN-A F11（identical） |
 | F12 | `cleanup-job` | 獨立 cron job + dry-run + 獨立 credential | 繼承 DESIGN-A F12（identical） |
 
-**DESIGN-B 中不適用的 A feature**：
+**DESIGN-B 中不適用的 DESIGN-A feature**：
 - ~~DESIGN-A 的 F10 `refresh-token-nestjs-bridge`~~ — DESIGN-B 無 nestjs，直接由 DESIGN-B 的 F10 `rust-refresh-token` 取代
 - ~~DESIGN-A 的 F13 `rust-refresh-token-impl`~~ — DESIGN-B 起點即 rust-only，併入 DESIGN-B 的 F10
 - ~~DESIGN-A 的 F14 `design-a-to-b-cutover`~~ — DESIGN-B 起點即為目標形態，無 cutover 動作

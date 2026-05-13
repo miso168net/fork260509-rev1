@@ -171,7 +171,7 @@ location = /api/auth/refreshToken {
 
 **守則**：
 - nestjs source **不改**，只用既有 build artifact / docker image
-- endpoint 列表 **保持最小、不擴張**；DESIGN-A → DESIGN-B 過程中只縮減不擴增（`assign-users` 不放 nestjs — 違反 §3.3 「Casbin policy 主寫權威唯一為 rust」原則）
+- endpoint 列表 **保持最小、不擴張**；DESIGN-A → DESIGN-B 過程中只縮減不擴增（`assign-users` 不放 nestjs — 違反 §3.3「Casbin policy 表」內「rust = 主寫權威 / nestjs = read-only」原則）
 - 每個 nestjs-bound endpoint 在 nginx config 都包在 §2.2 的 TRANSITIONAL marker block 內
 - nestjs 寫 `sys_tokens` 時必須同步寫 `sys_operation_log`（§1.5 全域 audit）
 - 共識資源（JWT secret / sys_tokens 表 / Casbin policy 表 / sys_operation_log）細節見 §3.3
@@ -246,7 +246,7 @@ location = /api/auth/refreshToken {
 
 ### §4.2 抽離項清單 × stub 行為 × 升級路徑
 
-承 §3.1 的抽離項：
+承 §3.1 的抽離項。下表 5 條中 `batchDeleteUser` 由 **F9 `systemManage-alias-router`** 統一交付（因 batchDeleteUser 是 `/systemManage/*` alias 的一員），其餘 4 條由 **F11 `extracted-stubs`** 統一交付：
 
 | Endpoint | Stub 行為（DESIGN-A v1） | UI 影響 | 升級路徑（spec-kit feature） |
 |---|---|---|---|

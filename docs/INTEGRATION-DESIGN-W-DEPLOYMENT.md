@@ -30,7 +30,7 @@ compose 透過 **base + override** 模型實作環境差異：`docker-compose.ym
 ### §1.3 Track DESIGN-A / Track DESIGN-B 差異最小化策略
 
 - **共用 compose service 集合**（17 個，§3.1）— 兩 track 一致
-- **Track DESIGN-A 多一個 nestjs service**（共 18 個，§3.2-A）
+- **Track DESIGN-A 多一個 nestjs service**（共 18 個，§3.4-A）
 - **nginx config 用 template + env 驅動** — track 切換時改 routing template，不改 compose 結構
 - **DESIGN-A → DESIGN-B 遷移路徑（承 DESIGN-A §6 F14）**：
   1. 刪除 nestjs service 條目（compose）
@@ -38,7 +38,21 @@ compose 透過 **base + override** 模型實作環境差異：`docker-compose.ym
   3. CI/CD pipeline 刪除 nestjs image build job
   4. 不需 DB migration、env / secret / observability / backup 全保持
 
-### §1.4 範圍宣告
+### §1.4 決策 marker（D1-D7）對照表
+
+本文後續章節以「承 D*」標記引用 brainstorming 階段的 7 個關鍵 trade-off 拍板。對照如下：
+
+| D # | 主題 | 拍板選項 | 落地章節 |
+|---|---|---|---|
+| **D1** | DB migration trigger | Init container（rust-api 共 image、不同 entrypoint） | §7.1 |
+| **D2** | Secret 注入機制 | Docker secrets + `_FILE` pattern（避 env 暴露） | §5.2 |
+| **D3** | TLS cert 來源 | prod Let's Encrypt + acme.sh / dev / staging 自簽 | §4.5 |
+| **D4** | CI/CD platform | DESIGN 層只寫 build → push → deploy → rollback 抽象階段、不綁 platform | §10 |
+| **D5** | Log driver / 聚服務 | promtail → Loki + grafana | §8.1 |
+| **D6** | Metrics stack | prometheus + grafana | §8.2 |
+| **D7** | Postgres backup 策略 | pg_basebackup + WAL archive (PITR) | §9 |
+
+### §1.5 範圍宣告
 
 | 主題 | 進來 |
 |---|---|
@@ -246,6 +260,7 @@ volumes:
   prometheus_data: # Prometheus tsdb
   grafana_data:    # Grafana config + dashboard
   acme_certs:      # TLS cert
+  backup_archive:  # pg_basebackup output (§9)
 ```
 
 **設計要點**：
@@ -320,13 +335,18 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+    ports:                              # dev 直連 nestjs 用，prod 透過 front-nginx 不暴露
+      - "${NESTJS_DEV_PORT:-13003}:3000"  # 對外 port 對齊 §6.1
     networks:
       - internal
     restart: unless-stopped
 ```
 
-啟動 track A：`docker compose --profile track-a --profile prod up -d`
-啟動 track B：`docker compose --profile prod up -d`（不帶 track-a）
+**啟動範例**（profile 機制下，**必須**明示帶 `track-a` 才會啟 nestjs）：
+- Track DESIGN-A prod：`docker compose --profile track-a --profile prod up -d` ⚠️ **prod 部署若漏 `--profile track-a` → nestjs 不啟動 → `/api/auth/refreshToken` 失效**
+- Track DESIGN-A dev：`docker compose --profile track-a up -d`（dev 場景需明示，default profile 不含 track-a）
+- Track DESIGN-B prod：`docker compose --profile prod up -d`（不帶 track-a）
+- Track DESIGN-B dev：`docker compose up -d`
 
 DESIGN-A → DESIGN-B 遷移：移除 nestjs service 條目即可、其他 service 不變。
 
@@ -386,6 +406,8 @@ server {
     }
 
     # Track-specific routing（§4.3 / §4.4）
+    # ⚠️ track-*.inc 內 location **必須**使用 `location = <exact-path>` exact match
+    # 否則會被下方預設 `location /api/`（prefix match）攔截
     include /etc/nginx/conf.d/track-*.inc;
 
     # 預設 /api/* → rust-api（DESIGN-B 用此 / DESIGN-A 在此之上加 TRANSITIONAL block）
@@ -1081,7 +1103,7 @@ DESIGN-A → DESIGN-B 遷移時刪除 nestjs build job。
 | **Phase W-5：Observability（P5）** ||||
 | W-F12 | `log-aggregation-loki` | promtail + Loki + grafana 部署；rust/nestjs/nginx 結構化 log 格式對齊 | W-F3 | 共用 |
 | W-F13 | `metrics-prometheus` | prometheus + exporters（postgres / redis / nginx）+ rust/nestjs `/metrics` endpoint + grafana data source | W-F3 | 共用 |
-| W-F14 | `grafana-dashboards` | 業務 metrics dashboard（DESIGN-A §5.2.x + audit log + Casbin enforce）| W-F12, W-F13 | 共用 |
+| W-F14 | `grafana-dashboards` | 業務 metrics dashboard（涵蓋 DESIGN-A §5.2.1 audit log / §5.2.2 soft delete / §5.2.3 cleanup 的 metric 維度 + Casbin enforce）| W-F12, W-F13 | 共用 |
 | **Phase W-6：Backup & DR（P6）** ||||
 | W-F15 | `pg-backup-pitr` | postgres WAL archive 配置 + backup-job container + retention 策略 | W-F3 | 共用 |
 | W-F16 | `disaster-recovery-runbook` | restore script + DR 演練 runbook + RTO/RPO 紀錄 | W-F15 | 共用 |

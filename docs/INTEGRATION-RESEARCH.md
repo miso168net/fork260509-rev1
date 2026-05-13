@@ -505,6 +505,12 @@ base 全走 nestjs。
 - demo views（plugin/function 大部分）純客戶端展示，後端 API 不需對接
 - 最終 PLAN 階段可依 user 需求收緊或放寬範圍
 
+**漏斗下游命名對應**（橋接後續 DESIGN 文件）：
+- **策略 1（rust-only）→ 最終形態 [`DESIGN-B`](INTEGRATION-DESIGN-B-RUST-ONLY.md)**（nestjs 完全退場）
+- **策略 2（rust + nestjs 並用，⭐ 首推）→ 起點形態 [`DESIGN-A`](INTEGRATION-DESIGN-A-RUST-NESTJS.md)**（nestjs 過渡補位、最終遷移到 DESIGN-B）
+- **策略 3（nestjs-only）→ 不採用**（違反 rev1 設計目標）
+- 部署統合留 [`DESIGN-W-DEPLOYMENT`](INTEGRATION-DESIGN-W-DEPLOYMENT.md)（Common 主體 + Track DESIGN-A/B 差異區）
+
 ---
 
 ## 8. 部署方向（mention，不深入）
