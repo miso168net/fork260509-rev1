@@ -26,8 +26,10 @@
 
 `base-web/` 與 `rust-api/` 是**worktree + submodule 雙重身分**：
 - **本機**：透過 `git worktree add -b <branch>` 建立，`.git` 是 file 指向源倉的 `worktrees/`，`cd base-web && git commit/push` 直接寫回 fork repo 的對應分支。
-- **外層 `rev1-admin-root`**：把它們當 submodule 處理（gitlink + `.gitmodules`），每次外層 commit 紀錄當下使用的 fork SHA。**外層看不到檔案 diff，只看到 SHA pin 變動**。
+- **外層 `rev1-admin-root`**：把它們當 submodule 處理（gitlink + `.gitmodules`），每次外層 commit 可能含當下使用的 fork SHA pin 變動，也可能含其他追蹤檔（`CLAUDE.md` / `.specify/` / `specs/` / `docs/` 等）的正常 diff。**`base-web` 與 `rust-api` 這兩列 gitlink 只看到 SHA 字串前後不同**（不展開檔案 diff）；其他追蹤檔仍是一般 git diff。
 - **別人 clone 外層**：`git clone --recurse-submodules` 會拉 fork repo 到 base-web/ rust-api/（變正常 clone 而非 worktree，但內容相同）。
+
+**Outer branch 模式**：default branch 為 `rev1-admin-root`；spec-kit 流程啟動時，`before_specify` mandatory pre-hook（`speckit.git.feature`，見 `.specify/extensions/git/scripts/bash/create-new-feature.sh`）會從當前 default 衍生短期 `NNN-<short-name>` feature branch（命名與 `specs/NNN-<short-name>/` 目錄對齊），spec docs（`spec.md` / `plan.md` / `tasks.md` / `checklists/`）+ 該 feature 對應的 submodule SHA pin 變動都落在這個 feature branch 上；feature 完成後 merge 回 `rev1-admin-root`。workspace-wide 設定 / 文件變動（`CLAUDE.md` / `.gitignore` / `.specify/` 結構等）可直接落 default branch。worktree（`base-web/` / `rust-api/`）維持各自長期分支不變、**不**為 feature 另開新分支。
 
 兩段式 commit 是日常工作流，詳見 §6 與 §9 操作手冊。
 
@@ -140,11 +142,14 @@ git push origin rev1-admin-base-web           # 推到 miso168net/fork260509-soy
 
 # === 第二段：回外層更新 SHA pin ===
 cd ..
+git branch --show-current                     # 確認當前 outer branch（spec-kit feature 開發中應為 NNN-<short-name>；workspace-level 改動才在 rev1-admin-root）
 git status                                    # 應該看到 "modified content" 在 base-web
 git add base-web                              # 只 add 目錄即可（記 SHA，不記檔案）
 git commit -m "bump base-web to <短 SHA>: <一行描述>"
-git push                                      # 推到外層 rev1-admin-root remote
+git push origin "$(git branch --show-current)"   # outer feature branch 或 rev1-admin-root（取決於上面那行）
 ```
+
+> **Outer branch 預期**：跑 `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement` 全程，outer 都應該在對應 `NNN-<short-name>` feature branch 上（由 `before_specify` pre-hook 在第一步自動建）。第二段 commit 自然落在這個 feature branch；feature 完成後 merge 回 `rev1-admin-root`。如果跑 spec-kit 流程前發現 outer 不在 `NNN-<short-name>` 上、又即將改 spec / code 相關檔，先讓 pre-hook 跑（或手動 `git switch -c NNN-<short-name>`）對齊。
 
 第二段的 outer commit 訊息**建議帶 SHA 與 fork 提交標題**，以後在外層 log 看得懂：
 
@@ -227,6 +232,7 @@ git log --oneline -5                  # 最近 5 個外層 commit，看 pin 變�
 - ❌ 不要在 worktree 裡跑 `git push` 不指定 remote/branch — `cd base-web` 預設推到 fork260509-soybean-admin-base，可能誤推到非預期分支；用 `git push origin rev1-admin-base-web` 顯式指定。
 - ❌ 不要忘記第二段 commit：worktree 內改完 push 完，**一定要回外層 `git add base-web && git commit`** 更新 pin，否則外層下次 commit 才會包進去（容易混淆 SHA 對應關係）。
 - ❌ 不要直接編輯 `fork260509-soybean-admin-*/` 四個源倉的檔案：base 與 rust 兩個應透過 `base-web/` / `rust-api/` worktree 改；docs / nestjs 兩個目前未列入 rev1 整合範圍（依 §4 disclaimer 待 INTEGRATION-PLAN 確認，可能納入也可能維持參考）。
+- ❌ 不要跳過 spec-kit `.specify/extensions.yml` 內 `optional: false` 的 mandatory pre-hook（如 `before_specify` → `speckit.git.feature` 為 feature 開短期 outer branch）。即使當前 outer branch 是 `rev1-admin-root`（傘狀 monorepo default），spec-kit feature branch 模式**仍是預期工作流**（見 §1 Outer branch 模式）。pre-hook 只在 local 建分支、**不** push，符合「push 前須 user 同意」紀律（§6.2）。
 
 ## 8. 進度追蹤
 
