@@ -4,7 +4,7 @@
 > 範圍：rev1 base-web（`fork260509-soybean-admin-base` 的 `example` 分支）↔ rev1 rust-api（`fork260509-soybean-admin-rust` 的 `main` 分支）↔ nestjs（`fork260509-soybean-admin-nestjs`，過渡性補位）
 > 資料來源：[`INTEGRATION-RESEARCH.md`](INTEGRATION-RESEARCH.md) + 直接讀 source + `graphify-out/`（圖譜限制見 [`GRAPHIFY-NOTES.md`](GRAPHIFY-NOTES.md)）
 > 性質：本檔為 **設計階段**（拍板方案 + 抽離項清單 + spec-kit feature 切分）；具體 code/config patch 由 spec-kit `specify → plan → tasks → implement` 階段落地
-> 兩條軌道並存：[`INTEGRATION-DESIGN-B-RUST-ONLY.md`](INTEGRATION-DESIGN-B-RUST-ONLY.md)（最終形態）+ [`INTEGRATION-DESIGN-W-DEPLOYMENT.md`](INTEGRATION-DESIGN-W-DEPLOYMENT.md)（部署統合）— 撰寫順序為 A → B → W
+> 兩條軌道並存：[`INTEGRATION-DESIGN-B-RUST-ONLY.md`](INTEGRATION-DESIGN-B-RUST-ONLY.md)（最終形態）+ [`INTEGRATION-DESIGN-W-DEPLOYMENT.md`](INTEGRATION-DESIGN-W-DEPLOYMENT.md)（部署統合）— 撰寫順序為 DESIGN-A → DESIGN-B → W
 
 ---
 
@@ -24,7 +24,7 @@ DESIGN-A 的設計支柱：**Casbin + menu「不符權限不顯示」**。落實
 - **rust 主後端**：主要 endpoint、Casbin RBAC enforcement、主要 data layer、`/systemManage/*` alias。
 - **nestjs 補位**：填 rust 缺的特定功能（首要 `POST /auth/refreshToken`），沿用 nestjs source、不改 code。
 - **單一職責、不互相 forward（嚴版）**：每個 endpoint 只由一個後端負責 enforcement；nginx config 拍板誰負責什麼，**禁止**後端間 HTTP/RPC 呼叫對方 API。跨服務狀態同步**只能**透過共用 DB（postgres）與 redis pub-sub。
-- **nestjs 為過渡性補位 — 最終目標是 nestjs 退場、全面遷移到 [`DESIGN-B`](INTEGRATION-DESIGN-B-RUST-ONLY.md)**；每個 A 階段決策都要過「未來 nestjs 拔掉時順嗎」這道濾鏡。
+- **nestjs 為過渡性補位 — 最終目標是 nestjs 退場、全面遷移到 [`DESIGN-B`](INTEGRATION-DESIGN-B-RUST-ONLY.md)**；每個 DESIGN-A 階段決策都要過「未來 nestjs 拔掉時順嗎」這道濾鏡。
 - **共識資源**：JWT secret、postgres、Casbin policy 表、`sys_operation_log` 表（詳見 §3.3）。
 
 ### §1.3 base 不改動邊界
@@ -75,7 +75,7 @@ DESIGN-A 的設計支柱：**Casbin + menu「不符權限不顯示」**。落實
 │   過渡補位     │     │   主後端                 │
 │   - refresh   │     │   - auth/login/getInfo  │
 │     token     │     │   - /route/* (動態 menu) │
-│   (A → B 拔)  │     │   - /user, /role, /menu │
+│   (DESIGN-A → DESIGN-B 拔)  │     │   - /user, /role, /menu │
 │               │     │   - Casbin enforce      │
 │               │     │   - /systemManage/*     │
 │               │     │     (alias router)      │
@@ -105,7 +105,7 @@ DESIGN-A 的設計支柱：**Casbin + menu「不符權限不顯示」**。落實
 | Location | 上游 | 用途 | 狀態 |
 |---|---|---|---|
 | `/` | base-web static | SPA assets | 永久 |
-| `/api/auth/refreshToken` | nestjs | Refresh token rotation | **Transitional**（A → B 改 rust）|
+| `/api/auth/refreshToken` | nestjs | Refresh token rotation | **Transitional**（DESIGN-A → DESIGN-B 改 rust）|
 | `/api/*`（其餘） | rust-api | 主要 endpoint + Casbin enforce + `/systemManage/*` alias + 抽離項 stub | 永久 |
 
 **設計要點**：
@@ -114,11 +114,11 @@ DESIGN-A 的設計支柱：**Casbin + menu「不符權限不顯示」**。落實
 - **抽離項不在 nginx 層處理**：抽離項由 rust handler 註冊 stub + Casbin policy 控管，nginx 對其完全透明（見 §4.2）
 - **單向流向**：所有跨後端協調走 postgres / redis（如圖示），nginx 不參與任何「rust → nestjs」或反向的中繼
 
-**nginx config 強制慣例**：所有 nestjs-bound location 及對應 upstream 宣告必須包在以下 marker block 內，A → B 遷移時直接刪除整個 block + 把對應 location 的 `proxy_pass` 改指 rust-api：
+**nginx config 強制慣例**：所有 nestjs-bound location 及對應 upstream 宣告必須包在以下 marker block 內，DESIGN-A → DESIGN-B 遷移時直接刪除整個 block + 把對應 location 的 `proxy_pass` 改指 rust-api：
 
 ```nginx
 # ============================================================
-# >>>>> TRANSITIONAL BEGIN — A → B 拔除點 <<<<<
+# >>>>> TRANSITIONAL BEGIN — DESIGN-A → DESIGN-B 拔除點 <<<<<
 # 以下整段（含 upstream）在 nestjs 退場時刪除
 # ============================================================
 upstream nestjs_transitional {
@@ -163,13 +163,13 @@ location = /api/auth/refreshToken {
 
 ### §3.2 nestjs 補位 endpoint（DESIGN-A v1，過渡）
 
-| Endpoint | 用途 | A → B 拔除策略 |
+| Endpoint | 用途 | DESIGN-A → DESIGN-B 拔除策略 |
 |---|---|---|
 | `POST /auth/refreshToken` | refresh token rotation | rust 補齊後 nginx 改路由、刪 TRANSITIONAL block |
 
 **守則**：
 - nestjs source **不改**，只用既有 build artifact / docker image
-- endpoint 列表 **保持最小、不擴張**；A → B 過程中只縮減不擴增（`assign-users` 不放 nestjs — 違反 §3.3 「Casbin policy 主寫權威唯一為 rust」原則）
+- endpoint 列表 **保持最小、不擴張**；DESIGN-A → DESIGN-B 過程中只縮減不擴增（`assign-users` 不放 nestjs — 違反 §3.3 「Casbin policy 主寫權威唯一為 rust」原則）
 - 每個 nestjs-bound endpoint 在 nginx config 都包在 §2.2 的 TRANSITIONAL marker block 內
 - nestjs 寫 `sys_tokens` 時必須同步寫 `sys_operation_log`（§1.5 全域 audit）
 - 共識資源（JWT secret / sys_tokens 表 / Casbin policy 表 / sys_operation_log）細節見 §3.3
@@ -186,7 +186,7 @@ location = /api/auth/refreshToken {
 #### sys_tokens 表
 - **nestjs = 寫入者**（refresh 時寫新 token row、舊 token 標 revoked / 記 rotation_chain）
 - **rust = 讀取者**（驗 token valid 時查表；logout 時可選寫入 revoke）
-- **表 schema 共識**：rust 在 DESIGN-A v1 雖不寫，**migration 仍預先建立 sys_tokens schema**（rust 主導 migration，nestjs 既有 prisma schema 對齊到此 schema）— 讓 A → B 時 rust 直接接手寫，不需 schema 變動
+- **表 schema 共識**：rust 在 DESIGN-A v1 雖不寫，**migration 仍預先建立 sys_tokens schema**（rust 主導 migration，nestjs 既有 prisma schema 對齊到此 schema）— 讓 DESIGN-A → DESIGN-B 時 rust 直接接手寫，不需 schema 變動
 - **DESIGN-A → DESIGN-B**：rust 接手 refresh handler，繼續用同表
 
 #### Casbin policy 表
@@ -281,7 +281,7 @@ location = /api/auth/refreshToken {
 
 #### §5.1.3 User info + sys_tokens 跨服務同源
 - **風險**：rust 與 nestjs 對同 user 的 view 不一致；nestjs 寫 sys_tokens 後 rust 不認 schema
-- **緩解**：共用 sys_user 表 read-only 對齊；sys_tokens schema rust 主導 migration（即使 A v1 rust 不寫）；JWT 簽章自帶驗證，sys_tokens 表只作 revocation list / rotation chain（避免每次 request 都查表）
+- **緩解**：共用 sys_user 表 read-only 對齊；sys_tokens schema rust 主導 migration（即使 DESIGN-A v1 rust 不寫）；JWT 簽章自帶驗證，sys_tokens 表只作 revocation list / rotation chain（避免每次 request 都查表）
 - **DESIGN-A → DESIGN-B**：rust 接手寫入，零 schema 改動
 
 ### §5.2 資料變動原則衍生
@@ -317,7 +317,7 @@ location = /api/auth/refreshToken {
 
 - **跨資源補償機制**（具體選哪個 + 怎麼實作留 spec-kit `audit-log-infrastructure`）：
 
-  | 機制 | 角色 | 對 DESIGN-A → B 遷移影響 |
+  | 機制 | 角色 | 對 DESIGN-A → DESIGN-B 遷移影響 |
   |---|---|---|
   | **Outbox 模式** | transaction 內同時寫業務 + audit + outbox event row；獨立 worker 讀 outbox 並重試 publish 直到成功 | nestjs 退場後 outbox 仍可用，或單服務時直接無 publish 需求 |
   | **TTL fallback** | nestjs enforcer cache 設 TTL（如 5 分鐘）；publish 漏掉時 cache 自然失效、重 load from DB | nestjs 退場後此機制無需，rust 進程內 cache 行為由 rust 自定 |
@@ -361,15 +361,15 @@ location = /api/auth/refreshToken {
 | # | Feature | 範疇 | 主要交付 | 依賴 |
 |---|---|---|---|---|
 | **Phase 1：基礎設施（P1）** ||||
-| F1 | `jwt-secrets` | JWT secret 共享、algorithm（HS256 vs RS256）拍板、claim 欄位列表（sub/exp/iat/roles/...）對齊；docker compose envvar 注入機制 | rust + nestjs 雙端共識，A → B 後 rust 沿用 | — |
+| F1 | `jwt-secrets` | JWT secret 共享、algorithm（HS256 vs RS256）拍板、claim 欄位列表（sub/exp/iat/roles/...）對齊；docker compose envvar 注入機制 | rust + nestjs 雙端共識，DESIGN-A → DESIGN-B 後 rust 沿用 | — |
 | F2 | `audit-log-infrastructure` | `sys_operation_log` schema 擴充（含 actor/timestamp/operation/entity_type/entity_id/payload before & after）；transaction 邊界守則；outbox 模式落地；redis subscriber TTL fallback | 全域 audit 紀律（§1.5 + §5.2.1）；spec-kit 內定義「業務 + audit 同 transaction」測試規範 | — |
 | F3 | `soft-delete-infrastructure` | 所有 entity 表 migration 加 `deleted_at`；Sea-ORM scoped finder trait；partial unique index；Casbin orphan cleanup 規則拍板 | 全域 soft delete 紀律（§1.5 + §5.2.2） | — |
 | F4 | `response-shape-alignment` | rust 全 handler 改用 path II（HTTP 200 + body business code）；全 request/response struct 加 `#[serde(rename_all="camelCase")]`；user info DTO 對齊 base `Api.Auth.UserInfo` 欄位 | B1/B2/B3/B5 GAP 一次性解決 | — |
 | **Phase 2：核心 auth + RBAC menu（P2）** ||||
-| F5 | `auth-login-and-dynamic-menu` | `/auth/{login, getUserInfo}` + `/route/getUserRoutes` 整套（Casbin enforce + role-menu 關聯計算）；A 的設計支柱第一條落地 | base `_builtin/login` 跑通 + 登入後動態 menu | F1, F2, F3, F4 |
+| F5 | `auth-login-and-dynamic-menu` | `/auth/{login, getUserInfo}` + `/route/getUserRoutes` 整套（Casbin enforce + role-menu 關聯計算）；DESIGN-A 的設計支柱第一條落地 | base `_builtin/login` 跑通 + 登入後動態 menu | F1, F2, F3, F4 |
 | F6 | `route-guard` | `/route/{getConstantRoutes, isRouteExist}` + base vue-router guard 串接 | base 路由守衛行為符合預期 | F5 |
 | **Phase 3：主流業務 endpoint（P3）** ||||
-| F7 | `manage-crud-alignment` | manage/* 4 個 module（user / role / menu / domain）對應 endpoint shape 對齊 + Casbin enforce + 軟刪 + audit；包含 menu CRUD（A 設計支柱第二條） | base `manage/*` 4 view 跑通 | F5 |
+| F7 | `manage-crud-alignment` | manage/* 4 個 module（user / role / menu / domain）對應 endpoint shape 對齊 + Casbin enforce + 軟刪 + audit；包含 menu CRUD（DESIGN-A 設計支柱第二條） | base `manage/*` 4 view 跑通 | F5 |
 | F8 | `assign-users` | `/authorization/assign-users`（rust 補位，pattern 同既有 `/user/add_policies`） | 完整 user × role 關聯管理 | F7 |
 | F9 | `systemManage-alias-router` | rust 10 條 `/systemManage/*` thin wrapper（含 `update_user_post` POST 包 PUT、`delete_user_by_body` 從 body 抽 id、`batch_delete_users` stub） | base 既有 service 對 systemManage 全跑通 | F7 |
 | **Phase 4：過渡橋 + 抽離項 + cleanup（P4）** ||||
@@ -408,4 +408,4 @@ P1 foundation ┼─ F3 (soft)  ─┤             │                ├─ F11
 
 ---
 
-> **下一步**：本 DESIGN-A 完成後，依撰寫順序進入 [`INTEGRATION-DESIGN-B-RUST-ONLY.md`](INTEGRATION-DESIGN-B-RUST-ONLY.md)（將以「DESIGN-A 去 nestjs 維度」的簡化視角撰寫），然後 [`INTEGRATION-DESIGN-W-DEPLOYMENT.md`](INTEGRATION-DESIGN-W-DEPLOYMENT.md)（統合 A/B 兩種部署形態）。具體 code/config patch 由 spec-kit `specify → plan → tasks → implement` 階段落地。
+> **下一步**：本 DESIGN-A 完成後，依撰寫順序進入 [`INTEGRATION-DESIGN-B-RUST-ONLY.md`](INTEGRATION-DESIGN-B-RUST-ONLY.md)（將以「DESIGN-A 去 nestjs 維度」的簡化視角撰寫），然後 [`INTEGRATION-DESIGN-W-DEPLOYMENT.md`](INTEGRATION-DESIGN-W-DEPLOYMENT.md)（統合 DESIGN-A/DESIGN-B 兩種部署形態）。具體 code/config patch 由 spec-kit `specify → plan → tasks → implement` 階段落地。
