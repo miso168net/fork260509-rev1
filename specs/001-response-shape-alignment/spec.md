@@ -190,5 +190,5 @@ rust 新增的單一共用模組（例如 `server_core::web::code` 或類似 pat
 - **B4 Refresh token rotation 業務邏輯不在 F4 範圍**（僅欄位 rename）— rotation 邏輯由 F10 / F13 處理
 - **既有 per-field `#[serde(rename = "...")]` 替換為 struct-level `rename_all = "camelCase"` 後輸出 JSON 等價**（已驗證 `user_id` → `userId` 兩者結果一致）
 - **F4 不引入新的 rust crate 依賴**（既有 validator 機制重用）
-- **多語系 msg 不在 F4 範圍**（msg 預設中文或英文皆可，未來 i18n 留後續 feature）
+- **F4 階段 msg 為全英文**（i18n-neutral，per [`research.md`](./research.md) R3）；多語系留後續 i18n feature
 - **F4 與 F1 / F2 / F3 可平行進行**（無依賴關係，per [`DESIGN-A`](../../docs/INTEGRATION-DESIGN-A-RUST-NESTJS.md) §6.2）
