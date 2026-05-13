@@ -52,7 +52,7 @@
 
 ### 2.1 Vue 3 stack（基線技術選型）
 
-- **Vue 3 + TypeScript + Vite7** — 標準 SFC，<script setup>，Vite 為 build/dev server
+- **Vue 3 + TypeScript + Vite7** — 標準 SFC，`<script setup>`，Vite 為 build/dev server
 - **Naive UI** — 主元件庫（example 分支內所有業務 view 用 NaiveUI）
 - **Pinia** — 狀態管理
 - **vue-router 4** — 路由
