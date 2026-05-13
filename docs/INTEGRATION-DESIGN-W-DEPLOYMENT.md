@@ -1000,7 +1000,7 @@ echo "Backup completed: $BACKUP_DIR"
 │   4. Build docker image                                  │
 │      - rust-api: multi-stage Dockerfile (§2.1)           │
 │      - base-web: multi-stage Dockerfile (§2.2)           │
-│      - nestjs (Track DESIGN-A only): 既有 Dockerfile (§2.3)     │
+│      - nestjs (DESIGN-A only): 既有 Dockerfile (§2.3)    │
 │   5. Tag image: <service>:<short-sha> + <service>:<branch>│
 │   6. Push to registry                                    │
 └──────────────────────┬───────────────────────────────────┘

@@ -75,7 +75,7 @@ DESIGN-A 的設計支柱：**Casbin + menu「不符權限不顯示」**。落實
 │   過渡補位     │     │   主後端                 │
 │   - refresh   │     │   - auth/login/getInfo  │
 │     token     │     │   - /route/* (動態 menu) │
-│   (DESIGN-A → DESIGN-B 拔)  │     │   - /user, /role, /menu │
+│   (拔除點)     │     │   - /user, /role, /menu │
 │               │     │   - Casbin enforce      │
 │               │     │   - /systemManage/*     │
 │               │     │     (alias router)      │
@@ -93,6 +93,8 @@ DESIGN-A 的設計支柱：**Casbin + menu「不符權限不顯示」**。落實
    │   - 事實源              │ │              │
    └────────────────────────┘ └──────────────┘
 ```
+
+> 圖中 nestjs 框內 **「(拔除點)」= DESIGN-A → DESIGN-B 遷移時拔除**（承 §1.2「nestjs 為過渡性補位」原則）
 
 **分層原則**：
 - **nginx 在最外緣**：TLS 終止、static 服務、`/api/*` 反向代理；不做業務邏輯
