@@ -377,3 +377,16 @@ git log --oneline -5                  # 最近 5 個外層 commit，看 pin 變�
 ```
 
 若發現 worktree 不存在（`.git` 不在），代表使用者可能在新機器或 worktree 被誤刪 — 提示走 §9.1 重建。
+
+## 10. 目前活躍 spec-kit feature
+
+<!-- SPECKIT START -->
+- **Active feature**: `006-dockerfile-rust-api`（W-F1,rev1 deploy P1 第一個 — debian+glibc multi-stage Dockerfile + /health endpoint）
+- **Plan**: [`specs/006-dockerfile-rust-api/plan.md`](specs/006-dockerfile-rust-api/plan.md)
+- **Spec**: [`specs/006-dockerfile-rust-api/spec.md`](specs/006-dockerfile-rust-api/spec.md)
+- **Brainstorm**: [`docs/superpowers/006-feature-dockerfile-rust-api.md`](docs/superpowers/006-feature-dockerfile-rust-api.md)
+- **Phase**: Plan done(research/data-model/contracts/quickstart 全產出);下一步 `/speckit-tasks`
+- **Outer branch**: `006-dockerfile-rust-api`(尚未 push)
+- **Implementer landing point**: `rust-api/` worktree(rev1-admin-rust-api 分支)
+<!-- SPECKIT END -->
+

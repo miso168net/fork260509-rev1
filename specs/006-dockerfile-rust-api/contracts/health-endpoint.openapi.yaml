@@ -1,0 +1,94 @@
+openapi: 3.1.0
+info:
+  title: rust-api W-F1 /health endpoint contract
+  version: "1.0.0"
+  description: |
+    `/health` endpoint contract — W-F1 範疇新增。
+
+    Purpose:讓 W-F3 docker-compose healthcheck / 未來 W-F11 front-nginx upstream
+    healthcheck / 任何 ops probe 判斷 rust-api server process 是否可服務 HTTP。
+
+    Public、無 auth、無 Casbin enforce、不查 DB/redis、不過 TraceLayer(INFO level
+    log silent)— per spec.md FR-013~FR-015 + Q3 clarify。
+  contact:
+    name: rev1 integration
+    url: https://github.com/miso168net/fork260509-rev1
+
+servers:
+  - url: http://127.0.0.1:11081
+    description: rust-api container 內部(per FR-008 EXPOSE 11081 + Q1 clarify APP_SERVER_PORT=11081)
+
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Health probe(server process liveness)
+      description: |
+        Returns 200 OK + plain text `ok` 表示 server process 可服務 HTTP。
+
+        **不查 DB / redis**(per FR-015) — 健康定義為「process 可服務 HTTP」、
+        DB/redis health 由 W-F13 metrics exporter(future)另行觀測。
+
+        **public** — 不過 jwt_auth_middleware、不過 axum_casbin enforce
+        layer、不過 api_key_middleware(per FR-014)。
+
+        **silent at INFO log level** — tracing layer 不記錄 `/health` request
+        (per FR-015 update / Q3 clarify);實作上不過 `apply_layers()` → 不過
+        `TraceLayer`。RUST_LOG=debug 級別仍可開細節。
+
+      parameters: []
+
+      responses:
+        "200":
+          description: Server process alive and serving HTTP
+          content:
+            text/plain:
+              schema:
+                type: string
+                const: "ok"
+              example: "ok"
+
+      # Performance contract(per spec SC-004)
+      x-performance:
+        p99_latency_ms: 50
+        scope: local docker network
+
+      # Negative semantics(what /health does NOT do)
+      x-not-checked:
+        - database connectivity
+        - redis connectivity
+        - downstream service health
+        - business invariants(Casbin policy load / migration completion / etc.)
+
+      # Future extensions(out of W-F1 scope)
+      x-future-extensions:
+        - "JSON response with build SHA / uptime(留 future feature)"
+        - "503 on graceful shutdown SIGTERM(留 W-F11)"
+
+components: {}
+
+# Acceptance reference(spec.md Dimension D)
+x-acceptance-scenarios:
+  - id: scenario-10
+    description: 完整 stack 起後 curl /health 回 200 + "ok"
+    given: postgres + redis + rust-api container 全啟動完成
+    when: docker exec <container> curl -f http://localhost:11081/health
+    then: HTTP 200 + body == "ok"
+  - id: scenario-11
+    description: 不帶 token 直接 call /health
+    given: F5.1 既有 jwt_auth_middleware + axum_casbin layer 都 wire 完成
+    when: GET /health 無 Authorization header
+    then: 200 OK(public、不過 auth)
+  - id: scenario-12
+    description: source code grep /health 至少 1 命中
+    given: W-F1 implementation 完成
+    when: grep -rn "/health" rust-api/server/router/src/ rust-api/server/initialize/src/
+    then: 至少 1 命中(`.route("/health", get(...))` 樣式)
+  - id: scenario-12b
+    description: /health 不進 INFO log + debug 級別可開
+    given: 完整 stack 起 + RUST_LOG=info(預設)
+    when: 從外部連續 call /health 10 次 + tail container stdout/stderr
+    then: 0 個 /health-related tracing log row
+    and-given: 同 container 改 RUST_LOG=debug
+    when: 再連續 call /health 10 次
+    then: 至少出現 debug 級別 trace
