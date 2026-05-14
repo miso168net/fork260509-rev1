@@ -8,9 +8,13 @@
 
 ## 🎯 Current Focus
 
-**Phase**：P1 基礎設施（必先 4 個 feature）— **4/4 全部完成** ✅
-**Active feature**：無（P1 全完成、**解鎖 P2 F5 `auth-login-and-dynamic-menu`**）
-**下一步**：啟動 P2 — F5 為 P2 第一個 feature（per DESIGN-A §6.1 Phase 2）
+**Phase**：W deploy(per DESIGN-W §11)— **W-1 P1:1/4(W-F1 完成 ✅;W-F2 / W-F3 / W-F4 待動)**
+**Active feature**：無(W-F1 全完成、**解鎖 W-F2 base-web Dockerfile / W-F3 compose 結構 / W-F4 secret 注入**)
+**下一步**:W-F2 與 W-F3 / W-F4 任一順序皆可(W-F2 + W-F3 與 W-F4 共組 P1 必先 4 個;per DESIGN-W §11.2 依賴圖)
+
+> **F5.1 階段同期(P2 主體解鎖)**:F5.1 base-web auth-login-and-dynamic-menu 已完成 merge(2026-05-15、outer `be6e237` + merge `e71aefe`、rust-api `a85e88c`),F5.2 Casbin redis pub-sub 與 F10/F14 同期。
+>
+> ⚠️ **W-F1 acceptance 階段發現 F5.1 pre-existing wiring bug**(非 W-F1 regression):`/route/getUserRoutes` 在 `sys_menu_route.rs:73` mount 但 handler `SysAuthenticationApi::get_user_routes` 期 `Extension<Arc<SysAuthService>>`、SysMenuRouter 用 SysMenuService 注入。F5.1 e2e test 用 `#[ignore]` 沒實際跑、bug 漏網。**留 F5.1 follow-up / 新 feature 處理、不在 W 系列範疇**。
 
 ---
 
@@ -24,6 +28,8 @@
 - [x] **F3 soft-delete-infrastructure** ✅（2026-05-14 完成；outer `6941788` + merge `0f1c5c3`、rust-api `2a65e2c`；spec `specs/002-soft-delete-infrastructure/`）
 - [x] **F2.1 audit-log-infrastructure** ✅（2026-05-14 完成；outer `3c9c689` + merge `209a2c8`、rust-api `6bfa674`；spec `specs/003-audit-log-infrastructure/`；F2.2 outbox + Redis TTL 留後續）
 - [x] **F1.1 jwt-secrets** ✅（2026-05-15 完成；outer `c582db4` + merge `5f82df3`、rust-api `65ce06a`；spec `specs/004-jwt-secrets/`；F1.2 algorithm 升級 + key versioning + refresh-token 預埋 留 with F10 refresh-token-bridge 同期）
+- [x] **F5.1 auth-login-and-dynamic-menu** ✅(2026-05-15 完成;outer `be6e237` + merge `e71aefe`、rust-api `a85e88c`;spec `specs/005-auth-login-and-dynamic-menu/`;P2 第一個 feature 解鎖 base-web 主體)
+- [x] **W-F1 dockerfile-rust-api** ✅(2026-05-15 完成;outer `bdbfb3c` + merge `430ada9`、rust-api `6831677`;spec `specs/006-dockerfile-rust-api/`;Phase W deploy P1 第一個 feature — debian+glibc multi-stage Dockerfile + /health endpoint + ENV APP_SERVER_PORT=11081 走 F1.1 env-override;acceptance 21/22 PASS、image 184MB、build 5m25s / cache hit 2s;1 partial = pre-existing F5.1 wiring bug 已記到 Current Focus)
 
 ---
 
@@ -39,6 +45,19 @@
 §6.2 規則：**P1 4 個任一順序皆可（平行 spec-kit）、但必須全部完成才能動 P2**。
 
 **Phase 1 P1 全 4 個基礎設施 ✅ 完成（2026-05-15）— Phase 2-5 features（F5-F14）解鎖**。
+
+---
+
+## Phase W deploy Roadmap(per DESIGN-W §11)
+
+| # | Feature | Brainstorm | spec | plan | tasks | impl | 狀態 |
+|---|---|---|---|---|---|---|---|
+| W-F1 | `dockerfile-rust-api` | ✅ | ✅ | ✅ | ✅ | ✅ | **完成**(commit 上方) |
+| W-F2 | `dockerfile-base-web` | — | — | — | — | — | 待啟動 |
+| W-F3 | `compose-base-structure` | — | — | — | — | — | 待啟動(依賴 W-F1 + W-F2) |
+| W-F4 | `secret-injection` | — | — | — | — | — | 待啟動(依賴 W-F3) |
+
+§11.2 規則:**W-1 P1 4 個(W-F1 / W-F2 / W-F3 / W-F4)為部署最低基礎、必先全部完成才能動 W-2 P2(W-F5 nginx 反向代理 / W-F6 TLS / W-F7 對外 port)**。W-F1 完成、W-F2 / W-F3 / W-F4 任一順序皆可平行 spec-kit。
 
 ---
 
