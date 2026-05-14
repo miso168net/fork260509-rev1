@@ -1,0 +1,18 @@
+name: ci-soft-delete-lint
+
+on:
+  push:
+    branches: [main, rev1-admin-root, '002-soft-delete-infrastructure', '00*-**']
+  pull_request:
+    branches: [main, rev1-admin-root]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Run F3 soft-delete entities lint
+        run: bash rust-api/scripts/ci-soft-delete-lint.sh
