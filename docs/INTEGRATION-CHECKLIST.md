@@ -9,7 +9,7 @@
 ## 🎯 Current Focus
 
 **Phase**：P1 基礎設施（必先 4 個 feature）— **2/4 完成**
-**Active feature**：F2 `audit-log-infrastructure` ✅ F2.1 brainstorm 完成（`docs/superpowers/003-feature-audit-log-infrastructure.md`）— **待 user review + `/speckit-specify` 接手**
+**Active feature**：F2 `audit-log-infrastructure` ✅ F2.1 spec + clarify + plan + **tasks** 完成（`specs/003-audit-log-infrastructure/` 含 spec.md / plan.md / research.md / data-model.md / contracts/internal-api.md / quickstart.md / checklists/requirements.md / **tasks.md 37 tasks**）— **待 `/speckit-analyze`（optional）或 `/speckit-implement` 接手**
 **Next after F2.1**：F1 `jwt-secrets`（P1 最後一塊；F2.1 / F1 任一順序皆可、per DESIGN-A §6.2）
 
 ---
@@ -30,7 +30,7 @@
 | # | Feature | Brainstorm | spec | plan | tasks | impl | 狀態 |
 |---|---|---|---|---|---|---|---|
 | F1 | `jwt-secrets` | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | 待 brainstorm |
-| F2 | `audit-log-infrastructure` | ✅（F2.1 brainstorm doc 完成）| ⏳ | ⏳ | ⏳ | ⏳ | 待 `/speckit-specify` |
+| F2 | `audit-log-infrastructure` | ✅ | ✅ | ✅ | ✅ | ⏳ | 待 `/speckit-implement` |
 | F3 | `soft-delete-infrastructure` | ✅ | ✅ | ✅ | ✅ | ✅ | **完成**（commits 上方） |
 | F4 | `response-shape-alignment` | ✅ | ✅ | ✅ | ✅ | ✅ | **完成**（commits 上方） |
 
@@ -57,7 +57,15 @@ Phase 2-5 features（F5-F14）待 P1 全完成後啟動。
 | 6 | sensitive field redaction | Trait-based — `AuditSerialize::redacted_fields() -> &[&str]`、sys_user 含 `password`、sys_access_key 含 `access_key_secret` |
 | 7 | Implementation approach | **Approach A**：`AuditEvent` struct + `audit_log::write_in_txn` helper（漸進演進 F3 既有 pattern）|
 
-→ 詳細 design 完整版 brainstorming 完成後寫入 `docs/superpowers/003-feature-audit-log-infrastructure.md`、之後 `/speckit-specify` 接手轉為正式 feature spec。
+#### `/speckit-clarify` Session 2026-05-14 額外 3 個拍板
+
+| # | Decision | Choice |
+|---|---|---|
+| 8 | HTTP middleware + service-level audit 雙寫 row 怎麼鎖？ | **Always double-write** — 同一 admin HTTP write 留 2 row（HTTP 視角 method=POST 等 + service-level method=INTERNAL）、middleware 不 dedupe |
+| 9 | HTTP middleware audit row entity_type 怎麼填？ | **Hybrid rule** — URL match 7 條 admin pattern `/api/sys-(user|role|menu|domain|organization|endpoint|access-key)/*` 對應 `sys_<x>`、不 match fallback `"http_event"` |
+| 10 | Migration `datas/*` seeding INSERT 是否 audit？ | **Exempt** — F2.1 audit 範圍只含 application runtime write（service + middleware）；seeding 走 git tracked migration 檔留紀錄 |
+
+→ Spec / plan / research / data-model / contracts / quickstart 全在 `specs/003-audit-log-infrastructure/`、待 `/speckit-tasks` 接手產 dependency-ordered tasks.md。
 
 ### F3 `soft-delete-infrastructure`（已完成、archived）
 
