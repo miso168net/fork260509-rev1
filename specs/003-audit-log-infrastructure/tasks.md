@@ -301,18 +301,28 @@ F2.1 為 single-developer feature（不涉跨域協調）：
 > Implementation 開始前由 T002 填入；polish 階段 SC verification 對比驗證用
 
 ```text
-Before implementation (T002 執行時填入):
-  sys_operation_log 既有 column 數: __ (預期 18、per data-model.md §E1)
-  F3 既有 AuditLogCtx active callsite 數 in server/: __ (預期 14 = 7 facade × 2 op)
-  rust-api/server/service/src/admin/sys_*_service.rs 內 create_<x> / update_<x> async fn 命中數: __ (plan 預估 9 個)
-  audit_log::write_in_txn callsite 數 in server/: __ (F3 既有 14、F2.1 後 ≈ 25-30)
+Before implementation (T002 執行時填入、2026-05-14):
+  sys_operation_log 既有 column 數: 18 ✓ (per data-model.md §E1)
+  F3 既有 AuditLogCtx active callsite 數 in server/: 23 (含 use imports + parameter type) / 14 construction sites = 7 facade × 2 op ✓
+  rust-api/server/service/src/admin/sys_*_service.rs 內 create_<x> / update_<x> async fn 命中數: 18 (含 trait decl + impl pair) / 9 unique methods (sys_user 2 + role 2 + menu 2 + domain 2 + access_key 1)
+  audit_log::write_in_txn callsite 數 in server/: 16 (F3 既有 14 in facade + 2 in audit_log.rs def/import)
 
-After implementation (T032 / T033 / T034 執行時填入):
-  sys_operation_log column 數: 22 (SC-001 pass criteria、18 + 4 新欄)
-  AuditLogCtx active callsite 數 (除 deprecated declaration + From shim): 0 (SC-004 pass criteria)
-  impl AuditSerialize 命中數 in audit_serialize.rs: >=7 (SC-003 pass criteria)
-  cargo check 全 workspace: 0 errors / 0 warnings (SC-010 pass criteria)
+After implementation (T032 / T033 / T034 執行時填入、2026-05-14):
+  sys_operation_log column 數: 22 ✅ (SC-001 pass、18 + 4 新欄、entity grep 全列出)
+  AuditLogCtx active callsite 數 (除 audit.rs 內 declaration): 0 ✅ (SC-004 pass、G1 quality fix 完全 remove dead code shim)
+  impl AuditSerialize 命中數 in audit_serialize.rs: 7 ✅ (SC-003 pass、sys_user "password" + sys_access_key "accessKeySecret" 各 1)
+  ci-audit-coverage-lint.sh: ✅ pass (SC-005) — 正常 exit 0、注入違規（remove 全 3 個 audit pattern）即 exit 1
+  cargo check 全 workspace: ✅ 0 errors / 0 warnings (SC-010 pass、docker rust:1.86.0-alpine)
+  F3 既有 acceptance test (soft_delete_*) 編譯仍 pass (SC-002、cargo test --no-run -p server-model 跑通)
 ```
+
+### T035 quickstart 狀態
+- **Step 1-6 + 8-9 static-checkable**: 透過上述 grep + cargo check + lint script verify ✅
+- **Step 7 (E2E CRUD + audit row 雙寫 + redaction + rollback 驗 with curl + psql)**: 需 real postgres + redis + rust-api server 起來 — **deferred to manual run when deploy/ stack is up**。3 個 G6 acceptance test 都用 `#[ignore]` pattern、`cargo test -- --ignored` + export `TEST_DATABASE_URL` 即可跑
+
+F2.1 spec 16 個 acceptance scenarios 對應：
+- Static-checkable scenarios (1-2 schema, 4-9 + 12 audit 結構 + Hybrid + redaction): ✅ verified by grep + cargo check + lint
+- Behavior scenarios (3, 10-11, 13-16): test code 寫完、待 DB 起來實跑驗證
 
 ---
 
