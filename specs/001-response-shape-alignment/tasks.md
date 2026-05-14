@@ -63,11 +63,13 @@ description: "Task list for F4 — response-shape-alignment implementation"
 
 ### Dimension A — Handler magic number 替換（FR-018 + SC-006）
 
-- [ ] T009 [US1] Audit + 替換 `rust-api/server/api/**/*.rs` 內所有 `Res::new_error(<magic_number>, ...)` 呼叫：
+- [x] T009 [US1] Audit + 替換 `rust-api/server/api/**/*.rs` 內所有 `Res::new_error(<magic_number>, ...)` 呼叫：
   - 跑 `grep -rn 'Res::new_error\([0-9]' rust-api/server/api --include='*.rs'`
   - 對每個 callsite 判斷該用哪個 `code::CODE_*` 常數（validation / permission / business / server 群）
   - 替換、加 `use server_core::web::code;` import
   - 完成後 `grep -rn 'Res::new_error\([0-9]'` 應為 0
+  - **Audit 結果 (2026-05-14)**：`server/api/**/*.rs` 內**0 個** `Res::new_error` callsite — 所有 handler 用 `Result<Res<T>, AppError>` + `?` operator + `From<>` conversion 路徑，**不**直接構造 error envelope。T009 在 `api/` scope 內為 no-op。
+  - **發現的 audit 漏網**：`server/middleware/src/jwt.rs` (line 17 + 37) 有 2 處 `StatusCode::UNAUTHORIZED.as_u16()` 作 envelope code、不在 `api/` 但屬 FR-021 middleware error scope。**已修正**：line 17 (no token) → `code::CODE_PERMISSION_CASBIN_DENY` (5001) 與 web/auth.rs:121 同；line 37 (validate_token 失敗) → 透過 `AppError::from(JwtError)` 取得 per-variant 映射（reuse Unit 3 T008 工作）。`StatusCode` import 移除。`cargo check` clean。
 
 ### Dimension B — Struct rename_all 替換（FR-010 + FR-011 + FR-014）
 
@@ -254,15 +256,55 @@ F4 為 single-developer feature（不涉跨域協調）：
 > Implementation 開始前由 T002 填入；polish 階段 SC-004 / SC-006 對比驗證用
 
 ```text
-Before implementation (T002 執行時填入):
-  Res::new_error(<magic>) 出現次數: __
-  per-field rename for camelCase 數量: __
-  snake_case key 在 sample endpoint output 命中數: __
+Before implementation (T002 captured at 2026-05-14):
+  Res::new_error(<magic literal>) 出現次數: 0
+    └─ 注：codebase 不用 raw 數字、而是 StatusCode::XXX.as_u16() 形式 — 真正的 magic 在 error.rs From<*> impls 內（見下）
+  Res::new_error( 全部 callsite 數: 1
+    └─ 唯一一處: web/auth.rs:126 (Res::new_error(StatusCode::UNAUTHORIZED.as_u16(), "Unauthorized"))
+  res.rs StatusCode::OK.as_u16() 出現次數: 4
+    └─ lines 24, 33, 51, 60（new_paginated / new_success / new_message / new_data）
+    └─ 注：plan.md / data-model.md 寫 5 處、實際為 4
+  error.rs From<*> impls 內 HTTP 風格 magic numbers: ~40
+    └─ From<DbErr> 16 個 (503/400/500/404)
+    └─ From<JwtError> 1 個 (400)
+    └─ From<RedisError> 9 個 (500/401/400/503)
+    └─ From<MongoError> 20+ 個 (401/400/503/500)
+    └─ 這些是 T008 真正目標、需 map 到 CODE_SERVER_* / CODE_EXPIRED_* / CODE_PERMISSION_*
+  per-field rename (excluding rename_all) 總數: 29
+    └─ 保留: enum variant 7 處 (redis_config.rs × 2 + sea_orm_active_enums.rs × 5、per R5)
+    └─ 替換目標: 22 處 (sys_authentication.rs × 2 + sys_menu.rs × 20)
+    └─ 注：tasks.md T011 寫 "6 處 sys_menu" 為 spec 階段估算、實際 sys_menu.rs 為 20 處（含 skip_serializing_if 合併形式）
+  snake_case key 在 sample endpoint output 命中數: 待 implementation 後 T020 量
 
-After implementation (T020 / T021 執行時填入):
-  Res::new_error(<magic>) 出現次數: 0  (SC-006 pass criteria)
-  per-field rename for camelCase 數量: 0（除 enum variant 保留）
-  snake_case key 在 sample endpoint output 命中數: 0  (SC-004 pass criteria)
+After implementation (T020 / T021 執行時填入 — 2026-05-14):
+  Res::new_error(<magic literal>) 出現次數: 0 ✓ SC-006 pass
+  per-field rename for camelCase 數量: 0（除 enum variant 保留 7 處 per R5）✓
+  snake_case key 在 sample endpoint output 命中數: 0 ✓ SC-004 pass (via dim_b sc004_no_snake_case_keys test)
+  StatusCode::*.as_u16() in envelope position: 0 ✓（middleware error 全經 envelope, FR-021 達成）
+  剩餘 StatusCode usage (全 out-of-F4-scope):
+    - core/web/operation_log.rs:279-482 — #[cfg(test)] 內 mock HTTP（test only）
+    - core/web/validator.rs:78-112 — pre-handler form/JSON parse error（FR-022 axum 預設、explicitly out of scope）
+    - server/initialize/src/lib.rs:47-120 — 全部 commented dead code
+    - server/initialize/src/router_initialization.rs:325 — 404 fallback handler（FR-022）
+
+T025 FR-012 audit (Option<Vec<...>> 應為 Vec<T>):
+  3 hit (全 legitimate exception):
+    - sys_endpoint.rs:13 EndpointTree.children: Option<Vec<EndpointTree>>
+    - sys_menu.rs:14 MenuRoute.children: Option<Vec<MenuRoute>>
+    - sys_menu.rs:80 MenuTree.children: Option<Vec<MenuTree>>
+  Rationale: 3 個 hit 皆為「樹狀結構的 children 欄位」、配合 #[serde(skip_serializing_if = "Option::is_none")] → None 序列化為 absent (非 null)；Some([]) 為「非 leaf 但暫無 child」。若改 Vec<T> 會強迫每個 leaf 都帶 children: []（遞迴噪音、wire 體積增、且 TS 端通常 interface 用 children?: Foo[]）。Edge case「空集合 vs null」由 skip_serializing_if 解決、不違反 FR-012 intent。
+
+F4 acceptance test 執行結果 (cargo test --package server-model --tests):
+  response_shape_alignment_dimension_a: 6 passed
+  response_shape_alignment_dimension_b: 4 passed (含 SC-004 snake_case scan)
+  response_shape_alignment_dimension_c: 3 passed
+  business_code_coverage:                 4 passed (SC-007 四群業務 code 覆蓋)
+  Total: 17 passed, 0 failed — SC-005 全 11 個 scenario + SC-007 達成 ✓
+
+T022 quickstart (Step 2-6) 狀態:
+  - 靜態驗證部分 (Step 5 SC-004 / Step 6 SC-005 / SC-006 / SC-007): ✓ 透過 cargo test + grep 自動化覆蓋
+  - 動態驗證部分 (Step 2 SC-001 5 endpoint curl / Step 3 SC-002 login round-trip / Step 4 SC-003 getUserInfo): ⏳ 需 operator 啟動 postgres + redis + rust-api + base-web、依 quickstart.md 跑完整 flow 驗證
+  - F4 內部開發 cargo check + cargo test 已過、code path 健康；最後一哩 round-trip 驗證留 operator 收尾（commit 後）
 ```
 
 ---
@@ -273,17 +315,67 @@ After implementation (T020 / T021 執行時填入):
 
 ```text
 T012 (output/*.rs 補齊 rename_all):
-  Files needed rename_all: [..., ...]
-  Skipped (no Serialize / 內部用): [..., ...]
+  Files modified:
+    - sys_endpoint.rs (EndpointTree: Serialize + Clone — 補 rename_all)
+  Skipped (no Serialize / 不在 wire):
+    - sys_domain.rs DomainOutput (只 derive FromQueryResult，未在任何 handler Res<> return；雖在 mod.rs re-export 但無實際使用方)
+    - mod.rs (無 struct)
 
 T013 (input/*.rs 補齊 rename_all):
-  Files needed rename_all: [..., ...]
+  Files modified:
+    - sys_access_key.rs (AccessKeyPageRequest, AccessKeyInput)
+    - sys_authentication.rs (LoginInput)
+    - sys_domain.rs (DomainPageRequest, DomainInput, UpdateDomainInput)
+    - sys_endpoint.rs (EndpointPageRequest)
+    - sys_login_log.rs (LoginLogPageRequest)
+    - sys_menu.rs (MenuPageRequest, MenuInput, UpdateMenuInput)
+    - sys_operation_log.rs (OperationLogPageRequest)
+    - sys_organization.rs (OrganizationPageRequest)
+    - sys_role.rs (RolePageRequest, RoleInput, UpdateRoleInput)
+    - sys_user.rs (UserPageRequest, UpdateUserInput)  ← code quality review 階段追補：file-level grep 漏掉「同檔有部分 struct 已 rename_all」case
+  Skipped:
+    - mod.rs (無 struct)
+    - sys_authorization.rs (前置 Unit 已補)
+
+T013 補充：core/src/web/page.rs（FR-014 — 跨 crate flatten/wrap）:
+  Files modified:
+    - page.rs PageRequest (Deserialize/Serialize — 被 admin input DTOs flatten)
+    - page.rs PaginatedData<T> (Serialize — 為 Res<T>.data 的常見 nested 型別)
+  注：兩個 struct 既有欄位皆單字 (current/size/total/records)、rename_all 對 wire 輸出無實質變化、為 FR-014 future-proof + consistency。
+
+Discovery（跨 task、留 Unit 9 quickstart 階段驗）:
+  spec.md Edge Cases 提到「分頁欄位（page / pageSize / total / records）需對齊 base 期望」、但 rust PageRequest/PaginatedData 用的是 current / size（非 page / pageSize）。
+  rename_all = "camelCase" **無法** 改 field NAME、只改 case。若 base TS 確實期望 page/pageSize、F4 需要「rename rust 欄位」這層獨立工作 — 非 Unit 6 audit 範疇。
+  Action item: Unit 9 跑 quickstart Step 3 (login round-trip) 與抽樣 paginated endpoint (sys-role/list 等) 時驗證 base 是否能正確 parse current/size、若否則記為 F4 後續修正點（或 F7 manage-crud-alignment 階段一併處理）。
 
 T014 (entity 直接 return audit):
-  Endpoint → Entity: 
-    GET /api/sys-user/list → SysUserModel (補 rename_all)
-    GET /api/sys-role/list → SysRoleModel (補 rename_all)
-    ...
+  Endpoint → Entity → Action:
+    GET /api/sys-access-key/list           → SysAccessKeyModel    — 補 rename_all (sys_access_key.rs) ✓
+    POST /api/sys-access-key (create)      → SysAccessKeyModel    — 同檔已涵蓋
+    GET /api/sys-endpoint/list             → SysEndpointModel     — 補 rename_all (sys_endpoint.rs) ✓
+    GET /api/sys-domain/list               → SysDomainModel       — 補 rename_all (sys_domain.rs) ✓
+    POST /api/sys-domain (create)          → SysDomainModel       — 同檔已涵蓋
+    PUT /api/sys-domain (update)           → SysDomainModel       — 同檔已涵蓋
+    GET /api/sys-domain/:id                → SysDomainModel       — 同檔已涵蓋
+    GET /api/sys-login-log/list            → SysLoginLogModel     — 已有 rename_all（前置 Unit 補）
+    GET /api/sys-operation-log/list        → SysOperationLogModel — 已有 rename_all（前置 Unit 補）
+    GET /api/sys-organization/list         → SysOrganizationModel — 補 rename_all (sys_organization.rs) ✓
+    GET /api/sys-role/list                 → SysRoleModel         — 補 rename_all (sys_role.rs) ✓
+    POST /api/sys-role (create)            → SysRoleModel         — 同檔已涵蓋
+    PUT /api/sys-role (update)             → SysRoleModel         — 同檔已涵蓋
+    GET /api/sys-role/:id                  → SysRoleModel         — 同檔已涵蓋
+    POST /api/sys-menu (create)            → SysMenuModel         — 補 rename_all (sys_menu.rs) ✓
+    PUT /api/sys-menu (update)             → SysMenuModel         — 同檔已涵蓋
+    GET /api/sys-menu/:id                  → SysMenuModel         — 同檔已涵蓋
+  Skipped:
+    - sea_orm_active_enums.rs (R5: 列舉值用 #[serde(rename = "...")]，非容器層 rename_all)
+    - 其他未被 handler 直接 return 的 entity（casbin_rule, sys_role_menu, sys_tokens, sys_user, sys_user_role）— 不在 wire 範圍
+
+Verification:
+  cargo check: 0 errors (Finished `dev` profile [unoptimized + debuginfo] target(s) in 40.74s)
+  find output/ without rename_all: mod.rs + sys_domain.rs (intentional skip)
+  find input/ without rename_all: mod.rs only
+  entity Models all have #[serde(rename_all = "camelCase")] below #[sea_orm(table_name = ...)]
 ```
 
 ---
