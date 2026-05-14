@@ -8,9 +8,9 @@
 
 ## 🎯 Current Focus
 
-**Phase**：P1 基礎設施（必先 4 個 feature）— **3/4 完成**
-**Active feature**：F1 `jwt-secrets` (拆 F1.1 + F1.2) — F1.1 spec + clarify + plan + **tasks** 完成（`specs/004-jwt-secrets/` 含 spec.md / plan.md / research.md / data-model.md / contracts/claim-contract.md / quickstart.md / checklists/requirements.md / **tasks.md 19 tasks**）— **待 `/speckit-analyze`（optional）或 `/speckit-implement` 接手**
-**P1 完成後**：4 個 P1 feature 都齊 → 可啟動 P2（F5 auth-login-and-dynamic-menu）
+**Phase**：P1 基礎設施（必先 4 個 feature）— **4/4 全部完成** ✅
+**Active feature**：無（P1 全完成、**解鎖 P2 F5 `auth-login-and-dynamic-menu`**）
+**下一步**：啟動 P2 — F5 為 P2 第一個 feature（per DESIGN-A §6.1 Phase 2）
 
 ---
 
@@ -23,6 +23,7 @@
 - [x] **F4 response-shape-alignment** ✅（2026-05-12 完成；outer `3d357e5`、rust-api `82bbde5`；spec `specs/001-response-shape-alignment/`）
 - [x] **F3 soft-delete-infrastructure** ✅（2026-05-14 完成；outer `6941788` + merge `0f1c5c3`、rust-api `2a65e2c`；spec `specs/002-soft-delete-infrastructure/`）
 - [x] **F2.1 audit-log-infrastructure** ✅（2026-05-14 完成；outer `3c9c689` + merge `209a2c8`、rust-api `6bfa674`；spec `specs/003-audit-log-infrastructure/`；F2.2 outbox + Redis TTL 留後續）
+- [x] **F1.1 jwt-secrets** ✅（2026-05-15 完成；outer `c582db4` + merge `5f82df3`、rust-api `65ce06a`；spec `specs/004-jwt-secrets/`；F1.2 algorithm 升級 + key versioning + refresh-token 預埋 留 with F10 refresh-token-bridge 同期）
 
 ---
 
@@ -30,14 +31,14 @@
 
 | # | Feature | Brainstorm | spec | plan | tasks | impl | 狀態 |
 |---|---|---|---|---|---|---|---|
-| F1 | `jwt-secrets` (拆 F1.1 + F1.2) | ✅ | ✅ | ✅ | ✅ | ⏳ | 待 `/speckit-implement` |
+| F1 | `jwt-secrets` (拆 F1.1 + F1.2) | ✅ | ✅ | ✅ | ✅ | ✅（F1.1）| **完成** F1.1（F1.2 留 with F10）|
 | F2 | `audit-log-infrastructure` | ✅ | ✅ | ✅ | ✅ | ✅（F2.1）| **完成** F2.1 |
 | F3 | `soft-delete-infrastructure` | ✅ | ✅ | ✅ | ✅ | ✅ | **完成**（commits 上方） |
 | F4 | `response-shape-alignment` | ✅ | ✅ | ✅ | ✅ | ✅ | **完成**（commits 上方） |
 
 §6.2 規則：**P1 4 個任一順序皆可（平行 spec-kit）、但必須全部完成才能動 P2**。
 
-Phase 2-5 features（F5-F14）待 P1 全完成後啟動。
+**Phase 1 P1 全 4 個基礎設施 ✅ 完成（2026-05-15）— Phase 2-5 features（F5-F14）解鎖**。
 
 ---
 
@@ -68,24 +69,13 @@ Phase 2-5 features（F5-F14）待 P1 全完成後啟動。
 
 → Spec / plan / research / data-model / contracts / quickstart / tasks 全在 `specs/003-audit-log-infrastructure/`；F2.1 已 implement 完成（10 commits in rust-api + 2 commits outer + merge to rev1-admin-root）。
 
-### F1.1 `jwt-secrets`（進行中、brainstorm 2026-05-14）
-
-> Source: `docs/superpowers/004-feature-jwt-secrets.md`
-> Parent design：DESIGN-A §3.3（JWT 簽章共識）+ §6.1 F1 + Constitution §架構約束（Docker secrets + _FILE pattern）
-
-| # | Decision | Choice |
-|---|---|---|
-| 1 | F1 scope 拆分 | **F1.1 + F1.2 兩階**：F1.1 minimal（secret hardening + claim doc + _FILE 注入）解鎖 P1；F1.2 algorithm 升級 + key versioning 與 F10 refresh-token-bridge 同期 |
-| 2 | jwt_secret 驗證嚴格度 | **Strict always**：empty / placeholder（黑名單 6 個值）/ length<32 都 fail-fast、dev/staging/prod 統一 enforce |
-| 3 | claim 欄位 standardize 範圍 | **保留現狀 + doc reference**：Claims struct 不動、新增 contract spec doc 列 11 fields 用途；F10 加 `token_type` 時不破壞 |
-| 4 | envvar 注入機制 | **F1.1 實作 _FILE 支援**：APP_JWT_JWT_SECRET_FILE 優先於 bare envvar、讀檔 trim 後過 strict validation |
-| 5 | Implementation approach | **Approach A**：config_init 載入點 + boot-time validate、panic on fail（同既有 assert! 位置擴展、與 codebase boot config error 偏好 panic 風格一致）|
-
-→ F1.1 brainstorm doc 完整版見 `docs/superpowers/004-feature-jwt-secrets.md`、之後 `/speckit-specify` 接手。F1.2 留 with F10 同期。
-
 ### F2.1 `audit-log-infrastructure`（已完成、archived）
 
 → `docs/superpowers/003-feature-audit-log-infrastructure.md`
+
+### F1.1 `jwt-secrets`（已完成、archived）
+
+→ `docs/superpowers/004-feature-jwt-secrets.md`；spec-kit 全套 + impl 在 `specs/004-jwt-secrets/`
 
 ### F3 `soft-delete-infrastructure`（已完成、archived）
 
