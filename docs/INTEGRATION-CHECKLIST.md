@@ -8,9 +8,9 @@
 
 ## 🎯 Current Focus
 
-**Phase**：P1 基礎設施（必先 4 個 feature）— **2/4 完成**
-**Active feature**：F2 `audit-log-infrastructure` ✅ F2.1 spec + clarify + plan + **tasks** 完成（`specs/003-audit-log-infrastructure/` 含 spec.md / plan.md / research.md / data-model.md / contracts/internal-api.md / quickstart.md / checklists/requirements.md / **tasks.md 37 tasks**）— **待 `/speckit-analyze`（optional）或 `/speckit-implement` 接手**
-**Next after F2.1**：F1 `jwt-secrets`（P1 最後一塊；F2.1 / F1 任一順序皆可、per DESIGN-A §6.2）
+**Phase**：P1 基礎設施（必先 4 個 feature）— **3/4 完成**
+**Active feature**：F1 `jwt-secrets` (拆 F1.1 + F1.2) — F1.1 brainstorm 完成（`docs/superpowers/004-feature-jwt-secrets.md`）— **待 user review + `/speckit-specify` 接手**
+**P1 完成後**：4 個 P1 feature 都齊 → 可啟動 P2（F5 auth-login-and-dynamic-menu）
 
 ---
 
@@ -22,6 +22,7 @@
 - [x] constitution v1.0.0（`.specify/memory/constitution.md`、Principle I-V）
 - [x] **F4 response-shape-alignment** ✅（2026-05-12 完成；outer `3d357e5`、rust-api `82bbde5`；spec `specs/001-response-shape-alignment/`）
 - [x] **F3 soft-delete-infrastructure** ✅（2026-05-14 完成；outer `6941788` + merge `0f1c5c3`、rust-api `2a65e2c`；spec `specs/002-soft-delete-infrastructure/`）
+- [x] **F2.1 audit-log-infrastructure** ✅（2026-05-14 完成；outer `3c9c689` + merge `209a2c8`、rust-api `6bfa674`；spec `specs/003-audit-log-infrastructure/`；F2.2 outbox + Redis TTL 留後續）
 
 ---
 
@@ -29,8 +30,8 @@
 
 | # | Feature | Brainstorm | spec | plan | tasks | impl | 狀態 |
 |---|---|---|---|---|---|---|---|
-| F1 | `jwt-secrets` | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | 待 brainstorm |
-| F2 | `audit-log-infrastructure` | ✅ | ✅ | ✅ | ✅ | ⏳ | 待 `/speckit-implement` |
+| F1 | `jwt-secrets` (拆 F1.1 + F1.2) | ✅（F1.1 brainstorm 完成）| ⏳ | ⏳ | ⏳ | ⏳ | 待 `/speckit-specify` |
+| F2 | `audit-log-infrastructure` | ✅ | ✅ | ✅ | ✅ | ✅（F2.1）| **完成** F2.1 |
 | F3 | `soft-delete-infrastructure` | ✅ | ✅ | ✅ | ✅ | ✅ | **完成**（commits 上方） |
 | F4 | `response-shape-alignment` | ✅ | ✅ | ✅ | ✅ | ✅ | **完成**（commits 上方） |
 
@@ -65,7 +66,26 @@ Phase 2-5 features（F5-F14）待 P1 全完成後啟動。
 | 9 | HTTP middleware audit row entity_type 怎麼填？ | **Hybrid rule** — URL match 7 條 admin pattern `/api/sys-(user|role|menu|domain|organization|endpoint|access-key)/*` 對應 `sys_<x>`、不 match fallback `"http_event"` |
 | 10 | Migration `datas/*` seeding INSERT 是否 audit？ | **Exempt** — F2.1 audit 範圍只含 application runtime write（service + middleware）；seeding 走 git tracked migration 檔留紀錄 |
 
-→ Spec / plan / research / data-model / contracts / quickstart 全在 `specs/003-audit-log-infrastructure/`、待 `/speckit-tasks` 接手產 dependency-ordered tasks.md。
+→ Spec / plan / research / data-model / contracts / quickstart / tasks 全在 `specs/003-audit-log-infrastructure/`；F2.1 已 implement 完成（10 commits in rust-api + 2 commits outer + merge to rev1-admin-root）。
+
+### F1.1 `jwt-secrets`（進行中、brainstorm 2026-05-14）
+
+> Source: `docs/superpowers/004-feature-jwt-secrets.md`
+> Parent design：DESIGN-A §3.3（JWT 簽章共識）+ §6.1 F1 + Constitution §架構約束（Docker secrets + _FILE pattern）
+
+| # | Decision | Choice |
+|---|---|---|
+| 1 | F1 scope 拆分 | **F1.1 + F1.2 兩階**：F1.1 minimal（secret hardening + claim doc + _FILE 注入）解鎖 P1；F1.2 algorithm 升級 + key versioning 與 F10 refresh-token-bridge 同期 |
+| 2 | jwt_secret 驗證嚴格度 | **Strict always**：empty / placeholder（黑名單 6 個值）/ length<32 都 fail-fast、dev/staging/prod 統一 enforce |
+| 3 | claim 欄位 standardize 範圍 | **保留現狀 + doc reference**：Claims struct 不動、新增 contract spec doc 列 11 fields 用途；F10 加 `token_type` 時不破壞 |
+| 4 | envvar 注入機制 | **F1.1 實作 _FILE 支援**：APP_JWT_JWT_SECRET_FILE 優先於 bare envvar、讀檔 trim 後過 strict validation |
+| 5 | Implementation approach | **Approach A**：config_init 載入點 + boot-time validate、panic on fail（同既有 assert! 位置擴展、與 codebase boot config error 偏好 panic 風格一致）|
+
+→ F1.1 brainstorm doc 完整版見 `docs/superpowers/004-feature-jwt-secrets.md`、之後 `/speckit-specify` 接手。F1.2 留 with F10 同期。
+
+### F2.1 `audit-log-infrastructure`（已完成、archived）
+
+→ `docs/superpowers/003-feature-audit-log-infrastructure.md`
 
 ### F3 `soft-delete-infrastructure`（已完成、archived）
 
