@@ -9,7 +9,7 @@
 ## 🎯 Current Focus
 
 **Phase**：P1 基礎設施（必先 4 個 feature）— **2/4 完成**
-**Active feature**：F2 `audit-log-infrastructure`（brainstorming 階段、scope 切為 F2.1 先交）
+**Active feature**：F2 `audit-log-infrastructure` ✅ F2.1 brainstorm 完成（`docs/superpowers/003-feature-audit-log-infrastructure.md`）— **待 user review + `/speckit-specify` 接手**
 **Next after F2.1**：F1 `jwt-secrets`（P1 最後一塊；F2.1 / F1 任一順序皆可、per DESIGN-A §6.2）
 
 ---
@@ -30,7 +30,7 @@
 | # | Feature | Brainstorm | spec | plan | tasks | impl | 狀態 |
 |---|---|---|---|---|---|---|---|
 | F1 | `jwt-secrets` | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | 待 brainstorm |
-| F2 | `audit-log-infrastructure` | 🔄 進行中（F2.1 scope）| ⏳ | ⏳ | ⏳ | ⏳ | brainstorming |
+| F2 | `audit-log-infrastructure` | ✅（F2.1 brainstorm doc 完成）| ⏳ | ⏳ | ⏳ | ⏳ | 待 `/speckit-specify` |
 | F3 | `soft-delete-infrastructure` | ✅ | ✅ | ✅ | ✅ | ✅ | **完成**（commits 上方） |
 | F4 | `response-shape-alignment` | ✅ | ✅ | ✅ | ✅ | ✅ | **完成**（commits 上方） |
 
