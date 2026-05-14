@@ -1,0 +1,18 @@
+name: ci-audit-coverage-lint
+
+on:
+  push:
+    branches: [main, rev1-admin-root, '003-audit-log-infrastructure', '00*-**']
+  pull_request:
+    branches: [main, rev1-admin-root]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Run F2.1 audit-coverage lint
+        run: bash rust-api/scripts/ci-audit-coverage-lint.sh
