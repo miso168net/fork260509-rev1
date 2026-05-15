@@ -381,15 +381,9 @@ git log --oneline -5                  # 最近 5 個外層 commit，看 pin 變�
 ## 10. 目前活躍 spec-kit feature
 
 <!-- SPECKIT START -->
-- **Active feature**: `009-secret-injection`(W-F4,rev1 deploy P1 **最後一個**(4/4)— Docker secrets + `_FILE` pattern 升級 W-F3 過渡 secret 模式)
-- **Plan**: [`specs/009-secret-injection/plan.md`](specs/009-secret-injection/plan.md)
-- **Spec**: [`specs/009-secret-injection/spec.md`](specs/009-secret-injection/spec.md)(2 clarification 已 resolve、0 NEEDS CLARIFICATION marker)
-- **Brainstorm**: 無(W-F4 跳過 brainstorm 階段、DESIGN-W §5 + F1.1 為 authoritative source)
-- **Phase**: Plan done(research / data-model / contracts / quickstart 全產出、Constitution gate 23/23 PASS);下一步 `/speckit-tasks`
-- **Outer branch**: `009-secret-injection`(尚未 push)
-- **Implementer landing point**: **兩段 commit** per CLAUDE.md §6.1
-  - 第一段:rust-api worktree(`server/config/src/secret_loader.rs` + `config_init.rs` — 2 helper + 2 callsite)→ push fork
-  - 第二段:outer feature branch(`docker-compose.yml` / `.env.example` / `.gitignore` / `deploy/secrets/` 5 個 `.txt.example` + rust-api SHA bump)
-- **Previous features**: W-F1 (`006-dockerfile-rust-api`) merge `430ada9` / W-F2 (`007-dockerfile-base-web`) merge `ac79ed0` / W-F3 (`008-compose-base-structure`) merge `04671d0`(均已 push、acceptance PASS;W-F4 完成後 Phase W P1 100%、解鎖 P2)
+- **Active feature**:無(W-F4 全完成、**Phase W deploy P1 100% 達成、P2 解鎖**)
+- **Phase**:Done — W-F4 acceptance 13/13 task / 18/18 scenario 全 PASS、merged to `rev1-admin-root`
+- **Previous features**: W-F1 (`006-dockerfile-rust-api`) merge `430ada9` / W-F2 (`007-dockerfile-base-web`) merge `ac79ed0` / W-F3 (`008-compose-base-structure`) merge `04671d0` / W-F4 (`009-secret-injection`) merge `ab658d7`(均已 push、acceptance PASS)
+- **下一步候選**:Phase W deploy **P2** — W-F5(front-nginx 反向代理)/ W-F6(TLS / acme)/ W-F7(對外 port forwarding)等,依 DESIGN-W §11.2 任一可平行 spec-kit
 <!-- SPECKIT END -->
 
