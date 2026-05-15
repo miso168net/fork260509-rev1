@@ -381,12 +381,13 @@ git log --oneline -5                  # 最近 5 個外層 commit，看 pin 變�
 ## 10. 目前活躍 spec-kit feature
 
 <!-- SPECKIT START -->
-- **Active feature**: `006-dockerfile-rust-api`（W-F1,rev1 deploy P1 第一個 — debian+glibc multi-stage Dockerfile + /health endpoint）
-- **Plan**: [`specs/006-dockerfile-rust-api/plan.md`](specs/006-dockerfile-rust-api/plan.md)
-- **Spec**: [`specs/006-dockerfile-rust-api/spec.md`](specs/006-dockerfile-rust-api/spec.md)
-- **Brainstorm**: [`docs/superpowers/006-feature-dockerfile-rust-api.md`](docs/superpowers/006-feature-dockerfile-rust-api.md)
-- **Phase**: Plan done(research/data-model/contracts/quickstart 全產出);下一步 `/speckit-tasks`
-- **Outer branch**: `006-dockerfile-rust-api`(尚未 push)
-- **Implementer landing point**: `rust-api/` worktree(rev1-admin-rust-api 分支)
+- **Active feature**: `007-dockerfile-base-web`（W-F2,rev1 deploy P1 第二個 — Vite build + nginx 1.27 alpine serve + /health endpoint）
+- **Plan**: [`specs/007-dockerfile-base-web/plan.md`](specs/007-dockerfile-base-web/plan.md)
+- **Spec**: [`specs/007-dockerfile-base-web/spec.md`](specs/007-dockerfile-base-web/spec.md)
+- **Brainstorm**: [`docs/superpowers/007-feature-dockerfile-base-web.md`](docs/superpowers/007-feature-dockerfile-base-web.md)
+- **Phase**: Plan done(research/data-model/contracts × 2/quickstart 全產出);下一步 `/speckit-tasks`
+- **Outer branch**: `007-dockerfile-base-web`(尚未 push)
+- **Implementer landing point**: `base-web/` worktree(rev1-admin-base-web 分支)
+- **Previous feature**: W-F1 (`006-dockerfile-rust-api`) 已完成 merge to rev1-admin-root(commit `430ada9` / acceptance 21/22 PASS、image 184MB)
 <!-- SPECKIT END -->
 
