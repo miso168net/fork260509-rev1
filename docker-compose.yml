@@ -146,6 +146,34 @@ services:
       retries: 3
     restart: unless-stopped
 
+  # ---------------------------------------------------------------------------
+  # front-nginx(W-F5 反向代理 + SPA gateway)
+  # per specs/010-front-nginx/、DESIGN-W §4.2
+  # - 2 upstream(base_web:8080 / rust_api:11081 + keepalive 32)
+  # - 3 location(= /health self / /api/ → rust_api/ 切前綴 / / → base_web SPA)
+  # - 5 header forwarding(/api/ 內)
+  # - 無 ports(留 W-F7)、無 TLS(留 W-F6)、無 secrets(純路由配置)
+  # ---------------------------------------------------------------------------
+  front-nginx:
+    image: nginx:1.27-alpine
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+    volumes:
+      - ./deploy/front-nginx/conf.d:/etc/nginx/conf.d:ro
+    depends_on:
+      base-web:
+        condition: service_healthy
+      rust-api:
+        condition: service_healthy
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
 # =============================================================================
 # Secrets(per W-F4 spec FR-004 / contracts C-S3)
 # 5 entries、各指 ./deploy/secrets/<name>.txt(repo-relative)
