@@ -62,6 +62,10 @@ deploy/.env
 *.key
 .dev.vars
 
+# W-F4 Docker secrets — 實際 secret 檔 gitignored、.txt.example 範本 git-tracked
+/deploy/secrets/*.txt
+!/deploy/secrets/*.txt.example
+
 # ============================================================
 # Docker / dev container 個人 override
 # ============================================================
