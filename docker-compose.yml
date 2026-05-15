@@ -1,16 +1,25 @@
 # =============================================================================
-# rev1 deploy docker-compose 主檔(W-F3)
+# rev1 deploy docker-compose 主檔(W-F4)
 #
 # 5 service stack:postgres + redis + migration(one-shot)+ rust-api + base-web
 # 1 bridge network:internal
 # 2 named volumes:postgres_data + redis_data
+# 5 secrets(W-F4):jwt_secret / database_url / redis_url / postgres_password / redis_password
 #
-# 不在 W-F3 範疇(per spec FR-021~FR-027 + plan.md Constitution Check):
+# W-F4 改動範圍(per specs/009-secret-injection/):
+# - 加 top-level secrets: 段(5 entries)
+# - 4 service 加 secrets: ref(postgres / redis / migration / rust-api;base-web 不加)
+# - rust-api environment 換 *_FILE 變量
+# - postgres environment 換 POSTGRES_PASSWORD_FILE
+# - redis command 改 shell expand 從 secret file 讀
+# - migration entrypoint 包 wrapper shell 從 secret file 讀 DATABASE_URL
+# - 不動 networks / volumes / depends_on / healthcheck 結構
+#
+# 不在 W-F4 範疇(後續 feature):
 # - front-nginx 反向代理 → W-F5
 # - TLS / acme → W-F6
-# - 對外 host port forwarding → W-F7(W-F3 嚴守邊界、不開任何 host port)
-# - Docker secrets / _FILE pattern → W-F4(W-F3 用 environment: 過渡簡化模式)
-# - observability stack(promtail/loki/prometheus/grafana)→ W-F12-14
+# - 對外 host port forwarding → W-F7(W-F4 嚴守邊界、不開任何 host port)
+# - observability stack → W-F12-14
 # - backup / DR → W-F15-16
 # - CI/CD pipeline → W-F17-18
 # - cleanup-job / outbox-worker → W-F9-10
@@ -20,15 +29,18 @@
 services:
 
   # ---------------------------------------------------------------------------
-  # postgres(per spec FR-003 + FR-006 / contracts C-C3)
+  # postgres(per W-F4 spec FR-007 / contracts C-S5)
+  # 用 POSTGRES_PASSWORD_FILE(image-native);POSTGRES_USER / POSTGRES_DB 維持直接 env(非 secret)
   # ---------------------------------------------------------------------------
   postgres:
     image: postgres:17.4
     environment:
       TZ: ${TZ:-Asia/Shanghai}
       POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
       POSTGRES_DB: ${POSTGRES_DB}
+    secrets:
+      - postgres_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -41,42 +53,45 @@ services:
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
-  # redis(per spec FR-004 + FR-007 / contracts C-C4)
+  # redis(per W-F4 spec FR-008 / contracts C-S7)
+  # shell form + $$(cat /run/secrets/redis_password) 從 secret file 讀
+  # (per W-F3 R-006 sticky;$$ 為 compose escape per analyze I2)
   # ---------------------------------------------------------------------------
   redis:
     image: redis/redis-stack:7.4.0-v3
-    # 用 sh -c 包(shell form)讓 $REDIS_PASSWORD 在 container 內展開;
-    # 直接 exec form(`redis-server --requirepass $REDIS_PASSWORD`)會把字面字串
-    # 當密碼、rust-api 用真實密碼連會 auth fail
-    command: ["sh", "-c", "redis-server --requirepass \"$$REDIS_PASSWORD\""]
+    command: ["sh", "-c", "redis-server --requirepass \"$$(cat /run/secrets/redis_password)\""]
     environment:
       TZ: ${TZ:-Asia/Shanghai}
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    secrets:
+      - redis_password
     volumes:
       - redis_data:/data
     networks:
       - internal
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD ping"]
+      test: ["CMD-SHELL", "redis-cli -a \"$$(cat /run/secrets/redis_password)\" ping"]
       interval: 10s
       timeout: 5s
       retries: 5
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
-  # migration(per spec FR-005 + FR-008 / contracts C-C5)
-  # one-shot init container,共用 rust-api image、不同 entrypoint
-  # 用 DATABASE_URL(sea-orm-migration 1.1.14 CLI 標準、cli.rs:38 要求);
-  # 與 rust-api service 用的 APP_DATABASE_URL 不同 prefix — migration binary
-  # 是 sea-orm-cli 標準二進制、不走 rust-api 的 EnvConfigLoader。
-  # (analyze remediation I1 原把這裡改 APP_DATABASE_URL 是 false fix、本次 implement 階段 revert)
+  # migration(per W-F4 spec FR-006 / contracts C-S6 / clarify Q1)
+  # entrypoint wrapper:從 secret file 讀 DATABASE_URL → export env → exec 真正 migration
+  # 注意:
+  # - 用 DATABASE_URL(sea-orm-cli 標準、非 APP_DATABASE_URL — migration 是 sea-orm-cli 二進制、
+  #   不走 rust-api 的 EnvConfigLoader)
+  # - $$ 為 compose escape(per analyze I2);docker compose config 渲染後 shell 看到 $()
+  # - exec 確保 migration process 取代 wrapper、signal handling 正確(per R-007)
+  # - 必移除 W-F3 既有 command: ["up"](避免被當 sh 額外 arg);"up" 移入 entrypoint 字串
   # ---------------------------------------------------------------------------
   migration:
     image: rust-api:${IMAGE_TAG:-rev1-admin-rust-api}
-    entrypoint: ["/usr/local/bin/migration"]
-    command: ["up"]
+    entrypoint: ["sh", "-c", "DATABASE_URL=\"$$(cat /run/secrets/database_url)\" exec /usr/local/bin/migration up"]
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      TZ: ${TZ:-Asia/Shanghai}
+    secrets:
+      - database_url
     depends_on:
       postgres:
         condition: service_healthy
@@ -85,14 +100,21 @@ services:
     restart: "no"
 
   # ---------------------------------------------------------------------------
-  # rust-api(per spec FR-005 + FR-009 + FR-017 / contracts C-C6)
+  # rust-api(per W-F4 spec FR-005 / contracts C-S4 / C-S5)
+  # 3 個 _FILE env 取代 W-F3 既有 APP_* 直接 env
+  # F1.1 + W-F4 hardening helper 在 config_init.rs callsite 讀 secret file
   # ---------------------------------------------------------------------------
   rust-api:
     image: rust-api:${IMAGE_TAG:-rev1-admin-rust-api}
     environment:
-      APP_JWT_JWT_SECRET: "${APP_JWT_JWT_SECRET:?APP_JWT_JWT_SECRET required in .env, generate via openssl rand -hex 32}"
-      APP_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      APP_REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      TZ: ${TZ:-Asia/Shanghai}
+      APP_JWT_JWT_SECRET_FILE: /run/secrets/jwt_secret
+      APP_DATABASE_URL_FILE: /run/secrets/database_url
+      APP_REDIS_URL_FILE: /run/secrets/redis_url
+    secrets:
+      - jwt_secret
+      - database_url
+      - redis_url
     depends_on:
       migration:
         condition: service_completed_successfully
@@ -110,7 +132,7 @@ services:
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
-  # base-web(per spec FR-005 + FR-010 / contracts C-C7)
+  # base-web(W-F2 既有 image、W-F3 配置;W-F4 不引用任何 secret)
   # 無 depends_on — base-web 為 static SPA、無 runtime backend dep
   # ---------------------------------------------------------------------------
   base-web:
@@ -125,16 +147,31 @@ services:
     restart: unless-stopped
 
 # =============================================================================
-# Networks(per spec FR-011 + FR-012 / contracts C-C8)
+# Secrets(per W-F4 spec FR-004 / contracts C-S3)
+# 5 entries、各指 ./deploy/secrets/<name>.txt(repo-relative)
+# operator 須先 cp .txt.example 為 .txt + 編輯填值,否則 compose config 渲染抓 file not found
+# =============================================================================
+secrets:
+  jwt_secret:
+    file: ./deploy/secrets/jwt_secret.txt
+  database_url:
+    file: ./deploy/secrets/database_url.txt
+  redis_url:
+    file: ./deploy/secrets/redis_url.txt
+  postgres_password:
+    file: ./deploy/secrets/postgres_password.txt
+  redis_password:
+    file: ./deploy/secrets/redis_password.txt
+
+# =============================================================================
+# Networks(W-F3 維持)
 # =============================================================================
 networks:
   internal:
     driver: bridge
 
 # =============================================================================
-# Volumes(per spec FR-013 + FR-014 / contracts C-C8)
-# 2 named volumes(W-F3 範疇);其他 6 volume(postgres_wal / loki_data
-# / prometheus_data / grafana_data / acme_certs / backup_archive)留 W-F12-16
+# Volumes(W-F3 維持;其他 6 volume 留 W-F12-16)
 # =============================================================================
 volumes:
   postgres_data:

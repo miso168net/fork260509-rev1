@@ -381,13 +381,15 @@ git log --oneline -5                  # 最近 5 個外層 commit，看 pin 變�
 ## 10. 目前活躍 spec-kit feature
 
 <!-- SPECKIT START -->
-- **Active feature**: `008-compose-base-structure`(W-F3,rev1 deploy P1 第三個 — docker-compose 5 service stack:postgres + redis + migration + rust-api + base-web)
-- **Plan**: [`specs/008-compose-base-structure/plan.md`](specs/008-compose-base-structure/plan.md)
-- **Spec**: [`specs/008-compose-base-structure/spec.md`](specs/008-compose-base-structure/spec.md)
-- **Brainstorm**: 無(W-F3 跳過 brainstorm 階段、DESIGN-W §3 為 authoritative source)
-- **Phase**: Plan done(research/data-model/contracts/quickstart 全產出);下一步 `/speckit-tasks`
-- **Outer branch**: `008-compose-base-structure`(尚未 push)
-- **Implementer landing point**: outer repo root(`docker-compose.yml` + `.env.example` + `.gitignore` 補,**單段 commit** per CLAUDE.md §6.2 — 不動 worktree)
-- **Previous features**: W-F1 (`006-dockerfile-rust-api`) merge `430ada9` / W-F2 (`007-dockerfile-base-web`) merge `ac79ed0`(均已 push、acceptance PASS)
+- **Active feature**: `009-secret-injection`(W-F4,rev1 deploy P1 **最後一個**(4/4)— Docker secrets + `_FILE` pattern 升級 W-F3 過渡 secret 模式)
+- **Plan**: [`specs/009-secret-injection/plan.md`](specs/009-secret-injection/plan.md)
+- **Spec**: [`specs/009-secret-injection/spec.md`](specs/009-secret-injection/spec.md)(2 clarification 已 resolve、0 NEEDS CLARIFICATION marker)
+- **Brainstorm**: 無(W-F4 跳過 brainstorm 階段、DESIGN-W §5 + F1.1 為 authoritative source)
+- **Phase**: Plan done(research / data-model / contracts / quickstart 全產出、Constitution gate 23/23 PASS);下一步 `/speckit-tasks`
+- **Outer branch**: `009-secret-injection`(尚未 push)
+- **Implementer landing point**: **兩段 commit** per CLAUDE.md §6.1
+  - 第一段:rust-api worktree(`server/config/src/secret_loader.rs` + `config_init.rs` — 2 helper + 2 callsite)→ push fork
+  - 第二段:outer feature branch(`docker-compose.yml` / `.env.example` / `.gitignore` / `deploy/secrets/` 5 個 `.txt.example` + rust-api SHA bump)
+- **Previous features**: W-F1 (`006-dockerfile-rust-api`) merge `430ada9` / W-F2 (`007-dockerfile-base-web`) merge `ac79ed0` / W-F3 (`008-compose-base-structure`) merge `04671d0`(均已 push、acceptance PASS;W-F4 完成後 Phase W P1 100%、解鎖 P2)
 <!-- SPECKIT END -->
 
