@@ -1,0 +1,86 @@
+openapi: 3.1.0
+info:
+  title: base-web W-F2 /health endpoint contract
+  version: "1.0.0"
+  description: |
+    `/health` endpoint contract — W-F2 範疇新增(by nginx config,not application logic)。
+
+    Purpose:讓 W-F3 docker-compose healthcheck / 未來 W-F5 front-nginx upstream
+    healthcheck 判斷 base-web nginx container 是否可服務 HTTP。
+
+    Public、無 auth、純 nginx `return 200`、不過 SPA 路由 — per spec.md
+    FR-015 ~ FR-016 + Q3 clarify。對齊 W-F1 `/health` 紀律(同 path、同 response)。
+  contact:
+    name: rev1 integration
+    url: https://github.com/miso168net/fork260509-rev1
+
+servers:
+  - url: http://127.0.0.1:8080
+    description: base-web container 內部(per FR-014 EXPOSE 8080)
+
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Health probe(nginx process liveness)
+      description: |
+        Returns 200 OK + plain text `ok` 表示 nginx process 可服務 HTTP。
+
+        **不過 SPA fallback**(per nginx `location = /health` exact match
+        優先級高於 `location /` SPA fallback)。
+
+        **public** — 無 auth、無 application logic、純 nginx `return 200`。
+
+        **與 W-F1 `/health` 對齊** — 同 path、同 response、同 priority bypass
+        application middleware。
+
+      parameters: []
+
+      responses:
+        "200":
+          description: nginx process alive and serving HTTP
+          content:
+            text/plain:
+              schema:
+                type: string
+                const: "ok"
+              example: "ok"
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                const: "text/plain"
+              description: explicit by nginx `add_header Content-Type text/plain`
+
+      # Performance contract(per spec SC-004)
+      x-performance:
+        p99_latency_ms: 50
+        scope: local docker network
+
+      # Negative semantics(what /health does NOT check)
+      x-not-checked:
+        - SPA build integrity(/usr/share/nginx/html files exist 與否)
+        - backend rust-api health(by W-F5 front-nginx upstream check)
+        - DB / redis(那是 rust-api 範疇)
+        - nginx config 內容正確性(由 build 時 nginx -t 驗、AC-5)
+
+      # Differences from W-F1 /health
+      x-vs-w-f1:
+        - "W-F1 (rust-api) 透過 axum route + handler 實現,跑過 application code"
+        - "W-F2 (base-web) 透過 nginx return directive 實現,完全不過 application"
+        - "兩者 user-facing response 同(200 + `ok`),consumer 無需知差別"
+
+components: {}
+
+# Acceptance reference(spec.md Dimension C)
+x-acceptance-scenarios:
+  - id: scenario-6
+    description: port 8080 listening
+    given: docker run -d -p 8080:8080 base-web:test + sleep 3
+    when: nc -zv localhost 8080
+    then: connection succeeded
+  - id: scenario-7
+    description: /health 200 + "ok"
+    given: 同 container
+    when: curl -fsS http://localhost:8080/health
+    then: HTTP 200 + body == "ok" + Content-Type text/plain
