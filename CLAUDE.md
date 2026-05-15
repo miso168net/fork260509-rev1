@@ -381,13 +381,13 @@ git log --oneline -5                  # 最近 5 個外層 commit，看 pin 變�
 ## 10. 目前活躍 spec-kit feature
 
 <!-- SPECKIT START -->
-- **Active feature**: `007-dockerfile-base-web`（W-F2,rev1 deploy P1 第二個 — Vite build + nginx 1.27 alpine serve + /health endpoint）
-- **Plan**: [`specs/007-dockerfile-base-web/plan.md`](specs/007-dockerfile-base-web/plan.md)
-- **Spec**: [`specs/007-dockerfile-base-web/spec.md`](specs/007-dockerfile-base-web/spec.md)
-- **Brainstorm**: [`docs/superpowers/007-feature-dockerfile-base-web.md`](docs/superpowers/007-feature-dockerfile-base-web.md)
-- **Phase**: Plan done(research/data-model/contracts × 2/quickstart 全產出);下一步 `/speckit-tasks`
-- **Outer branch**: `007-dockerfile-base-web`(尚未 push)
-- **Implementer landing point**: `base-web/` worktree(rev1-admin-base-web 分支)
-- **Previous feature**: W-F1 (`006-dockerfile-rust-api`) 已完成 merge to rev1-admin-root(commit `430ada9` / acceptance 21/22 PASS、image 184MB)
+- **Active feature**: `008-compose-base-structure`(W-F3,rev1 deploy P1 第三個 — docker-compose 5 service stack:postgres + redis + migration + rust-api + base-web)
+- **Plan**: [`specs/008-compose-base-structure/plan.md`](specs/008-compose-base-structure/plan.md)
+- **Spec**: [`specs/008-compose-base-structure/spec.md`](specs/008-compose-base-structure/spec.md)
+- **Brainstorm**: 無(W-F3 跳過 brainstorm 階段、DESIGN-W §3 為 authoritative source)
+- **Phase**: Plan done(research/data-model/contracts/quickstart 全產出);下一步 `/speckit-tasks`
+- **Outer branch**: `008-compose-base-structure`(尚未 push)
+- **Implementer landing point**: outer repo root(`docker-compose.yml` + `.env.example` + `.gitignore` 補,**單段 commit** per CLAUDE.md §6.2 — 不動 worktree)
+- **Previous features**: W-F1 (`006-dockerfile-rust-api`) merge `430ada9` / W-F2 (`007-dockerfile-base-web`) merge `ac79ed0`(均已 push、acceptance PASS)
 <!-- SPECKIT END -->
 

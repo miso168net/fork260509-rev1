@@ -1,0 +1,141 @@
+# =============================================================================
+# rev1 deploy docker-compose 主檔(W-F3)
+#
+# 5 service stack:postgres + redis + migration(one-shot)+ rust-api + base-web
+# 1 bridge network:internal
+# 2 named volumes:postgres_data + redis_data
+#
+# 不在 W-F3 範疇(per spec FR-021~FR-027 + plan.md Constitution Check):
+# - front-nginx 反向代理 → W-F5
+# - TLS / acme → W-F6
+# - 對外 host port forwarding → W-F7(W-F3 嚴守邊界、不開任何 host port)
+# - Docker secrets / _FILE pattern → W-F4(W-F3 用 environment: 過渡簡化模式)
+# - observability stack(promtail/loki/prometheus/grafana)→ W-F12-14
+# - backup / DR → W-F15-16
+# - CI/CD pipeline → W-F17-18
+# - cleanup-job / outbox-worker → W-F9-10
+# - nestjs(Track DESIGN-A)→ W-FA1
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # postgres(per spec FR-003 + FR-006 / contracts C-C3)
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:17.4
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # redis(per spec FR-004 + FR-007 / contracts C-C4)
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis/redis-stack:7.4.0-v3
+    # 用 sh -c 包(shell form)讓 $REDIS_PASSWORD 在 container 內展開;
+    # 直接 exec form(`redis-server --requirepass $REDIS_PASSWORD`)會把字面字串
+    # 當密碼、rust-api 用真實密碼連會 auth fail
+    command: ["sh", "-c", "redis-server --requirepass \"$$REDIS_PASSWORD\""]
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # migration(per spec FR-005 + FR-008 / contracts C-C5)
+  # one-shot init container,共用 rust-api image、不同 entrypoint
+  # 用 DATABASE_URL(sea-orm-migration 1.1.14 CLI 標準、cli.rs:38 要求);
+  # 與 rust-api service 用的 APP_DATABASE_URL 不同 prefix — migration binary
+  # 是 sea-orm-cli 標準二進制、不走 rust-api 的 EnvConfigLoader。
+  # (analyze remediation I1 原把這裡改 APP_DATABASE_URL 是 false fix、本次 implement 階段 revert)
+  # ---------------------------------------------------------------------------
+  migration:
+    image: rust-api:${IMAGE_TAG:-rev1-admin-rust-api}
+    entrypoint: ["/usr/local/bin/migration"]
+    command: ["up"]
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal
+    restart: "no"
+
+  # ---------------------------------------------------------------------------
+  # rust-api(per spec FR-005 + FR-009 + FR-017 / contracts C-C6)
+  # ---------------------------------------------------------------------------
+  rust-api:
+    image: rust-api:${IMAGE_TAG:-rev1-admin-rust-api}
+    environment:
+      APP_JWT_JWT_SECRET: "${APP_JWT_JWT_SECRET:?APP_JWT_JWT_SECRET required in .env, generate via openssl rand -hex 32}"
+      APP_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      APP_REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11081/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # base-web(per spec FR-005 + FR-010 / contracts C-C7)
+  # 無 depends_on — base-web 為 static SPA、無 runtime backend dep
+  # ---------------------------------------------------------------------------
+  base-web:
+    image: base-web:${BASE_WEB_TAG:-rev1-admin-base-web}
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+# =============================================================================
+# Networks(per spec FR-011 + FR-012 / contracts C-C8)
+# =============================================================================
+networks:
+  internal:
+    driver: bridge
+
+# =============================================================================
+# Volumes(per spec FR-013 + FR-014 / contracts C-C8)
+# 2 named volumes(W-F3 範疇);其他 6 volume(postgres_wal / loki_data
+# / prometheus_data / grafana_data / acme_certs / backup_archive)留 W-F12-16
+# =============================================================================
+volumes:
+  postgres_data:
+  redis_data:
