@@ -381,14 +381,8 @@ git log --oneline -5                  # 最近 5 個外層 commit，看 pin 變�
 ## 10. 目前活躍 spec-kit feature
 
 <!-- SPECKIT START -->
-- **Active feature**: `010-front-nginx`(W-F5,rev1 deploy **P2 第一個 feature** — stack 內反向代理 + SPA gateway,解決 base-web `/api/` prefix vs rust-api root path mismatch)
-- **Plan**: [`specs/010-front-nginx/plan.md`](specs/010-front-nginx/plan.md)
-- **Spec**: [`specs/010-front-nginx/spec.md`](specs/010-front-nginx/spec.md)(1 clarification 已 resolve `/health` 來源 / 0 NEEDS CLARIFICATION marker)
-- **Brainstorm**: 無(W-F5 跳過 brainstorm 階段、DESIGN-W §4 為 authoritative source)
-- **Phase**: Plan done(research / data-model / contracts / quickstart 全產出、Constitution gate 23/23 通過 — 15 PASS / 7 N/A / 1 Partial-nginx-JSON-log 記 Complexity Tracking / 0 violation);下一步 `/speckit-tasks`
-- **Outer branch**: `010-front-nginx`(尚未 push)
-- **Implementer landing point**: **單段 commit** per CLAUDE.md §6.2
-  - 只動 outer(`docker-compose.yml` + `deploy/front-nginx/conf.d/default.conf` + `deploy/front-nginx/README.md` + spec docs)、不動 rust-api / base-web worktree
-- **Previous features**: W-F1 merge `430ada9` / W-F2 merge `ac79ed0` / W-F3 merge `04671d0` / W-F4 merge `ab658d7`(均已 push、acceptance PASS;Phase W P1 100% 完成、P2 解鎖)
+- **Active feature**: 無(W-F5 全完成、下一步 W-F6 TLS / W-F7 對外 port / W-F11 obs 任一)
+- **Phase**: Done
+- **Previous features**: W-F1 merge `430ada9` / W-F2 merge `ac79ed0` / W-F3 merge `04671d0` / W-F4 merge `ab658d7` / W-F5 merge `dff14c2`(均已 push、acceptance PASS;Phase W P1 100% 完成、**P2 第一個 W-F5 達成**、剩 W-F6 / W-F7 / W-F11)
 <!-- SPECKIT END -->
 
