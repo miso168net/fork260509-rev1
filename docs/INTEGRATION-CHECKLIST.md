@@ -12,6 +12,13 @@
 **Active feature**:無(W-F5 全完成、**Phase W P2 第一個 feature 達成**)
 **下一步**:Phase W P2 剩餘 — W-F6(TLS / acme)/ W-F7(對外 port forwarding)/ W-F11(observability);依 §11.2 P2 任一可平行 spec-kit
 
+> **要實際運行起 stack 環境 / 從 host 訪問(2026-05-16 session 建議)**:
+> 當前 stack 內部 6 service 全 work、SPA + API routing 通(W-F5 已驗),但**對外不可達** — 缺 front-nginx host port forwarding。
+>
+> - **dev / WSL 本機驗**:**直接走 W-F7** — 給 front-nginx 加 `ports: - "11080:80"`(per CLAUDE.md §5.2 rev1 提議 port),host 機 `curl http://127.0.0.1:11080` / 瀏覽器訪問 work;不需 TLS、改動量 3-5 行 yaml
+> - **prod 部署**:**W-F6 → W-F7**(DESIGN-W §11.2 規劃序)— 先加 TLS 再開對外 port、避免明文期窗口;**單獨開 W-F7 不接 TLS** 在 host 直連公網(如 VPS)場景明文暴露,**危險**
+> - W-F11 obs 純監控、不影響 stack 可運行,可平行或延後
+
 > **F5.1 階段同期(P2 主體解鎖)**:F5.1 base-web auth-login-and-dynamic-menu 已完成 merge(2026-05-15、outer `be6e237` + merge `e71aefe`、rust-api `a85e88c`),F5.2 Casbin redis pub-sub 與 F10/F14 同期。
 >
 > ⚠️ **W-F1 acceptance 階段發現 F5.1 pre-existing wiring bug**(非 W-F1 regression):`/route/getUserRoutes` 在 `sys_menu_route.rs:73` mount 但 handler `SysAuthenticationApi::get_user_routes` 期 `Extension<Arc<SysAuthService>>`、SysMenuRouter 用 SysMenuService 注入。F5.1 e2e test 用 `#[ignore]` 沒實際跑、bug 漏網。**留 F5.1 follow-up / 新 feature 處理、不在 W 系列範疇**。
