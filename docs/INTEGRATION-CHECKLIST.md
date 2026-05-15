@@ -8,9 +8,9 @@
 
 ## 🎯 Current Focus
 
-**Phase**：W deploy(per DESIGN-W §11)— **W-1 P1:2/4(W-F1 + W-F2 完成 ✅;W-F3 / W-F4 待動)**
-**Active feature**：無(W-F2 全完成、**解鎖 W-F3 compose 結構 / W-F4 secret 注入**)
-**下一步**:W-F3 為 P1 第三個 feature(依賴 W-F1 + W-F2 都完成、現已就緒);W-F4 secret-injection 依賴 W-F3、可在 W-F3 spec-kit 過程中平行 spec 但 implement 須等 W-F3 完成 per DESIGN-W §11.2 依賴圖
+**Phase**：W deploy(per DESIGN-W §11)— **W-1 P1:3/4(W-F1 + W-F2 + W-F3 完成 ✅;W-F4 待動)**
+**Active feature**：無(W-F3 全完成、**解鎖 W-F4 secret-injection**)
+**下一步**:W-F4 為 Phase W P1 最後一個(第四個)feature;依賴 W-F3 已完成、現已就緒;W-F4 完成後 Phase W P1 100% 達成、解鎖 P2 階段(W-F5 front-nginx 等)
 
 > **F5.1 階段同期(P2 主體解鎖)**:F5.1 base-web auth-login-and-dynamic-menu 已完成 merge(2026-05-15、outer `be6e237` + merge `e71aefe`、rust-api `a85e88c`),F5.2 Casbin redis pub-sub 與 F10/F14 同期。
 >
@@ -31,6 +31,7 @@
 - [x] **F5.1 auth-login-and-dynamic-menu** ✅(2026-05-15 完成;outer `be6e237` + merge `e71aefe`、rust-api `a85e88c`;spec `specs/005-auth-login-and-dynamic-menu/`;P2 第一個 feature 解鎖 base-web 主體)
 - [x] **W-F1 dockerfile-rust-api** ✅(2026-05-15 完成;outer `bdbfb3c` + merge `430ada9`、rust-api `6831677`;spec `specs/006-dockerfile-rust-api/`;Phase W deploy P1 第一個 feature — debian+glibc multi-stage Dockerfile + /health endpoint + ENV APP_SERVER_PORT=11081 走 F1.1 env-override;acceptance 21/22 PASS、image 184MB、build 5m25s / cache hit 2s;1 partial = pre-existing F5.1 wiring bug 已記到 Current Focus)
 - [x] **W-F2 dockerfile-base-web** ✅(2026-05-15 完成;outer `de1df10` + merge `ac79ed0`、base-web `cb897e9`;spec `specs/007-dockerfile-base-web/`;Phase W deploy P1 第二個 feature — node:22-slim builder + nginx:1.27-alpine runtime multi-stage Dockerfile + deploy/nginx.conf + .dockerignore 新建 3 個檔;corepack prepare pnpm@10.18.0 顯式 pin;Vite build-arg `VITE_SERVICE_BASE_URL=/api` 透過 process.env override .env.prod mock URL;nginx user pid permission 修;acceptance 12/12 + 4 remediation 全 PASS、image 24.3MB、build 65s cold / cache hit 4s)
+- [x] **W-F3 compose-base-structure** ✅(2026-05-15 完成;outer `aa23840` + merge `04671d0`、base-web W-F2 followup `d56b9f8`;spec `specs/008-compose-base-structure/`;Phase W deploy P1 第三個 feature — 新建 outer repo root `docker-compose.yml` + `.env.example` + base-web Dockerfile W-F2 followup fix nginx cache subdir;5 service stack(postgres:17.4 / redis-stack:7.4.0-v3 / migration / rust-api / base-web)+ 1 internal network + 2 named volumes;Q1 postgres + Q2 redis 沿用 W-F1 verified、Q3 嚴守 W-F7 邊界不開 host port;acceptance 18/18 全 PASS、stack up-to-healthy 71s、/health p99 0.45ms、SC-001~SC-006 全達標)
 
 ---
 
@@ -55,8 +56,8 @@
 |---|---|---|---|---|---|---|---|
 | W-F1 | `dockerfile-rust-api` | ✅ | ✅ | ✅ | ✅ | ✅ | **完成**(commit 上方) |
 | W-F2 | `dockerfile-base-web` | ✅ | ✅ | ✅ | ✅ | ✅ | **完成**(commit 上方) |
-| W-F3 | `compose-base-structure` | — | — | — | — | — | 待啟動(W-F1 + W-F2 已就緒、現解鎖) |
-| W-F4 | `secret-injection` | — | — | — | — | — | 待啟動(依賴 W-F3) |
+| W-F3 | `compose-base-structure` | — | ✅ | ✅ | ✅ | ✅ | **完成**(commit 上方;DESIGN-W §3 為 authoritative source、無 brainstorm 階段) |
+| W-F4 | `secret-injection` | — | — | — | — | — | 待啟動(W-F1 + W-F2 + W-F3 已就緒、現解鎖) |
 
 §11.2 規則:**W-1 P1 4 個(W-F1 / W-F2 / W-F3 / W-F4)為部署最低基礎、必先全部完成才能動 W-2 P2(W-F5 nginx 反向代理 / W-F6 TLS / W-F7 對外 port)**。W-F1 完成、W-F2 / W-F3 / W-F4 任一順序皆可平行 spec-kit。
 
