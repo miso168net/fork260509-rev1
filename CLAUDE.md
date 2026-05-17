@@ -400,8 +400,8 @@ git log --oneline -5                  # 最近 5 個外層 commit，看 pin 變�
 ## 10. 目前活躍 spec-kit feature
 
 <!-- SPECKIT START -->
-- **Active feature**: W-F7 `011-port-mapping`([spec](specs/011-port-mapping/spec.md) / [plan](specs/011-port-mapping/plan.md))
-- **Phase**: Planning(plan + research + data-model + contracts + quickstart 完成;下一步 `/speckit-tasks`)
-- **Previous features**: W-F1 merge `430ada9` / W-F2 merge `ac79ed0` / W-F3 merge `04671d0` / W-F4 merge `ab658d7` / W-F5 merge `dff14c2`(均已 push、acceptance PASS;Phase W P1 100% 完成、**P2 第一個 W-F5 達成**、W-F7 brainstorm + spec + plan 完成中、剩 W-F6 / W-F11)
+- **Active feature**: 無(W-F7 全完成、dev 環境對外可達)
+- **Phase**: Done
+- **Previous features**: W-F1 merge `430ada9` / W-F2 merge `ac79ed0` / W-F3 merge `04671d0` / W-F4 merge `ab658d7` / W-F5 merge `dff14c2` / W-F7 merge `62b3475`(均已 push 或 local merge、acceptance PASS;Phase W P1 100% 完成、**P2 進度 2/4**(W-F5 + W-F7 完成)、剩 W-F6 TLS + W-F11 obs 任一)
 <!-- SPECKIT END -->
 
