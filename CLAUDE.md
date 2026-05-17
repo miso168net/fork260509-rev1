@@ -418,8 +418,8 @@ git log --oneline -5                  # 最近 5 個外層 commit，看 pin 變�
 ## 10. 目前活躍 spec-kit feature
 
 <!-- SPECKIT START -->
-- **Active feature**: W-F6 `012-tls-cert-management`([spec](specs/012-tls-cert-management/spec.md) / [plan](specs/012-tls-cert-management/plan.md))
-- **Phase**: Planning(spec + plan + research + data-model + contracts + quickstart 完成;下一步 `/speckit-tasks`)
-- **Previous features**: W-F1 merge `430ada9` / W-F2 merge `ac79ed0` / W-F3 merge `04671d0` / W-F4 merge `ab658d7` / W-F5 merge `dff14c2` / W-F7 merge `62b3475`(均已 push、acceptance PASS;Phase W P1 100% 完成、**P2 進度 2/4**(W-F5 + W-F7 完成)、W-F6 brainstorm + spec + plan 完成中、剩 W-F11)
+- **Active feature**: 無(W-F6 全完成、TLS 結構就位 + prod 對外可達)
+- **Phase**: Done
+- **Previous features**: W-F1 merge `430ada9` / W-F2 merge `ac79ed0` / W-F3 merge `04671d0` / W-F4 merge `ab658d7` / W-F5 merge `dff14c2` / W-F7 merge `62b3475` / W-F6 merge `5e38030`(均已 push 或 local merge、acceptance PASS;Phase W P1 100% 完成、**P2 進度 3/4**(W-F5 + W-F7 + W-F6 完成)、剩 W-F11 obs + W-F6b cert acquisition)
 <!-- SPECKIT END -->
 
