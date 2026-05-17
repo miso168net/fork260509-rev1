@@ -8,9 +8,9 @@
 
 ## 🎯 Current Focus
 
-**Phase**:W deploy(per DESIGN-W §11)— **W-2 P2:2/4 ✅(W-F5 + W-F7 完成)、剩 W-F6 / W-F11**
-**Active feature**:無(W-F7 全完成、dev 環境對外可達)
-**下一步**:W-F6(prod TLS + 主 compose 加對外 port)/ W-F11(observability);W-F6 是 prod 對外 prerequisite、W-F11 純監控可平行
+**Phase**:W deploy(per DESIGN-W §11)— **W-2 P2:3/4 ✅(W-F5 + W-F7 + W-F6 完成)、剩 W-F11**
+**Active feature**:無(W-F6 全完成、TLS 結構就位 + prod 對外可達)
+**下一步**:W-F11(observability;rust-api 多 instance + Casbin pub-sub 跨 instance 驗) + W-F6b(acme.sh 真實 cert acquisition、需真實 domain + DNS provider creds、留 prod VPS 部署時觸發)
 
 > **F5.1 階段同期(P2 主體解鎖)**:F5.1 base-web auth-login-and-dynamic-menu 已完成 merge(2026-05-15、outer `be6e237` + merge `e71aefe`、rust-api `a85e88c`),F5.2 Casbin redis pub-sub 與 F10/F14 同期。
 >
@@ -35,6 +35,7 @@
 - [x] **W-F4 secret-injection** ✅(2026-05-15 完成;outer `b3d027e` + merge `ab658d7`、rust-api `4057770` + `adf5f4c`;spec `specs/009-secret-injection/`;Phase W deploy P1 **最後一個**(4/4)— Docker secrets + `_FILE` pattern 升級 W-F3 過渡 secret 模式;5 secret entries(jwt_secret / database_url / redis_url / postgres_password / redis_password)+ 4 service secrets ref + rust-api 2 type-specific helper + 既有 callsite 並列加 call + EnvConfigLoader filter `APP_*_FILE` 解 config-rs `_` separator ambiguity(W-F4 implement 階段發現、R-001 amendment);acceptance 13/13 task / 18/18 scenario 全 PASS、4 long-running services healthy + migration exited 0、redis ps 完全不洩 password、/health rust-api+base-web 都 ok、image rebuild 3m51s。**Phase W deploy P1 達 100%、解鎖 P2**)
 - [x] **W-F5 front-nginx** ✅(2026-05-16 完成;outer `101c9ac` + merge `dff14c2`;spec `specs/010-front-nginx/`;Phase W deploy **P2 第一個 feature**(1/4)— stack 內反向代理 + SPA gateway、解決 base-web `/api/` prefix vs rust-api root path mismatch;新增 `front-nginx` service(`nginx:1.27-alpine`、internal-only)+ `deploy/front-nginx/conf.d/default.conf`(2 upstream + 3 location + 5 header);5 routing path 全通(SPA `/` → base-web / `/api/auth/login` → rust-api 切前綴 200+JWT / `/api/nonexistent` 透傳 404 / SPA fallback / front-nginx self `/health`);`sys_login_log` 抓到真實 client IP `172.20.0.5` + `curl/7.88.1` UA(X-Forwarded-For 機制 work);6 service stack 起動正常、nginx -t syntax OK、無 ports/TLS/secrets/nestjs/rate limiting(嚴守邊界);**單段 commit**(只動 outer、不動 worktree)。**Phase W deploy P2 第一個 feature 達成、解鎖 W-F6 TLS + W-F7 對外 port**)
 - [x] **W-F7 port-mapping** ✅(2026-05-17 完成;outer `ad239c4` + merge `62b3475`;spec `specs/011-port-mapping/`;Phase W deploy **P2 第二個 feature**(2/4)— 新增 outer-repo root `docker-compose.dev.yml` 拆檔(1 個新檔 ~22 行)+ 4 個 host port forward(`127.0.0.1:11080:80` front-nginx + `127.0.0.1:11081:11081` rust-api 直連 + `127.0.0.1:15432:5432` postgres + `127.0.0.1:16379:6379` redis),全綁 127.0.0.1 loopback;主 docker-compose.yml 嚴格不動(prod safe baseline);dev `docker compose -f -f up`、prod `docker compose up` 顯式切換;同步更新 CLAUDE.md §5.2 + INTEGRATION-CHECKLIST.md;US1 7/7 + US2 4/4 + US3 1/2 acceptance PASS(T036 SPA 瀏覽器 e2e + T051 LAN 跨機驗 deferred manual);**單段 commit**(只動 outer);dev/WSL 本機驗工作流解鎖、解鎖 W-F6 / W-F11 後續 P2)
+- [x] **W-F6 tls-cert-management** ✅(2026-05-18 完成;outer `<sha-pending>` + merge `<sha-pending>`;spec `specs/012-tls-cert-management/`;Phase W deploy **P2 第三個 feature**(3/4)— 加 TLS 終止 + 對外 port + prod cert lifecycle skeleton(11 個檔);主 compose 加 named volume front_nginx_certs + acme.sh service(profile=prod)+ acme_email secret(per W-F4 _FILE pattern)+ front-nginx cert mount(**不**加 ports、per Clarify Q1 避 binding 衝突);dev.yml 加 127.0.0.1:11443:443 + dev-certs mount(覆蓋 named volume);prod.yml 新建(0.0.0.0:11080+11443 + default.conf.prod mount override);nginx config 加 443 ssl server block(http2 on / TLSv1.2/1.3 / HIGH cipher) + 抽 snippets/proxy_headers.inc DRY;新建 default.conf.prod variant(80 redirect 443 + 保 /.well-known/acme-challenge/);新建 deploy/generate-dev-cert.sh(openssl RSA 4096 自簽、SAN DNS:localhost + IP:127.0.0.1、365 天);新建 deploy/dev-certs/ + deploy/secrets/acme_email.txt.example;.gitignore 加 dev-certs/*.pem;同步 CLAUDE.md §5.2 + INTEGRATION-CHECKLIST.md;US1 P1 MVP 7/7 + US2 P2 4/4 + US3 P3 4/4 = 15/15 acceptance PASS;cert SAN 含 DNS+IP 雙覆;TLSv1.3 + AES-256-GCM cipher 驗成;nginx -t syntax OK;dev/prod 3 mode 切換 work;**單段 commit**(只動 outer);Constitution Check 7 PASS / 14 N/A / 2 Partial(TLS — acme acquisition 留 W-F6b、Complexity Tracking 已合理化)/ 0 violation;解鎖 W-F6b 真實 cert acquisition + W-F11 observability)
 
 ---
 
@@ -63,8 +64,9 @@
 | W-F4 | `secret-injection` | — | ✅ | ✅ | ✅ | ✅ | **完成**(commit 上方;DESIGN-W §5 + F1.1 為 authoritative source、無 brainstorm 階段) |
 | W-F5 | `front-nginx` | — | ✅ | ✅ | ✅ | ✅ | **完成**(commit 上方;DESIGN-W §4 為 authoritative source、無 brainstorm 階段;**P2 第一個 feature**) |
 | W-F7 | `port-mapping` | ✅ | ✅ | ✅ | ✅ | ✅ | **完成**(commit 上方;dev 4 port 已落地、127.0.0.1 binding、prod baseline 仍 internal-only)|
+| W-F6 | `tls-cert-management` | ✅ | ✅ | ✅ | ✅ | ✅ | **完成**(commit 上方;TLS 結構 + dev 自簽 + prod 80 redirect 443 + acme.sh skeleton;cert acquisition 留 W-F6b)|
 
-§11.2 規則:**W-1 P1 4 個(W-F1 / W-F2 / W-F3 / W-F4)為部署最低基礎、必先全部完成才能動 W-2 P2(W-F5 nginx 反向代理 / W-F6 TLS / W-F7 對外 port)**。**P1 全 4 個完成、P2 解鎖**(2026-05-15);**P2 W-F5 + W-F7 完成、剩 W-F6 / W-F11**(2026-05-17)。**W-2 P2:2/4**。
+§11.2 規則:**W-1 P1 4 個(W-F1 / W-F2 / W-F3 / W-F4)為部署最低基礎、必先全部完成才能動 W-2 P2(W-F5 nginx 反向代理 / W-F6 TLS / W-F7 對外 port)**。**P1 全 4 個完成、P2 解鎖**(2026-05-15);**P2 W-F5 + W-F7 + W-F6 完成、剩 W-F11**(2026-05-18)。**W-2 P2:3/4**。
 
 ---
 

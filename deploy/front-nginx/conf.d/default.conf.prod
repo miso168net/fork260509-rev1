@@ -1,0 +1,51 @@
+upstream base_web {
+    server base-web:8080;
+}
+
+upstream rust_api {
+    server rust-api:11081;
+    keepalive 32;
+}
+
+# 80 listen(prod 強制 redirect、保 Let's Encrypt HTTP-01 challenge 路徑)
+server {
+    listen 80;
+    server_name _;
+
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/acme-challenge;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# 443 listen ssl(prod 同 dev、cert 從 named volume)
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name _;
+
+    ssl_certificate     /etc/nginx/certs/fullchain.pem;
+    ssl_certificate_key /etc/nginx/certs/privkey.pem;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         HIGH:!aNULL:!MD5;
+    ssl_session_cache   shared:SSL:10m;
+    ssl_session_timeout 10m;
+
+    location = /health {
+        return 200 "ok";
+        add_header Content-Type text/plain;
+    }
+
+    location /api/ {
+        proxy_pass http://rust_api/;
+        include /etc/nginx/snippets/proxy_headers.inc;
+    }
+
+    location / {
+        proxy_pass http://base_web;
+        proxy_set_header Host $host;
+    }
+}

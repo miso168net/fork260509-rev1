@@ -66,6 +66,9 @@ deploy/.env
 /deploy/secrets/*.txt
 !/deploy/secrets/*.txt.example
 
+# W-F6 dev 自簽憑證 — 只在本機 dev 用，勿 commit
+deploy/dev-certs/*.pem
+
 # ============================================================
 # Docker / dev container 個人 override
 # ============================================================
