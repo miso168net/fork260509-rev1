@@ -1,0 +1,22 @@
+# docker-compose.dev.yml — W-F7 dev 用 host port forward(per specs/011-port-mapping/)
+# 用法:docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --wait
+# 不寫進主 docker-compose.yml(避免 prod 誤暴露);僅 dev / debug 場景使用
+# 4 個 port 全綁 127.0.0.1(loopback only、不暴露 LAN)
+# 11443 HTTPS 留 W-F6 TLS feature;0.0.0.0 LAN binding 不支援
+
+services:
+  front-nginx:
+    ports:
+      - "127.0.0.1:11080:80"          # SPA + /api/ 反向代理對外入口
+
+  rust-api:
+    ports:
+      - "127.0.0.1:11081:11081"       # rust-api 直連(跳過 nginx debug)
+
+  postgres:
+    ports:
+      - "127.0.0.1:15432:5432"        # psql / DBeaver 直連
+
+  redis:
+    ports:
+      - "127.0.0.1:16379:6379"        # redis-cli / RedisInsight 直連
