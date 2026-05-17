@@ -418,8 +418,8 @@ git log --oneline -5                  # 最近 5 個外層 commit，看 pin 變�
 ## 10. 目前活躍 spec-kit feature
 
 <!-- SPECKIT START -->
-- **Active feature**: 無(W-F6 全完成、TLS 結構就位 + prod 對外可達)
+- **Active feature**: 無(F6 全完成、application Phase 2 第二個 feature 達成)
 - **Phase**: Done
-- **Previous features**: W-F1 merge `430ada9` / W-F2 merge `ac79ed0` / W-F3 merge `04671d0` / W-F4 merge `ab658d7` / W-F5 merge `dff14c2` / W-F7 merge `62b3475` / W-F6 merge `5e38030`(均已 push 或 local merge、acceptance PASS;Phase W P1 100% 完成、**P2 進度 3/4**(W-F5 + W-F7 + W-F6 完成)、剩 W-F11 obs + W-F6b cert acquisition)
+- **Previous features**: W-F1 merge `430ada9` / W-F2 merge `ac79ed0` / W-F3 merge `04671d0` / W-F4 merge `ab658d7` / W-F5 merge `dff14c2` / W-F7 merge `62b3475` / W-F6 merge `5e38030` / F6 merge `<sha-pending>`(均已 push、acceptance PASS;Phase W deploy P2 進度 **3/4**、F6 為 application Phase 2 第二個 feature)
 <!-- SPECKIT END -->
 
