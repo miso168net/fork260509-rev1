@@ -122,29 +122,47 @@ fork260509-rev1/                            ← workspace root（傘狀 repo rev
 | Postgres | host `:5432` ↔ container `:5432` | container 內仍 `:5432`（不改）；host 暴露 `15432:5432` |
 | docker compose project name | `new-admin`（預設由目錄名衍生） | `rev1-admin`（透過 `COMPOSE_PROJECT_NAME` 環境變數設定） |
 
-**目前現況**（W-F7 落地、dev 4 port 已暴露、prod 維持 internal-only）：
-- **dev 啟動**：走 `docker-compose.dev.yml` 拆檔 + `-f -f` 啟動（範例見 §5.2.1）
-- **dev 4 port 全綁 `127.0.0.1`**：11080 front-nginx HTTP / 11081 rust-api 直連 / 15432 postgres / 16379 redis（均 loopback only、不暴露 LAN）
-- **prod baseline**（`docker compose up -d` 不帶 dev 檔）維持 internal-only、無 host port — 對外 11080 / 11443 暴露屬 W-F6 TLS feature 範疇
+**目前現況**（W-F6 + W-F7 落地、TLS 結構就位、3 種啟動模式）：
+- **dev**（`-f -f dev.yml`）：127.0.0.1 loopback、HTTP `:11080` + HTTPS `:11443`（自簽 cert）+ 直連 backend port `:11081 :15432 :16379`（範例見 §5.2.1）
+- **prod baseline**（`-f -f prod.yml`、不帶 `--profile prod`）：0.0.0.0 對外、80 強制 redirect 443、acme.sh 不啟（需先 seed cert into named volume `front_nginx_certs`）
+- **prod + acme**（`-f -f prod.yml --profile prod`）：同 prod baseline + acme.sh skeleton（實際 cert acquisition 留 W-F6b、需真實 domain + DNS provider）
 
-### 5.2.1 dev 啟動命令範例（W-F7 落地後）
+### 5.2.1 dev 啟動命令範例（W-F6 + W-F7 落地後）
 
 ```bash
-# === dev 啟動（暴露 4 個 host port、限 127.0.0.1）===
+# === 第一次：生成 dev 自簽 cert（只需跑一次、每年 renew）===
+bash deploy/generate-dev-cert.sh
+
+# === dev 啟動（暴露 4 個 host port、限 127.0.0.1、HTTP + HTTPS）===
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --wait
 
-# === host 機驗證（WSL2 內 shell 或 Win11 mirrored networking 下從 Windows host）===
-curl -fsS http://127.0.0.1:11080/health                              # front-nginx self
+# === host 機驗證（WSL2 mirrored networking 下從 Windows host 亦可）===
+curl -fsS http://127.0.0.1:11080/health                              # HTTP front-nginx self
+curl -kfsS https://127.0.0.1:11443/health                            # HTTPS front-nginx self
 curl -fsS http://127.0.0.1:11081/health                              # rust-api 直連
 pg_isready -h 127.0.0.1 -p 15432                                    # postgres
 redis-cli -h 127.0.0.1 -p 16379 -a "$(cat deploy/secrets/redis_password.txt)" --no-auth-warning ping  # redis
 
-# === prod baseline 啟動（無 host port）===
+# TLS handshake + cert SAN 驗
+openssl s_client -connect 127.0.0.1:11443 -servername localhost </dev/null 2>&1 | grep "subject="
+openssl x509 -in deploy/dev-certs/fullchain.pem -noout -ext subjectAltName
+
+# === prod baseline 啟動（0.0.0.0 對外、80 redirect 443、無 acme）===
+# 先 seed cert 進 named volume（W-F6 階段；W-F6b 後 acme 自動 issue）：
 docker compose -f docker-compose.yml -f docker-compose.dev.yml down -v --remove-orphans
-docker compose up -d --wait
+docker run --rm -v rev1-admin_front_nginx_certs:/certs -v "$PWD/deploy/dev-certs":/src alpine \
+  sh -c "cp /src/fullchain.pem /src/privkey.pem /certs/"
+
+# 啟 prod baseline：
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --wait
+
+# === prod + acme（7 service、acme skeleton sanity 用）===
+docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile prod up -d --wait
+docker compose exec acme acme.sh --version    # sanity check
 ```
 
 > WSL2 NAT mode 不可用 `127.0.0.1` — 設 `.wslconfig` `[wsl2] networkingMode=mirrored`（Win11 22H2+ 預設）、或用 `wsl hostname -I` 拿 WSL IP。
+> 實際 acme.sh cert acquisition / renew 流程留 W-F6b（需公網 + 真實 domain + DNS provider creds）。
 
 ## 6. 開發守則（workspace-specific）
 
@@ -400,8 +418,8 @@ git log --oneline -5                  # 最近 5 個外層 commit，看 pin 變�
 ## 10. 目前活躍 spec-kit feature
 
 <!-- SPECKIT START -->
-- **Active feature**: 無(W-F7 全完成、dev 環境對外可達)
-- **Phase**: Done
-- **Previous features**: W-F1 merge `430ada9` / W-F2 merge `ac79ed0` / W-F3 merge `04671d0` / W-F4 merge `ab658d7` / W-F5 merge `dff14c2` / W-F7 merge `62b3475`(均已 push 或 local merge、acceptance PASS;Phase W P1 100% 完成、**P2 進度 2/4**(W-F5 + W-F7 完成)、剩 W-F6 TLS + W-F11 obs 任一)
+- **Active feature**: W-F6 `012-tls-cert-management`([spec](specs/012-tls-cert-management/spec.md) / [plan](specs/012-tls-cert-management/plan.md))
+- **Phase**: Planning(spec + plan + research + data-model + contracts + quickstart 完成;下一步 `/speckit-tasks`)
+- **Previous features**: W-F1 merge `430ada9` / W-F2 merge `ac79ed0` / W-F3 merge `04671d0` / W-F4 merge `ab658d7` / W-F5 merge `dff14c2` / W-F7 merge `62b3475`(均已 push、acceptance PASS;Phase W P1 100% 完成、**P2 進度 2/4**(W-F5 + W-F7 完成)、W-F6 brainstorm + spec + plan 完成中、剩 W-F11)
 <!-- SPECKIT END -->
 

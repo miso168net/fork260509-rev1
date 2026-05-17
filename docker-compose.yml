@@ -160,6 +160,8 @@ services:
       TZ: ${TZ:-Asia/Shanghai}
     volumes:
       - ./deploy/front-nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./deploy/front-nginx/snippets:/etc/nginx/snippets:ro   # ★ W-F6 新增
+      - front_nginx_certs:/etc/nginx/certs:ro                  # ★ W-F6 新增
     depends_on:
       base-web:
         condition: service_healthy
@@ -174,9 +176,26 @@ services:
       retries: 3
     restart: unless-stopped
 
+  # ---------------------------------------------------------------------------
+  # acme(W-F6 prod TLS cert management via acme.sh + Let's Encrypt)
+  # profiles: ["prod"] — dev 啟動不包含此 service
+  # front_nginx_certs volume 共用：acme 寫入、front-nginx 唯讀掛載
+  # ---------------------------------------------------------------------------
+  acme:
+    image: neilpang/acme.sh:latest
+    profiles: ["prod"]
+    command: ["daemon"]
+    volumes:
+      - front_nginx_certs:/acme.sh
+    environment:
+      - ACME_EMAIL_FILE=/run/secrets/acme_email
+    secrets:
+      - acme_email
+    restart: unless-stopped
+
 # =============================================================================
 # Secrets(per W-F4 spec FR-004 / contracts C-S3)
-# 5 entries、各指 ./deploy/secrets/<name>.txt(repo-relative)
+# 5 entries → 6 entries(W-F6 加 acme_email)
 # operator 須先 cp .txt.example 為 .txt + 編輯填值,否則 compose config 渲染抓 file not found
 # =============================================================================
 secrets:
@@ -190,6 +209,8 @@ secrets:
     file: ./deploy/secrets/postgres_password.txt
   redis_password:
     file: ./deploy/secrets/redis_password.txt
+  acme_email:
+    file: ./deploy/secrets/acme_email.txt
 
 # =============================================================================
 # Networks(W-F3 維持)
@@ -204,3 +225,4 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  front_nginx_certs:    # ★ W-F6 新增(acme.sh 寫入 prod cert + front-nginx 唯讀掛載)

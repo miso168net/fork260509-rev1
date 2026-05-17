@@ -8,6 +8,9 @@ services:
   front-nginx:
     ports:
       - "127.0.0.1:11080:80"          # SPA + /api/ 反向代理對外入口
+      - "127.0.0.1:11443:443"         # ★ W-F6 新增 HTTPS
+    volumes:                           # ★ W-F6 新增整段
+      - ./deploy/dev-certs:/etc/nginx/certs:ro
 
   rust-api:
     ports:
