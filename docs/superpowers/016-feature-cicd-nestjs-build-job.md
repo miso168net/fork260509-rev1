@@ -10,7 +10,7 @@
 - [`docs/INTEGRATION-DESIGN-W-DEPLOYMENT.md`](../INTEGRATION-DESIGN-W-DEPLOYMENT.md) §11 line 1116(W-FA3 scope 描述:nestjs image build pipeline)
 - [`docs/INTEGRATION-DESIGN-A-RUST-NESTJS.md`](../INTEGRATION-DESIGN-A-RUST-NESTJS.md) §6 F10 / Principle V「漸進收縮 DESIGN-A → DESIGN-B」— nestjs 屬 transitional、W-FA3 build script 在 cutover 時整支刪
 - [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md) v1.0.0(Principle IV「base 不改動邊界」延伸至 nestjs fork repo 完全零改動;Principle V「漸進收縮」— W-FA3 設計直接服務未來退場)
-- [`docs/superpowers/011-feature-compose-nestjs-service.md`](011-feature-compose-nestjs-service.md) W-FA1(brainstorm 階段為 nestjs container 落地、quickstart Step 1-2 含 build cmd 與 NODE_VERSION discovery)
+- [`docs/superpowers/014-feature-compose-nestjs-service.md`](014-feature-compose-nestjs-service.md) W-FA1(brainstorm 階段為 nestjs container 落地、quickstart Step 1-2 含 build cmd 與 NODE_VERSION discovery)
 - 既有 [`fork260509-soybean-admin-nestjs/backend/Dockerfile`](../../fork260509-soybean-admin-nestjs/backend/Dockerfile)(W-FA1 build context、W-FA3 沿用不動)
 - 既有 W-FA1 落定的 build cmd(per `CLAUDE.md` §5.2.1 line 167-172 與 W-FA1 quickstart):
   ```

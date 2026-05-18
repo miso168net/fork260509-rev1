@@ -2,7 +2,7 @@
 
 **Feature**: W-F7 — port-mapping(dev host port forward)
 **Date**: 2026-05-17
-**Source**: [spec.md](spec.md) + [docs/superpowers/008-feature-port-mapping.md](../../docs/superpowers/008-feature-port-mapping.md)
+**Source**: [spec.md](spec.md) + [docs/superpowers/011-feature-port-mapping.md](../../docs/superpowers/011-feature-port-mapping.md)
 
 > 本檔結構:對 spec / brainstorm 階段未完全消化的「技術細節 / 行為假設」做最終驗證。本 feature brainstorm 3 個 Q 已拍板,research 主要驗證 docker compose 機制細節。
 

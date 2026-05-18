@@ -47,4 +47,4 @@
 ## Notes
 
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`
-- W-FA2 brainstorm 已在 docs/superpowers/012-feature-nginx-track-a-transitional-block.md 階段解掉所有設計 OQ、本 spec 為 brainstorm doc 的 spec-kit-format 化、無新 unclarified 點。
+- W-FA2 brainstorm 已在 docs/superpowers/015-feature-nginx-track-a-transitional-block.md 階段解掉所有設計 OQ、本 spec 為 brainstorm doc 的 spec-kit-format 化、無新 unclarified 點。

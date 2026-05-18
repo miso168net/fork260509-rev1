@@ -2,7 +2,7 @@
 
 **Feature**: W-FA1 — compose-nestjs-service
 **Date**: 2026-05-18
-**Source**: [spec.md](spec.md) + [docs/superpowers/011-feature-compose-nestjs-service.md](../../docs/superpowers/011-feature-compose-nestjs-service.md)
+**Source**: [spec.md](spec.md) + [docs/superpowers/014-feature-compose-nestjs-service.md](../../docs/superpowers/014-feature-compose-nestjs-service.md)
 
 > Brainstorm 階段保留 4 個 OQ(plan-stage detail)、plan 階段透過 nestjs fork source code 探勘全部解開。Research 7 個技術點均有明確 decision + evidence + alternative。
 

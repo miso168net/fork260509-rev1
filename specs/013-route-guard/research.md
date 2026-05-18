@@ -2,7 +2,7 @@
 
 **Feature**: F6 — route-guard(`/route/isRouteExist`)
 **Date**: 2026-05-18
-**Source**: [spec.md](spec.md) + [docs/superpowers/010-feature-route-guard.md](../../docs/superpowers/010-feature-route-guard.md)
+**Source**: [spec.md](spec.md) + [docs/superpowers/013-feature-route-guard.md](../../docs/superpowers/013-feature-route-guard.md)
 
 > Brainstorm 階段保留 4 個 OQ(plan-stage detail)、plan 階段透過 rust-api source code 探勘全部解開,並**發現 1 個新關鍵 architectural 議題:Casbin allowlist mode → F6 必須補 sys_endpoint + casbin_rule seed**(否則所有 logged-in user 被 deny)。
 

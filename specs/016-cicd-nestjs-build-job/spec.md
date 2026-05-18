@@ -5,7 +5,7 @@
 **Status**: Draft
 **Input**: User description: "W-FA3 cicd-nestjs-build-job — Phase W deploy P7 Track DESIGN-A 三件套第三個也是最後一個 feature(W-FA1 + W-FA2 後接續、收尾 Track DESIGN-A deploy 結構)。把 W-FA1 落地的 nestjs image build cmd(`DOCKER_BUILDKIT=1 docker build --build-arg NODE_VERSION=22.11.0 -f fork260509-soybean-admin-nestjs/backend/Dockerfile -t nestjs:rev1-admin-nestjs fork260509-soybean-admin-nestjs/backend/`)抽象成 local shell script `deploy/build-nestjs.sh`。"
 
-**Source**: [`docs/superpowers/013-feature-cicd-nestjs-build-job.md`](../../docs/superpowers/013-feature-cicd-nestjs-build-job.md)(brainstorming 2026-05-18、3 顯式拍板 Q + 5 自然推論)
+**Source**: [`docs/superpowers/016-feature-cicd-nestjs-build-job.md`](../../docs/superpowers/016-feature-cicd-nestjs-build-job.md)(brainstorming 2026-05-18、3 顯式拍板 Q + 5 自然推論)
 
 **Authoritative parents**:
 - [`docs/INTEGRATION-DESIGN-W-DEPLOYMENT.md`](../../docs/INTEGRATION-DESIGN-W-DEPLOYMENT.md) §11 line 1116(W-FA3 scope 描述:nestjs image build pipeline、依賴 W-F17 抽象但本 feature 走 local script 不等)

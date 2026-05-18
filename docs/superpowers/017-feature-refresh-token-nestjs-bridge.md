@@ -11,9 +11,9 @@
 - [`docs/INTEGRATION-DESIGN-A-RUST-NESTJS.md`](../INTEGRATION-DESIGN-A-RUST-NESTJS.md) §3.2 nestjs 補位 endpoint「nestjs source **不改**,只用既有 build artifact / docker image」(F10 嚴守)
 - [`docs/INTEGRATION-DESIGN-A-RUST-NESTJS.md`](../INTEGRATION-DESIGN-A-RUST-NESTJS.md) §3.3 sys_tokens 表共識(rust 主導 migration、nestjs 既有 prisma schema 對齊)
 - [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md) v1.0.0(Principle IV「base 不改動邊界」延伸至 nestjs fork repo 完全零改動;Principle V「漸進收縮」— F10 過渡角色)
-- 既有 W-FA1 落地的 nestjs container 部署 + JWT secret 共享 _FILE pattern + sys_tokens schema 對齊驗(per [`011-feature-compose-nestjs-service.md`](011-feature-compose-nestjs-service.md))
-- 既有 W-FA2 落地的 nginx TRANSITIONAL block + variable proxy_pass + lazy DNS(per [`012-feature-nginx-track-a-transitional-block.md`](012-feature-nginx-track-a-transitional-block.md))
-- 既有 W-FA3 落地的 nestjs image build script(per [`013-feature-cicd-nestjs-build-job.md`](013-feature-cicd-nestjs-build-job.md))
+- 既有 W-FA1 落地的 nestjs container 部署 + JWT secret 共享 _FILE pattern + sys_tokens schema 對齊驗(per [`014-feature-compose-nestjs-service.md`](014-feature-compose-nestjs-service.md))
+- 既有 W-FA2 落地的 nginx TRANSITIONAL block + variable proxy_pass + lazy DNS(per [`015-feature-nginx-track-a-transitional-block.md`](015-feature-nginx-track-a-transitional-block.md))
+- 既有 W-FA3 落地的 nestjs image build script(per [`016-feature-cicd-nestjs-build-job.md`](016-feature-cicd-nestjs-build-job.md))
 - 既有 F5.1 落地的 rust login flow + `AccessTokenEvent::handle()` 寫 sys_tokens(per [`005-feature-auth-login-and-dynamic-menu.md`](005-feature-auth-login-and-dynamic-menu.md))
 - 既有 F1.1 落地的 JWT secret 共享 + _FILE pattern(per [`004-feature-jwt-secrets.md`](004-feature-jwt-secrets.md))
 - 既有 F4 落地的 response shape 對齊(per [`001-feature-response-shape-alignment.md`](001-feature-response-shape-alignment.md))— F10 acceptance 期 envelope 對齊

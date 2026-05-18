@@ -103,7 +103,7 @@
 
 - **NFR-001**: docker-compose.dev.yml YAML 大小不超過 30 行(預估 ~25 行含註解)— 體現「最小變動範圍」紀律。
 - **NFR-002**: 啟動延遲與 W-F5 baseline 比較不增 5%(host port forward 是 docker bridge 額外一層、但 dev 容忍開銷)。
-- **NFR-003**: spec 主 markdown 檔(docs/superpowers/008-feature-port-mapping.md)字數預估 4000-6000 字(W-F1/W-F2 量級,W-F3/W-F4/W-F5 因 source authoritative 較短;W-F7 重新進 brainstorming 故與 W-F1/W-F2 同量級)。
+- **NFR-003**: spec 主 markdown 檔(docs/superpowers/011-feature-port-mapping.md)字數預估 4000-6000 字(W-F1/W-F2 量級,W-F3/W-F4/W-F5 因 source authoritative 較短;W-F7 重新進 brainstorming 故與 W-F1/W-F2 同量級)。
 - **NFR-004**: spec 須對 WSL2 兼容性、port 衝突、prod CI 誤暴露 3 個風險點都有對策或紀律建議(對應 Edge Cases E-1 / E-2 / E-4)。
 
 ### Out of Scope(per Q1/Q2/Q3 + DESIGN-W 邊界 + 風險控制)
@@ -130,7 +130,7 @@
 
 **Schema**(預估結構,brainstorm 拍板):
 ```yaml
-# docker-compose.dev.yml — W-F7 dev 用 host port forward(per docs/superpowers/008-feature-port-mapping.md)
+# docker-compose.dev.yml — W-F7 dev 用 host port forward(per docs/superpowers/011-feature-port-mapping.md)
 # 用法:docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 # 不寫進主 docker-compose.yml(避免 prod 誤暴露);僅 dev / debug 場景使用
 # 4 個 port 全綁 127.0.0.1(loopback only、不暴露 LAN)

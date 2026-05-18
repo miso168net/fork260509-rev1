@@ -5,7 +5,7 @@
 **Status**: Draft
 **Input**: User description: "F6 route-guard — 新增 rust-api 1 個 endpoint GET /route/isRouteExist?routeName=<name>;Protected + 無 Casbin policy;sys_menu 表全域存在性(filter deleted_at IS NULL + status='enabled');F4 envelope plain boolean;base-web src 零改動"
 
-**Source**: [`docs/superpowers/010-feature-route-guard.md`](../../docs/superpowers/010-feature-route-guard.md)(brainstorming 2026-05-18、1 顯式拍板 Q1 Auth=Protected + 6 自然推論)
+**Source**: [`docs/superpowers/013-feature-route-guard.md`](../../docs/superpowers/013-feature-route-guard.md)(brainstorming 2026-05-18、1 顯式拍板 Q1 Auth=Protected + 6 自然推論)
 
 **Authoritative parents**:
 - [`docs/INTEGRATION-DESIGN-A-RUST-NESTJS.md`](../../docs/INTEGRATION-DESIGN-A-RUST-NESTJS.md) §6.1 F6(`/route/{getConstantRoutes, isRouteExist}` + base vue-router guard 串接)

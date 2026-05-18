@@ -2,7 +2,7 @@
 
 **Feature**: W-F6 — tls-cert-management
 **Date**: 2026-05-18
-**Source**: [spec.md](spec.md) + [docs/superpowers/009-feature-tls-cert-management.md](../../docs/superpowers/009-feature-tls-cert-management.md)
+**Source**: [spec.md](spec.md) + [docs/superpowers/012-feature-tls-cert-management.md](../../docs/superpowers/012-feature-tls-cert-management.md)
 
 > Brainstorm 2 Q + Clarify 1 Q 已涵蓋主要架構決策。Research 主要驗證 docker compose / nginx / acme.sh 行為細節 + 確認可行性。
 

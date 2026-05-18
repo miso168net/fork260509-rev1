@@ -5,7 +5,7 @@
 **Status**: Draft
 **Input**: User description: "W-FA1 compose-nestjs-service — DESIGN-A 路線 Track DESIGN-A 專屬第一個 feature(P7 三件套 W-FA1/W-FA2/W-FA3 中最先動);把 nestjs service 加進 rev1 docker compose stack、走 profile=track-a 啟動模式、共享 rev1 既有 postgres + redis、JWT secret 透過 W-F4 _FILE pattern 與 rust-api 共享;範疇 B 中度(nestjs container healthy + JWT secret _FILE bridge + DB 共享同 schema + sys_tokens schema acceptance verify、不含 F10 application 邏輯);Dockerfile 沿用 fork(fork260509-soybean-admin-nestjs/backend/Dockerfile 不動 source);DB 共享同 instance/同 DB/同 schema(per F10 sys_tokens 設計 intent);不跑 nestjs prisma migrate / db seed(避免 break rust-api migration);JWT secret 透過 compose entrypoint sh wrapper bridge `_FILE` → env(不動 nestjs source code);Refresh token secret 獨立新增(fallback JWT_SECRET);Port:container 9528、host 127.0.0.1:11082 dev only;不含 nginx routing(W-FA2 範疇)、不含 sys_tokens prisma model 對齊(F10 範疇)"
 
-**Source**: [`docs/superpowers/011-feature-compose-nestjs-service.md`](../../docs/superpowers/011-feature-compose-nestjs-service.md)(brainstorming 2026-05-18、4 顯式拍板 Q + 3 自然推論)
+**Source**: [`docs/superpowers/014-feature-compose-nestjs-service.md`](../../docs/superpowers/014-feature-compose-nestjs-service.md)(brainstorming 2026-05-18、4 顯式拍板 Q + 3 自然推論)
 
 **Authoritative parents**:
 - [`docs/INTEGRATION-DESIGN-W-DEPLOYMENT.md`](../../docs/INTEGRATION-DESIGN-W-DEPLOYMENT.md) §3.4-A(nestjs service yaml 草稿)、§11 line 1114(W-FA1 scope)、§11.5(profile 啟動命令)

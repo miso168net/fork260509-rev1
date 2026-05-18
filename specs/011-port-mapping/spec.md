@@ -5,7 +5,7 @@
 **Status**: Draft
 **Input**: User description: "W-F7 port-mapping — dev docker-compose.dev.yml + 4 host port forward + CLAUDE.md/INTEGRATION-CHECKLIST 文件更新"
 
-**Source**: [`docs/superpowers/008-feature-port-mapping.md`](../../docs/superpowers/008-feature-port-mapping.md)(brainstorming 2026-05-17 session 完成、3 個 Q 拍板 + 1 處 self-review 補強)
+**Source**: [`docs/superpowers/011-feature-port-mapping.md`](../../docs/superpowers/011-feature-port-mapping.md)(brainstorming 2026-05-17 session 完成、3 個 Q 拍板 + 1 處 self-review 補強)
 
 **Authoritative parents**:
 - [`docs/INTEGRATION-DESIGN-W-DEPLOYMENT.md`](../../docs/INTEGRATION-DESIGN-W-DEPLOYMENT.md) §6.1(對外 / 容器內 Port 規劃 — dev 4 個 host port 表)、§6.3(dev vs prod host port 暴露差異)、§11.1(W-F7 scope 描述)、§11.2(P2 依賴序、W-F7 依賴 W-F3)、§11.3(Day 1 dev 部署形態含 W-F7)

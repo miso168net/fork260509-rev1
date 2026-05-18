@@ -11,7 +11,7 @@
 - [`docs/INTEGRATION-DESIGN-A-RUST-NESTJS.md`](../INTEGRATION-DESIGN-A-RUST-NESTJS.md) §6 F10(sys_tokens schema 共識「rust 主導 migration、nestjs 共用」)
 - [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md) v1.0.0(Principle IV「base 不改動邊界」— 沿用 fork260509-soybean-admin-nestjs Dockerfile + source、不動 fork 源倉;Principle V「漸進收縮 DESIGN-A → DESIGN-B」— nestjs 屬 transitional、DESIGN-B 退場時整段刪除)
 - [`docs/superpowers/006-feature-dockerfile-rust-api.md`](006-feature-dockerfile-rust-api.md) W-F1 (rev1 deploy 規約 image tagging convention 沿用、healthcheck pattern 參考)
-- [`docs/superpowers/009-feature-tls-cert-management.md`](009-feature-tls-cert-management.md) W-F6 (dev/prod multi-mode compose override pattern 沿用)
+- [`docs/superpowers/012-feature-tls-cert-management.md`](012-feature-tls-cert-management.md) W-F6 (dev/prod multi-mode compose override pattern 沿用)
 - 既有 [`fork260509-soybean-admin-nestjs/backend/Dockerfile`](../../fork260509-soybean-admin-nestjs/backend/Dockerfile)(W-FA1 build context、不動)
 - 既有 [`fork260509-soybean-admin-nestjs/docker-compose.yml`](../../fork260509-soybean-admin-nestjs/docker-compose.yml)(nestjs fork 自帶 compose、W-FA1 取結構參考但不沿用)
 - 既有 [`docker-compose.yml`](../../docker-compose.yml)(W-F3/W-F4 落地、W-FA1 加 nestjs service 條目)

@@ -5,7 +5,7 @@
 **Status**: Draft
 **Input**: User description: "W-F6 tls-cert-management — TLS 終止 + 對外 port 暴露 + prod cert lifecycle skeleton(dev 自簽 + acme.sh profile=prod)"
 
-**Source**: [`docs/superpowers/009-feature-tls-cert-management.md`](../../docs/superpowers/009-feature-tls-cert-management.md)(brainstorming 2026-05-18 session、Q1 Mid 範疇 + Q2 Conditional redirect 拍板)
+**Source**: [`docs/superpowers/012-feature-tls-cert-management.md`](../../docs/superpowers/012-feature-tls-cert-management.md)(brainstorming 2026-05-18 session、Q1 Mid 範疇 + Q2 Conditional redirect 拍板)
 
 **Authoritative parents**:
 - [`docs/INTEGRATION-DESIGN-W-DEPLOYMENT.md`](../../docs/INTEGRATION-DESIGN-W-DEPLOYMENT.md) §4(反向代理 + TLS)、§4.5(TLS cert 來源 — prod acme.sh / dev 自簽)、§6.1(11443 對外 HTTPS port)、§6.3(prod 只暴露 front-nginx 11080 / 11443)、§11.1(W-F6 scope)、§11.2(P2 依賴序 W-F5→W-F6→W-F7)

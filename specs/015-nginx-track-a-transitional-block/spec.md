@@ -3,9 +3,9 @@
 **Feature Branch**: `015-nginx-track-a-transitional-block`
 **Created**: 2026-05-18
 **Status**: Draft
-**Input**: User description: "W-FA2 nginx-track-a-transitional-block — per docs/superpowers/012-feature-nginx-track-a-transitional-block.md 的 brainstorm 設計。Phase W-7 Track DESIGN-A 三件套第二個 feature(W-FA1 後接續)、把 POST /api/auth/refreshToken 補上 nginx 反代到 nestjs upstream、用 inline TRANSITIONAL marker block(per DESIGN-A §2.2 convention)+ variable proxy_pass + resolver lazy DNS 設計(default profile / DESIGN-B 退場 nginx 仍可啟動);3 處 nginx server block 各加 ~9 行(default.conf dev 80 + dev 443 + default.conf.prod 443、prod 80 只 redirect 不加);改動範圍小、單段 outer commit、不動 worktree、不動 nestjs fork。"
+**Input**: User description: "W-FA2 nginx-track-a-transitional-block — per docs/superpowers/015-feature-nginx-track-a-transitional-block.md 的 brainstorm 設計。Phase W-7 Track DESIGN-A 三件套第二個 feature(W-FA1 後接續)、把 POST /api/auth/refreshToken 補上 nginx 反代到 nestjs upstream、用 inline TRANSITIONAL marker block(per DESIGN-A §2.2 convention)+ variable proxy_pass + resolver lazy DNS 設計(default profile / DESIGN-B 退場 nginx 仍可啟動);3 處 nginx server block 各加 ~9 行(default.conf dev 80 + dev 443 + default.conf.prod 443、prod 80 只 redirect 不加);改動範圍小、單段 outer commit、不動 worktree、不動 nestjs fork。"
 
-**Source**: [`docs/superpowers/012-feature-nginx-track-a-transitional-block.md`](../../docs/superpowers/012-feature-nginx-track-a-transitional-block.md)(brainstorming 2026-05-18、3 顯式拍板 Q + 5 自然推論)
+**Source**: [`docs/superpowers/015-feature-nginx-track-a-transitional-block.md`](../../docs/superpowers/015-feature-nginx-track-a-transitional-block.md)(brainstorming 2026-05-18、3 顯式拍板 Q + 5 自然推論)
 
 **Authoritative parents**:
 - [`docs/INTEGRATION-DESIGN-W-DEPLOYMENT.md`](../../docs/INTEGRATION-DESIGN-W-DEPLOYMENT.md) §4.3(track-a.inc 草稿;DESIGN-W 草稿用 port 3000、未拍板 profile-aware 機制)、§11 line 1115(W-FA2 scope 描述)
