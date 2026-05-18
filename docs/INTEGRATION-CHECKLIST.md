@@ -8,9 +8,9 @@
 
 ## 🎯 Current Focus
 
-**Phase**:application Phase 2(per DESIGN-A §6.1)— **F5.1 + F6 完成、剩 F7 / F8 / F9 / F10 / F11**;W deploy 並行 **W-2 P2:3/4 ✅、剩 W-F11**
-**Active feature**:無(F6 全完成、`/route/isRouteExist` endpoint 補完 base-web vue-router guard disambiguation 邏輯)
-**下一步**:F7 manage-crud-alignment(大、留 momentum 高峰) / F8 assign-users(小機械) / F9 systemManage-alias-router(thin wrapper) / W-F11 observability(水平擴展) / W-F6b acme cert acquisition(留 prod VPS)
+**Phase**:Phase W deploy P7 Track DESIGN-A 三件套啟動(W-FA1 進行中)— DESIGN-A 路線 deploy chain 起點;application Phase 2 並行 F5.1 + F6 完成
+**Active feature**:W-FA1 `014-compose-nestjs-service` 進行中(implement + acceptance PASS、待 commit)
+**下一步**:W-FA1 commit → W-FA2 nginx-track-a-transitional-block → F10 refresh-token-nestjs-bridge → W-FA3 cicd-nestjs-build-job;application 並行 F7 / F8 / F9 / W-F11 / W-F6b
 
 > **F5.1 階段同期(P2 主體解鎖)**:F5.1 base-web auth-login-and-dynamic-menu 已完成 merge(2026-05-15、outer `be6e237` + merge `e71aefe`、rust-api `a85e88c`),F5.2 Casbin redis pub-sub 與 F10/F14 同期。
 >
@@ -68,6 +68,22 @@
 | W-F6 | `tls-cert-management` | ✅ | ✅ | ✅ | ✅ | ✅ | **完成**(commit 上方;TLS 結構 + dev 自簽 + prod 80 redirect 443 + acme.sh skeleton;cert acquisition 留 W-F6b)|
 
 §11.2 規則:**W-1 P1 4 個(W-F1 / W-F2 / W-F3 / W-F4)為部署最低基礎、必先全部完成才能動 W-2 P2(W-F5 nginx 反向代理 / W-F6 TLS / W-F7 對外 port)**。**P1 全 4 個完成、P2 解鎖**(2026-05-15);**P2 W-F5 + W-F7 + W-F6 完成、剩 W-F11**(2026-05-18)。**W-2 P2:3/4**。
+
+---
+
+## Phase W-7 deploy Roadmap — Track DESIGN-A 三件套(per DESIGN-W §11 line 1114-1116)
+
+| # | Feature | Brainstorm | spec | plan | tasks | impl | 狀態 |
+|---|---|---|---|---|---|---|---|
+| W-FA1 | `compose-nestjs-service` | ✅ | ✅ | ✅ | ✅ | ✅ | **進行中**(implement + acceptance PASS、待 commit;SHA TBD)|
+| W-FA2 | `nginx-track-a-transitional-block` | — | — | — | — | — | 未啟 |
+| W-FA3 | `cicd-nestjs-build-job` | — | — | — | — | — | 未啟 |
+
+**W-FA1 implement-time discoveries**(2026-05-18):
+- **NODE_VERSION build-arg override**:fork Dockerfile `ARG NODE_VERSION=20.11.1` 配 `pnpm@9.1.2` 觸 `ERR_UNKNOWN_BUILTIN_MODULE`(pnpm 用 Node 20.12+ 才有的 `node:sea-config`)。Spec A-002 anticipated;build cmd 加 `--build-arg NODE_VERSION=22.11.0`(LTS)解。
+- **healthcheck endpoint amendment**(R-1):spec FR-008 原 `/v1/route/getConstantRoutes` 假設只觸 sys_menu 不依賴 schema 對齊;實際發現 nestjs prisma 期 `public.Status` PG enum、rust-api 用 SMALLINT 致 PG 42704 type-not-exist。**改 healthcheck 到 `/v1` root(`@Public @BypassTransform getHello()` 不查 DB)**。對齊 W-F4 R-001 amendment 模式、保證 healthcheck PASS 與 schema 對齊無關。spec FR-008 / contract C-C4 / verification C-V2/C-V7 同步調整(此次 commit 一起落)。
+- **image size 870MB**:NFR-001 SHOULD ≤ 500MB 偏大(Node 22 + multi-stage 含完整 node_modules)、屬 SHOULD 非 MUST、留 W-FA3 build 優化階段精修。
+- **sys_menu / sys_tokens schema 對齊**:sys_tokens 表存在(rust-api 已 migrate)、但 nestjs prisma model 用 PG enum `Status` 與 rust-api SMALLINT 分歧 — F10 範疇對齊 nestjs prisma model 到 rust-api schema(spec OOS-005)。
 
 ---
 

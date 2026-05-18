@@ -1,7 +1,8 @@
 # docker-compose.dev.yml — W-F7 dev 用 host port forward(per specs/011-port-mapping/)
 # 用法:docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --wait
+#       (DESIGN-A:加 --profile track-a 啟用 nestjs;per W-FA1)
 # 不寫進主 docker-compose.yml(避免 prod 誤暴露);僅 dev / debug 場景使用
-# 4 個 port 全綁 127.0.0.1(loopback only、不暴露 LAN)
+# 4(W-F7)→ 5(W-FA1)個 port 全綁 127.0.0.1(loopback only、不暴露 LAN)
 # 11443 HTTPS 留 W-F6 TLS feature;0.0.0.0 LAN binding 不支援
 
 services:
@@ -23,3 +24,7 @@ services:
   redis:
     ports:
       - "127.0.0.1:16379:6379"        # redis-cli / RedisInsight 直連
+
+  nestjs:                              # ★ W-FA1 新增(profile=track-a 啟用時才起)
+    ports:
+      - "127.0.0.1:11082:9528"        # nestjs 直連 dev only(per W-FA1 FR-011)

@@ -119,11 +119,13 @@ fork260509-rev1/                            ← workspace root（傘狀 repo rev
 |---|---|---|
 | Web (對外) | `:8080` | `:11080` |
 | Rust API（內部，僅 dev 期間 host 直連用） | `:10001` | `:11081` |
+| nestjs（對外、僅 dev 期間 host 直連、`--profile track-a` 啟用） | n/a | `:11082`（dev only、W-FA1 落地） |
 | Postgres | host `:5432` ↔ container `:5432` | container 內仍 `:5432`（不改）；host 暴露 `15432:5432` |
 | docker compose project name | `new-admin`（預設由目錄名衍生） | `rev1-admin`（透過 `COMPOSE_PROJECT_NAME` 環境變數設定） |
 
-**目前現況**（W-F6 + W-F7 落地、TLS 結構就位、3 種啟動模式）：
+**目前現況**（W-F6 + W-F7 + W-FA1 落地、TLS 結構就位、3 種啟動模式 + DESIGN-A track-a profile 變體）：
 - **dev**（`-f -f dev.yml`）：127.0.0.1 loopback、HTTP `:11080` + HTTPS `:11443`（自簽 cert）+ 直連 backend port `:11081 :15432 :16379`（範例見 §5.2.1）
+- **dev DESIGN-A**（`-f -f dev.yml --profile track-a`）：上一行同 + nestjs container 加入 stack、host `:11082` dev only 直連 nestjs container `:9528`（W-FA1 落地、profile=track-a 啟用）
 - **prod baseline**（`-f -f prod.yml`、不帶 `--profile prod`）：0.0.0.0 對外、80 強制 redirect 443、acme.sh 不啟（需先 seed cert into named volume `front_nginx_certs`）
 - **prod + acme**（`-f -f prod.yml --profile prod`）：同 prod baseline + acme.sh skeleton（實際 cert acquisition 留 W-F6b、需真實 domain + DNS provider）
 
@@ -159,6 +161,24 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --wait
 # === prod + acme（7 service、acme skeleton sanity 用）===
 docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile prod up -d --wait
 docker compose exec acme acme.sh --version    # sanity check
+
+# === DESIGN-A 路線 dev（加 --profile track-a 啟 nestjs、共 7 service、W-FA1 落地）===
+# 第一次：build nestjs image（cold ~3-5 min；NODE_VERSION=22.11.0 為 pnpm 9.1.2 必要 override；
+# spec assumption A-002「build 失敗於 NODE_VERSION 對齊 build-arg 處理」現實場景）
+DOCKER_BUILDKIT=1 docker build \
+  --build-arg NODE_VERSION=22.11.0 \
+  -f fork260509-soybean-admin-nestjs/backend/Dockerfile \
+  -t nestjs:rev1-admin-nestjs \
+  fork260509-soybean-admin-nestjs/backend/
+
+# 第一次：備本機 refresh_token_secret.txt（gitignored、空檔走 fallback to JWT_SECRET）
+touch deploy/secrets/refresh_token_secret.txt
+# 或：openssl rand -hex 32 > deploy/secrets/refresh_token_secret.txt  # 獨立 secret
+
+# 啟 dev with track-a profile（7 service healthy）
+docker compose -f docker-compose.yml -f docker-compose.dev.yml --profile track-a up -d --wait
+docker compose ps    # 7 service healthy(含 nestjs)
+curl -fsS http://127.0.0.1:11082/v1                                 # nestjs 直連 root @Public（W-FA1 healthcheck endpoint）
 ```
 
 > WSL2 NAT mode 不可用 `127.0.0.1` — 設 `.wslconfig` `[wsl2] networkingMode=mirrored`（Win11 22H2+ 預設）、或用 `wsl hostname -I` 拿 WSL IP。
@@ -418,8 +438,8 @@ git log --oneline -5                  # 最近 5 個外層 commit，看 pin 變�
 ## 10. 目前活躍 spec-kit feature
 
 <!-- SPECKIT START -->
-- **Active feature**: 無(F6 全完成、application Phase 2 第二個 feature 達成)
-- **Phase**: Done
-- **Previous features**: W-F1 merge `430ada9` / W-F2 merge `ac79ed0` / W-F3 merge `04671d0` / W-F4 merge `ab658d7` / W-F5 merge `dff14c2` / W-F7 merge `62b3475` / W-F6 merge `5e38030` / F6 merge `a431215`(均已 push、acceptance PASS;Phase W deploy P2 進度 **3/4**、F6 為 application Phase 2 第二個 feature)
+- **Active feature**: W-FA1 `014-compose-nestjs-service`([spec](specs/014-compose-nestjs-service/spec.md) / [plan](specs/014-compose-nestjs-service/plan.md))
+- **Phase**: Planning(spec + plan + research + data-model + 3 contracts + quickstart 完成;下一步 `/speckit-tasks`)
+- **Previous features**: W-F1 merge `430ada9` / W-F2 merge `ac79ed0` / W-F3 merge `04671d0` / W-F4 merge `ab658d7` / W-F5 merge `dff14c2` / W-F7 merge `62b3475` / W-F6 merge `5e38030` / F6 merge `a431215`(均已 push、acceptance PASS;Phase W deploy P2 進度 **3/4**、F6 為 application Phase 2 第二個 feature;W-FA1 為 Phase W-7 Track DESIGN-A 三件套第一個)
 <!-- SPECKIT END -->
 

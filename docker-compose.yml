@@ -23,7 +23,13 @@
 # - backup / DR → W-F15-16
 # - CI/CD pipeline → W-F17-18
 # - cleanup-job / outbox-worker → W-F9-10
-# - nestjs(Track DESIGN-A)→ W-FA1
+#
+# W-FA1 改動範圍(per specs/014-compose-nestjs-service/):
+# - 加 nestjs service block(profile=track-a、~30 行 yaml)
+# - secrets: section 加 refresh_token_secret 條目
+# - 不動既有 6 service / network / volumes / secrets
+# - 透過 entrypoint sh wrapper bridge 4 個 _FILE secret → env
+# - 沿用 fork260509-soybean-admin-nestjs/backend/Dockerfile(不動 nestjs source、per FR-018)
 # =============================================================================
 
 services:
@@ -193,9 +199,73 @@ services:
       - acme_email
     restart: unless-stopped
 
+  # ---------------------------------------------------------------------------
+  # nestjs(W-FA1 Track DESIGN-A transitional service)
+  # per specs/014-compose-nestjs-service/contracts/compose-contract.md C-C1~C-C4
+  # per specs/014-compose-nestjs-service/contracts/secret-contract.md C-S1~C-S2
+  # - profiles: ["track-a"] — DESIGN-A 路線才啟用;DESIGN-B 不帶 profile 即不啟
+  # - entrypoint sh wrapper bridge 4 個 _FILE secret → env(nestjs fork source 不改、F10 範疇原生支援)
+  # - REFRESH_TOKEN_SECRET 走 robust fallback(file 缺 / 空都 fallback JWT_SECRET、per C-S2)
+  # - depends_on 3 service(migration completed / postgres healthy / redis healthy、對齊 W-F3 rust-api pattern)
+  # - healthcheck 走 /v1 root endpoint(W-FA1 implement R-1 amendment、見下方 healthcheck block 註解)
+  # - 共享 rev1 既有 postgres + redis(同 instance 同 DB schema、per Q3 + F10 設計 intent)
+  # ---------------------------------------------------------------------------
+  nestjs:
+    image: nestjs:${NESTJS_IMAGE_TAG:-rev1-admin-nestjs}
+    profiles: ["track-a"]
+    entrypoint:
+      - sh
+      - -c
+      - |
+        export JWT_SECRET=$$(cat /run/secrets/jwt_secret)
+        RTS=$$(cat /run/secrets/refresh_token_secret 2>/dev/null)
+        export REFRESH_TOKEN_SECRET=$${RTS:-$$JWT_SECRET}
+        export DATABASE_URL=$$(cat /run/secrets/database_url)
+        export REDIS_PASSWORD=$$(cat /run/secrets/redis_password)
+        exec node dist/apps/base-system/src/main
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      NODE_ENV: production
+      APP_PORT: 9528
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+      JWT_EXPIRE_IN: 3600
+      REFRESH_TOKEN_EXPIRE_IN: 7200
+      CASBIN_MODEL: model.conf
+      DOC_SWAGGER_ENABLE: "false"
+    secrets:
+      - jwt_secret
+      - database_url
+      - redis_password
+      - refresh_token_secret
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # W-FA1 implement-time discovery(R-1 amendment):
+    # spec FR-008 原 healthcheck endpoint `/v1/route/getConstantRoutes` 假設只觸 sys_menu / 不依賴 schema 對齊;
+    # 實際發現 nestjs prisma client 期 `public.Status` PG enum、rust-api migration 不建(sea_orm 用 SMALLINT 表 status)
+    # 致 prisma 查 sys_menu 失敗 with PG 42704 type-not-exist;
+    # 改用 `/v1` root endpoint(app.controller.ts:45-50 `@Public() @BypassTransform() getHello()` 不查 DB)
+    # 保證 healthcheck PASS 與 schema 是否對齊無關。
+    # sys_menu / sys_tokens schema 對齊驗 + nestjs prisma model rebuild 留 F10 範疇(per spec OOS-005)。
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9528/v1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - internal
+    restart: unless-stopped
+
 # =============================================================================
 # Secrets(per W-F4 spec FR-004 / contracts C-S3)
-# 5 entries → 6 entries(W-F6 加 acme_email)
+# 5 entries → 6 entries(W-F6 加 acme_email)→ 7 entries(W-FA1 加 refresh_token_secret)
 # operator 須先 cp .txt.example 為 .txt + 編輯填值,否則 compose config 渲染抓 file not found
 # =============================================================================
 secrets:
@@ -211,6 +281,8 @@ secrets:
     file: ./deploy/secrets/redis_password.txt
   acme_email:
     file: ./deploy/secrets/acme_email.txt
+  refresh_token_secret:
+    file: ./deploy/secrets/refresh_token_secret.txt
 
 # =============================================================================
 # Networks(W-F3 維持)
