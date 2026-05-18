@@ -445,8 +445,8 @@ git log --oneline -5                  # 最近 5 個外層 commit，看 pin 變�
 ## 10. 目前活躍 spec-kit feature
 
 <!-- SPECKIT START -->
-- **Active feature**: 無(W-FA2 全完成、merge `<sha-pending>` 已推 origin/rev1-admin-root)
+- **Active feature**: 無(W-FA2 全完成、merge `c5b7840` 已推 origin/rev1-admin-root)
 - **Phase**: Phase W deploy P7 Track DESIGN-A 三件套 W-FA1 + W-FA2 ✅ / 剩 W-FA3;下一步 F10 refresh-token-nestjs-bridge → W-FA3
-- **Previous features**: W-F1 merge `430ada9` / W-F2 merge `ac79ed0` / W-F3 merge `04671d0` / W-F4 merge `ab658d7` / W-F5 merge `dff14c2` / W-F7 merge `62b3475` / W-F6 merge `5e38030` / F6 merge `a431215` / W-FA1 merge `b095d55` / W-FA2 merge `<sha-pending>`(均已 push、acceptance PASS;Phase W deploy P2 進度 **3/4**、F6 為 application Phase 2 第二個 feature;W-FA1 為 Phase W-7 Track DESIGN-A 三件套第一個、W-FA2 為第二個)
+- **Previous features**: W-F1 merge `430ada9` / W-F2 merge `ac79ed0` / W-F3 merge `04671d0` / W-F4 merge `ab658d7` / W-F5 merge `dff14c2` / W-F7 merge `62b3475` / W-F6 merge `5e38030` / F6 merge `a431215` / W-FA1 merge `b095d55` / W-FA2 merge `c5b7840`(均已 push、acceptance PASS;Phase W deploy P2 進度 **3/4**、F6 為 application Phase 2 第二個 feature;W-FA1 為 Phase W-7 Track DESIGN-A 三件套第一個、W-FA2 為第二個)
 <!-- SPECKIT END -->
 
