@@ -163,13 +163,9 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile prod u
 docker compose exec acme acme.sh --version    # sanity check
 
 # === DESIGN-A 路線 dev（加 --profile track-a 啟 nestjs、共 7 service、W-FA1 落地）===
-# 第一次：build nestjs image（cold ~3-5 min；NODE_VERSION=22.11.0 為 pnpm 9.1.2 必要 override；
-# spec assumption A-002「build 失敗於 NODE_VERSION 對齊 build-arg 處理」現實場景）
-DOCKER_BUILDKIT=1 docker build \
-  --build-arg NODE_VERSION=22.11.0 \
-  -f fork260509-soybean-admin-nestjs/backend/Dockerfile \
-  -t nestjs:rev1-admin-nestjs \
-  fork260509-soybean-admin-nestjs/backend/
+# 第一次：build nestjs image（cold ~3-5 min；NODE_VERSION=22.11.0 為 pnpm 9.1.2 必要 override，
+# 內建於 script，per W-FA1 spec assumption A-002）
+bash deploy/build-nestjs.sh
 
 # 第一次：備本機 refresh_token_secret.txt（gitignored、空檔走 fallback to JWT_SECRET）
 touch deploy/secrets/refresh_token_secret.txt
@@ -445,8 +441,8 @@ git log --oneline -5                  # 最近 5 個外層 commit，看 pin 變�
 ## 10. 目前活躍 spec-kit feature
 
 <!-- SPECKIT START -->
-- **Active feature**: 無(W-FA2 全完成、merge `c5b7840` 已推 origin/rev1-admin-root)
-- **Phase**: Phase W deploy P7 Track DESIGN-A 三件套 W-FA1 + W-FA2 ✅ / 剩 W-FA3;下一步 F10 refresh-token-nestjs-bridge → W-FA3
-- **Previous features**: W-F1 merge `430ada9` / W-F2 merge `ac79ed0` / W-F3 merge `04671d0` / W-F4 merge `ab658d7` / W-F5 merge `dff14c2` / W-F7 merge `62b3475` / W-F6 merge `5e38030` / F6 merge `a431215` / W-FA1 merge `b095d55` / W-FA2 merge `c5b7840`(均已 push、acceptance PASS;Phase W deploy P2 進度 **3/4**、F6 為 application Phase 2 第二個 feature;W-FA1 為 Phase W-7 Track DESIGN-A 三件套第一個、W-FA2 為第二個)
+- **Active feature**: W-FA3 `016-cicd-nestjs-build-job`([spec](specs/016-cicd-nestjs-build-job/spec.md) / [plan](specs/016-cicd-nestjs-build-job/plan.md))
+- **Phase**: Planning(spec + plan + research + data-model + 2 contracts + quickstart 完成;下一步 `/speckit-tasks`)
+- **Previous features**: W-F1 merge `430ada9` / W-F2 merge `ac79ed0` / W-F3 merge `04671d0` / W-F4 merge `ab658d7` / W-F5 merge `dff14c2` / W-F7 merge `62b3475` / W-F6 merge `5e38030` / F6 merge `a431215` / W-FA1 merge `b095d55` / W-FA2 merge `c5b7840`(均已 push、acceptance PASS;Phase W deploy P2 進度 **3/4**、F6 為 application Phase 2 第二個 feature;W-FA1 為 Phase W-7 Track DESIGN-A 三件套第一個、W-FA2 為第二個、W-FA3 為第三個收尾)
 <!-- SPECKIT END -->
 
