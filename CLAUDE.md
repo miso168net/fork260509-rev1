@@ -441,8 +441,8 @@ git log --oneline -5                  # 最近 5 個外層 commit，看 pin 變�
 ## 10. 目前活躍 spec-kit feature
 
 <!-- SPECKIT START -->
-- **Active feature**: F10.1 `018-rust-jwt-refresh-token-signing`([spec](specs/018-rust-jwt-refresh-token-signing/spec.md) / [plan](specs/018-rust-jwt-refresh-token-signing/plan.md))
-- **Phase**: Planning(brainstorm + spec + 3-Q clarify + plan + Phase 0 research(8 finding)+ Phase 1 data-model/contracts/quickstart 完成;Constitution Check 17 PASS / 11 N/A / 0 violation;5-6 file rust patch + 2 unit test ~85 LOC、兩段式 commit;下一步 `/speckit-tasks`)
-- **Previous features**: W-F1 merge `430ada9` / W-F2 merge `ac79ed0` / W-F3 merge `04671d0` / W-F4 merge `ab658d7` / W-F5 merge `dff14c2` / W-F7 merge `62b3475` / W-F6 merge `5e38030` / F6 merge `a431215` / W-FA1 merge `b095d55` / W-FA2 merge `c5b7840` / W-FA3 merge `f23f38e` / F10 merge `8f0e84c`(均已 push、acceptance PASS;Phase W deploy P2 進度 **3/4**、F6 為 application Phase 2 第二個 feature;W-FA1/W-FA2/W-FA3 為 Phase W-7 Track DESIGN-A 三件套全完成;F10 為 application Phase 4 第一個、F10.1 為第二個)
+- **Active feature**: F10.2 `019-rust-tokenstatus-string-align`([spec](specs/019-rust-tokenstatus-string-align/spec.md) / [plan](specs/019-rust-tokenstatus-string-align/plan.md))
+- **Phase**: Planning(brainstorm + spec + clarify(無 question、4-Q brainstorm 已拍板)+ plan + Phase 0 research(5 finding 含 grep pre-check FR-019 + R-3 PASS)+ Phase 1 data-model/contracts/quickstart 完成;Constitution Check 17 PASS / 13 N/A / 0 violation;1 file rust patch + 1 unit test ~18 LOC、兩段式 commit、0 docker-compose 改;下一步 `/speckit-tasks`)
+- **Previous features**: W-F1 merge `430ada9` / W-F2 merge `ac79ed0` / W-F3 merge `04671d0` / W-F4 merge `ab658d7` / W-F5 merge `dff14c2` / W-F7 merge `62b3475` / W-F6 merge `5e38030` / F6 merge `a431215` / W-FA1 merge `b095d55` / W-FA2 merge `c5b7840` / W-FA3 merge `f23f38e` / F10 merge `8f0e84c` / F10.1 merge `48b70e6`(均已 push、acceptance PASS;Phase W deploy P2 進度 **3/4**、F6 為 application Phase 2 第二個 feature;W-FA1/W-FA2/W-FA3 為 Phase W-7 Track DESIGN-A 三件套全完成;F10 為 application Phase 4 第一個、F10.1 為第二個、F10.2 為第三個收尾)
 <!-- SPECKIT END -->
 
