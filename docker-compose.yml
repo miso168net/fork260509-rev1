@@ -115,10 +115,12 @@ services:
     environment:
       TZ: ${TZ:-Asia/Shanghai}
       APP_JWT_JWT_SECRET_FILE: /run/secrets/jwt_secret
+      APP_JWT_REFRESH_SECRET_FILE: /run/secrets/refresh_token_secret
       APP_DATABASE_URL_FILE: /run/secrets/database_url
       APP_REDIS_URL_FILE: /run/secrets/redis_url
     secrets:
       - jwt_secret
+      - refresh_token_secret
       - database_url
       - redis_url
     depends_on:
