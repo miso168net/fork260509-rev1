@@ -441,8 +441,8 @@ git log --oneline -5                  # 最近 5 個外層 commit，看 pin 變�
 ## 10. 目前活躍 spec-kit feature
 
 <!-- SPECKIT START -->
-- **Active feature**: W-FA3 `016-cicd-nestjs-build-job`([spec](specs/016-cicd-nestjs-build-job/spec.md) / [plan](specs/016-cicd-nestjs-build-job/plan.md))
-- **Phase**: Planning(spec + plan + research + data-model + 2 contracts + quickstart 完成;下一步 `/speckit-tasks`)
-- **Previous features**: W-F1 merge `430ada9` / W-F2 merge `ac79ed0` / W-F3 merge `04671d0` / W-F4 merge `ab658d7` / W-F5 merge `dff14c2` / W-F7 merge `62b3475` / W-F6 merge `5e38030` / F6 merge `a431215` / W-FA1 merge `b095d55` / W-FA2 merge `c5b7840`(均已 push、acceptance PASS;Phase W deploy P2 進度 **3/4**、F6 為 application Phase 2 第二個 feature;W-FA1 為 Phase W-7 Track DESIGN-A 三件套第一個、W-FA2 為第二個、W-FA3 為第三個收尾)
+- **Active feature**: F10 `017-refresh-token-nestjs-bridge`([spec](specs/017-refresh-token-nestjs-bridge/spec.md) / [plan](specs/017-refresh-token-nestjs-bridge/plan.md))
+- **Phase**: Planning(spec + clarify + plan + Phase 0 research + Phase 1 data-model/contracts/quickstart 完成;Plan 階段 Option A reset = wire-up + friction 紀錄 feature、0 rust patch、拆 F10.1/F10.2 follow-up;下一步 `/speckit-tasks`)
+- **Previous features**: W-F1 merge `430ada9` / W-F2 merge `ac79ed0` / W-F3 merge `04671d0` / W-F4 merge `ab658d7` / W-F5 merge `dff14c2` / W-F7 merge `62b3475` / W-F6 merge `5e38030` / F6 merge `a431215` / W-FA1 merge `b095d55` / W-FA2 merge `c5b7840` / W-FA3 merge `f23f38e`(均已 push、acceptance PASS;Phase W deploy P2 進度 **3/4**、F6 為 application Phase 2 第二個 feature;W-FA1/W-FA2/W-FA3 為 Phase W-7 Track DESIGN-A 三件套全完成;F10 為 application Phase 4 第一個)
 <!-- SPECKIT END -->
 
