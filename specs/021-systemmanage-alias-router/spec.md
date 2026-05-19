@@ -13,7 +13,7 @@
 - [`docs/INTEGRATION-DESIGN-B-RUST-ONLY.md`](../../docs/INTEGRATION-DESIGN-B-RUST-ONLY.md) §4.2 + §6(F9 在 DESIGN-B 完全繼承、identical)
 - [`docs/INTEGRATION-RESEARCH.md`](../../docs/INTEGRATION-RESEARCH.md) §6.2 方案 B「後端加 /systemManage/* alias router」(F9 主來源、明確選 rust 實作、重用既有 service)
 - [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md) v1.0.0(Principle I「RBAC fail-safe」+ IV「base 不改動邊界」+ V「漸進收縮」— F9 alias + stub 為 DESIGN-A 過渡、未來升級路徑明確)
-- 既有 rust `SysUserApi` / `SysRoleApi` / `SysMenuApi`(全有 CRUD + paginated handler、F9 加 5 個新 handler:`update_user_post` / `delete_user_by_body` / `batch_delete_users` / `get_all_roles` / `get_all_pages`)
+- 既有 rust `SysUserApi` / `SysRoleApi` / `SysMenuApi`(全有 CRUD + paginated handler、F9 加 4 個新 handler:`delete_user_by_body` / `batch_delete_users` / `get_all_roles` / `get_all_pages`、`update_user` 既有 handler 由 F9 alias POST mount 重用、per research.md R-Q1)
 - 既有 rust router 結構(`rust-api/server/router/src/admin/`、F11 後共 13 個 route file、F9 新建第 14 個:`sys_system_manage_route.rs`)
 - 既有 F11 Casbin policy seed pattern(`m20260519_a_f11_extracted_stubs_seed.rs`、F9 沿用 INSERT casbin_rule pattern、v4='' baseline)
 - 既有 F5.1 seed user(Soybean/ROLE_SUPER、Administrator/ROLE_ADMIN、GeneralUser/ROLE_USER、3 user 共密碼 `123456`)
@@ -28,7 +28,7 @@
 | 2 | `/getAllRoles` | GET | **新做** `SysRoleApi::get_all_roles` + `SysRoleService::find_all_enabled` |
 | 3 | `/getUserList` | GET | mount `SysUserApi::get_paginated_users` 直接重用 |
 | 4 | `/addUser` | POST | mount `SysUserApi::create_user` 直接重用 |
-| 5 | `/updateUser` | POST | **變形 wrapper** `SysUserApi::update_user_post`(重用 `UpdateUserInput` DTO → call `SysUserService::update_user`) |
+| 5 | `/updateUser` | POST | **重用直接 mount** `SysUserApi::update_user`(既有 PUT handler method-agnostic、F9 POST alias mount 同 handler + `ValidatedForm<UpdateUserInput>` body extractor、per research.md R-Q1) |
 | 6 | `/deleteUser` `{id}` | DELETE | **變形 wrapper** `SysUserApi::delete_user_by_body`(body 抽 id → call `SysUserService::delete_user`) |
 | 7 | `/batchDeleteUser` `{ids}` | DELETE | **新做 stub** `SysUserApi::batch_delete_users`(per-row loop call + counter、永遠 200 + `{deletedCount: N}`) |
 | 8 | `/getMenuList/v2` | GET | mount `SysMenuApi::get_menu_list` 直接重用 |
@@ -68,7 +68,7 @@
 
 - **Q3 (brainstorm)**: batchDeleteUser stub 核心行為 per-row loop + audit + 無 batch tx + 無 casbin cleanup(DESIGN-A 寫明);response shape + partial failure 怎麼處理?→ **A:Option B — 永遠 200 + `{deletedCount: N}` partial-success counted**。理由:(1) per-row loop call `SysUserService::delete_user`(既有 service 有 soft delete + audit hook、F9 不另寫);(2) 中途 fail 不快、continue loop、success counter++、結束同步累計達成 N;(3) 永遠 HTTP 200 + envelope `{code:0, data: {deletedCount: N}, msg:"success", success:true}` — pragmatic stub、前端能看 deletedCount 判斷部分成功;(4) 與 DESIGN-A「無 atomic rollback」字面一致(中途失敗已刪部分仍 soft-deleted、不還原);LOC ~25-30。對比:Option A 全 success 才 200、否則 4xx HTTP 4xx 與「部分已刪」語意矛盾;Option C `{success: [ids], failed: [ids]}` stub over-engineering;Option D 200 + 空 envelope 前端不知刪了多少。
 
-- **Q4 (brainstorm)**: F9 10 條 alias 跨 user/role/menu 三個 entity、5 個新/變形 handler 該集中還是拆到 entity 檔?→ **A:Option B — wrapper handler 加到對應 entity api 檔、route 集中新建 `sys_system_manage_route.rs`**。理由:(1) 5 個新 handler 邏輯與其 service 同檔聚集:`update_user_post` / `delete_user_by_body` / `batch_delete_users` 進 `sys_user_api.rs`;`get_all_roles` 進 `sys_role_api.rs`;`get_all_pages` 進 `sys_menu_api.rs`;(2) route 集中新建 `sys_system_manage_route.rs` — alias 是「虛擬路徑」、跟 user/role/menu route 平行存在、集中一檔一眼看完 10 條 mount;(3) F9 file 改動 ~12 file:7 改 + 2 新建(route + migration)+ 3 register/mod;(4) 未來 user CRUD 邏輯改 → 跳 1 個 file 即可。對比:Option A 全集中 sys_system_manage_*_route + _api 對齊 F11 sys_mock_* pattern 但 5 個 handler 邏輯與 service 拆開;Option C 全塞既有 entity route 不集中 alias 邏輯散落三檔。
+- **Q4 (brainstorm)**: F9 10 條 alias 跨 user/role/menu 三個 entity、5 個新/變形 handler 該集中還是拆到 entity 檔?→ **A:Option B — wrapper handler 加到對應 entity api 檔、route 集中新建 `sys_system_manage_route.rs`**。理由:(1) 4 個新 handler 邏輯與其 service 同檔聚集:`delete_user_by_body` / `batch_delete_users` 進 `sys_user_api.rs`;`get_all_roles` 進 `sys_role_api.rs`;`get_all_pages` 進 `sys_menu_api.rs`;`update_user` 既有 handler 由 alias POST mount 重用(per research.md R-Q1、不需新做 `update_user_post`);(2) route 集中新建 `sys_system_manage_route.rs` — alias 是「虛擬路徑」、跟 user/role/menu route 平行存在、集中一檔一眼看完 10 條 mount;(3) F9 file 改動 ~12 file:7 改 + 2 新建(route + migration)+ 3 register/mod;(4) 未來 user CRUD 邏輯改 → 跳 1 個 file 即可。對比:Option A 全集中 sys_system_manage_*_route + _api 對齊 F11 sys_mock_* pattern 但 4 個 handler 邏輯與 service 拆開;Option C 全塞既有 entity route 不集中 alias 邏輯散落三檔。
 
 - **Q5 (brainstorm)**: getAllPages stub 該回什麼 shape?base-web manage/menu 用此 API 綁定頁面、回空徱底見不到頁面。→ **A:Option C — 回 menu 表 name list 簡單 SQL**。理由:(1) 新 `SysMenuService::find_all_page_keys` = `SELECT DISTINCT name FROM sys_menu WHERE deleted_at IS NULL`(F3 soft delete 過濾隱含);(2) 反映實際 sys_menu 既有 page key、`manage/menu` 綁頁面下拉能體驗 menu 綁定 demo;(3) 不是真 stub、是「最簡實作」— 等同把 Q1 對 getAllPages 從 stub 升級為「最簡 SQL 真實作」;LOC ~15-20。對比:Option A hardcoded 3-5 個 page key 不反映 sys_menu 實際資料;Option B 回空 array demo 體驗破損;Option D 回 501 NotImplemented 與 DESIGN-A「抽離項必須註冊」紀律矛盾。
 
@@ -101,7 +101,7 @@ operator 用 `Soybean` user(ROLE_SUPER)login 拿 access_token → 用該 token �
    - `GET /api/systemManage/getMenuTree` → 預期 HTTP 200 + body envelope + data: menu tree
    ,**Then** 5/5 endpoint HTTP 200 + envelope `{code:0, data, msg:"success", success:true}`、各 endpoint data shape 對齊既有 rust handler 結果。
 
-3. **Given** US1.1 拿到 Soybean access_token,**When** 3 個變形 wrapper endpoint curl:
+3. **Given** US1.1 拿到 Soybean access_token,**When** 3 個 user-CRUD endpoint curl(1 個 alias mount + 2 個變形 wrapper/新 stub):
    - `POST /api/systemManage/updateUser` body `{id, username, ...}` → 預期 HTTP 200 + body envelope + 對齊既有 PUT /user 行為(若 id 不存在則回 envelope error code)
    - `DELETE /api/systemManage/deleteUser` body `{id: "non-existent-id"}` → 預期 HTTP 200 + body envelope(若 id 不存在則回 envelope error code)
    - `DELETE /api/systemManage/batchDeleteUser` body `{ids: ["id1", "id2", "non-existent"]}` → 預期 HTTP 200 + body envelope `{code:0, data: {deletedCount: N}, msg:"success", success:true}`、N ≤ 3
@@ -174,7 +174,7 @@ operator 跑 F9 acceptance 前 / 後查 postgres `casbin_rule` 表確認 F9 migr
 ### Functional Requirements
 
 - **FR-001**: F9 MUST mount 5 個重用 handler 到 `/systemManage/*` 路徑:`GET /getRoleList` → `SysRoleApi::get_paginated_roles`、`GET /getUserList` → `SysUserApi::get_paginated_users`、`POST /addUser` → `SysUserApi::create_user`、`GET /getMenuList/v2` → `SysMenuApi::get_menu_list`、`GET /getMenuTree` → `SysMenuApi::tree_menu`。
-- **FR-002**: F9 MUST 加 `POST /systemManage/updateUser` 變形 wrapper handler `SysUserApi::update_user_post`(在 `sys_user_api.rs` 加 fn、重用既有 `UpdateUserInput` DTO、call `SysUserService::update_user`)。
+- **FR-002**: F9 MUST mount `POST /systemManage/updateUser` 重用既有 `SysUserApi::update_user` handler(per research.md R-Q1:既有 handler 用 `ValidatedForm<UpdateUserInput>` body extractor、method-agnostic、F9 POST alias mount 同 handler 不需新做 wrapper)。
 - **FR-003**: F9 MUST 加 `DELETE /systemManage/deleteUser` 變形 wrapper handler `SysUserApi::delete_user_by_body`(在 `sys_user_api.rs` 加 fn、body 抽 `{id}`、call `SysUserService::delete_user`);**新加 DTO** `DeleteUserByBodyInput { id: String }`。
 - **FR-004**: F9 MUST 加 `DELETE /systemManage/batchDeleteUser` 新做 stub handler `SysUserApi::batch_delete_users`(在 `sys_user_api.rs` 加 fn、body 接 `{ids: Vec<String>}`、per-row loop call `SysUserService::delete_user`、success counter++、永遠回 HTTP 200 + envelope `{code:0, data: {deletedCount: N}, msg:"success", success:true}`、N ≤ ids.length);**新加 DTO** `BatchDeleteUserInput { ids: Vec<String> }`。
 - **FR-005**: F9 MUST 加 `GET /systemManage/getAllRoles` 新做完整 handler `SysRoleApi::get_all_roles`(在 `sys_role_api.rs` 加 fn)+ service method `SysRoleService::find_all_enabled`(在 `sys_role_service.rs` 加 fn、`SELECT * FROM sys_role WHERE status = Enabled AND deleted_at IS NULL`)、回 HTTP 200 + envelope `data: Vec<Role>`。
@@ -187,7 +187,7 @@ operator 跑 F9 acceptance 前 / 後查 postgres `casbin_rule` 表確認 F9 migr
 - **FR-012**: F9 MUST 不動 `docker-compose.yml` / `docker-compose.dev.yml` / `docker-compose.prod.yml`(W-FA1 既有 wire 已涵蓋、F9 不加新 envvar / secret)。
 - **FR-013**: F9 MUST 不動 `deploy/front-nginx/conf.d/default.conf` / nginx config(alias 在 rust router 註冊、nginx 透明、per DESIGN-A §3.1)。
 - **FR-014**: F9 MUST 不動 `rust-api/migration/src/datas/` 既有 migration 檔(F9 新建 1 個 single migration、不改既有 F1/F2.1/F3/F4/F5.1/F6/F11 migration、per Constitution Principle IV「base 不改動邊界」)。
-- **FR-015**: F9 commit 模式 = **兩段式**(per CLAUDE.md §6.1):rust-api worktree 1 commit(~12 file ~330 LOC)+ outer 1-2 commit + merge `--no-ff` + SHA fill follow-up;**無 docker-compose.yml 改**(對比 F10.1)。
+- **FR-015**: F9 commit 模式 = **兩段式**(per CLAUDE.md §6.1):rust-api worktree 1 commit(~12 file ~315 LOC、per research.md R-Q1 修正)+ outer 1-2 commit + merge `--no-ff` + SHA fill follow-up;**無 docker-compose.yml 改**(對比 F10.1)。
 - **FR-016**: F9 MUST 不寫 sys_operation_log audit log 額外於 service hook(per Q3 拍板、F9 stub 直接 call 既有 service、繼承既有 audit hook)。但 batchDeleteUser per-row loop call 既有 `SysUserService::delete_user` 預期觸發 audit hook(per row 寫入 sys_operation_log)、繼承 §1.5 全域 audit 紀律。
 - **FR-017**: F9 MUST 不加 rust unit test(per F11 Q3、wrapper 邏輯 stack-可見 / batchDelete loop 簡單 / curl 驗即可)。
 - **FR-018**: F9 MUST 不加 input validation 比 serde 預設更嚴(per F11 Q3、用 serde `Deserialize` derive 預設行為、reject malformed JSON、不加自訂 message)。
@@ -203,7 +203,7 @@ operator 跑 F9 acceptance 前 / 後查 postgres `casbin_rule` 表確認 F9 migr
 ### Non-Functional Requirements
 
 - **NFR-001**: F9 acceptance 跑時間 SHOULD ≤ 15s(10 個 C-V + 10 endpoint curl + 1 GeneralUser deny curl + 1 psql + 1 audit grep + 3 既有 endpoint regression、不含 stack 啟動 + rust image rebuild)。
-- **NFR-002**: F9 spec / plan / tasks 規模 SHOULD 對齊 ~12-file rust-source feature 規模(~22-25 task、~280-320 行 spec、12 file ~330 LOC code、per brainstorm Section 2 file 結構)。F11 13-file 為更近 reference(~24 task)、F9 因加 service layer + 多 entity 而略增。
+- **NFR-002**: F9 spec / plan / tasks 規模 SHOULD 對齊 ~12-file rust-source feature 規模(~25-30 task、~280-320 行 spec、12 file ~315 LOC code、per research.md R-Q1 修正 + brainstorm Section 2 file 結構)。F11 13-file 為更近 reference(~24 task、~118 LOC)、F9 因加 service layer + 多 entity + 既有 endpoint regression 而較多。
 - **NFR-003**: F9 acceptance failure mode SHOULD 明確指 friction 落點(rust handler logic / Casbin enforce / migration init / response shape 不對齊),便於 follow-up 判斷。
 - **NFR-004**: F9 完成標誌 SHOULD 為:US1 5/5 + US2 2/2 + US3 3/3 = **10/10 PASS**(對齊 F11 7/7 verification pattern 等比放大、無 unit test 補位)。
 - **NFR-005**: F9 rust image rebuild 時間 SHOULD ≤ 5 min warm(對齊 F11 baseline、加 5 個新 handler + 2 service method 不會破壞 cargo cache hit 主體)、cold ≤ 7 min(對齊 F10.1 baseline + W-F1)。
@@ -211,13 +211,13 @@ operator 跑 F9 acceptance 前 / 後查 postgres `casbin_rule` 表確認 F9 migr
 
 ### Key Entities
 
-- **rust `SysUserApi`**(`rust-api/server/api/src/admin/sys_user_api.rs`)— F9 加 3 個 handler(`update_user_post` / `delete_user_by_body` / `batch_delete_users`)、~55 LOC、既有 8 個 handler 不動
+- **rust `SysUserApi`**(`rust-api/server/api/src/admin/sys_user_api.rs`)— F9 加 **2 個** handler(`delete_user_by_body` / `batch_delete_users`、per research.md R-Q1:`update_user_post` 不需新做、既有 `update_user` 由 alias POST mount 重用)、~40 LOC、既有 8 個 handler 不動(`update_user` 由 F9 alias POST mount 重用)
 - **rust `SysRoleApi`**(`rust-api/server/api/src/admin/sys_role_api.rs`)— F9 加 1 個 handler(`get_all_roles`)、~25 LOC、既有 5 個 handler 不動
 - **rust `SysMenuApi`**(`rust-api/server/api/src/admin/sys_menu_api.rs`)— F9 加 1 個 handler(`get_all_pages`)、~20 LOC、既有 9 個 handler 不動
 - **rust `SysRoleService`**(`rust-api/server/service/src/admin/sys_role_service.rs`)— F9 加 1 個 method(`find_all_enabled`)、~20 LOC
 - **rust `SysMenuService`**(`rust-api/server/service/src/admin/sys_menu_service.rs`)— F9 加 1 個 method(`find_all_page_keys`)、~15 LOC
 - **rust `SysSystemManageRouter`**(`rust-api/server/router/src/admin/sys_system_manage_route.rs`、**新建**)— `init_router()` 含 10 條 route mount + 10 個 RouteInfo register、~80 LOC
-- **rust DTO**(`server/model/src/admin/input/sys_user.rs` 既有檔加、對齊既有 `UpdateUserInput` 同檔慣例)— `DeleteUserByBodyInput {id: String}` / `BatchDeleteUserInput {ids: Vec<String>}`、~15 LOC;`update_user_post` 重用既有 `UpdateUserInput` DTO
+- **rust DTO**(`server/model/src/admin/input/sys_user.rs` 既有檔加、對齊既有 `UpdateUserInput` 同檔慣例)— `DeleteUserByBodyInput {id: String}` / `BatchDeleteUserInput {ids: Vec<String>}`、~15 LOC;`updateUser` POST alias 重用既有 `SysUserApi::update_user` handler + `UpdateUserInput` DTO、不新做 wrapper(per research.md R-Q1)
 - **rust Casbin migration**(`rust-api/migration/src/datas/m20260520_a_f9_system_manage_alias_seed.rs`、**新建**)— `MigrationTrait` impl + `up()` INSERT 20 row + `down()` DELETE 20 row、~80 LOC
 - **既有 base-web example login view + manage/* 4 view** — **不動**(per FR-010、F9 不驗 base-web e2e、base-web 預期路徑可被新 alias 滿足)
 - **既有 nestjs `TokenStatus` 與 sys_tokens 表** — **不動**(per FR-011、F9 與 token state machine 無關)
@@ -230,7 +230,7 @@ operator 跑 F9 acceptance 前 / 後查 postgres `casbin_rule` 表確認 F9 migr
 
 - **SC-001**: F9 落地後跑 US1.1 → HTTP 200 + body envelope + Soybean access_token 為 HS256 JWT 三段格式(F10.1 沿用、F9 regression 驗)。
 - **SC-002**: F9 落地後跑 US1.2 → 5 個重用 mount endpoint(getRoleList / getUserList / addUser / getMenuList/v2 / getMenuTree)全 HTTP 200 + envelope `{code:0, data, msg:"success", success:true}` + 各 data shape 對齊既有 rust handler 結果 — F9 重用 mount 行為對齊。
-- **SC-003**: F9 落地後跑 US1.3 → 3 個變形 wrapper endpoint(updateUser / deleteUser / batchDeleteUser)全 HTTP 200 + envelope wrap + batchDeleteUser 顯示 `{deletedCount: N}` partial-success counter(N ≤ ids.length、per Q3 拍板)。
+- **SC-003**: F9 落地後跑 US1.3 → 3 個 user-CRUD endpoint(updateUser POST alias mount + deleteUser body 變形 wrapper + batchDeleteUser stub)全 HTTP 200 + envelope wrap + batchDeleteUser 顯示 `{deletedCount: N}` partial-success counter(N ≤ ids.length、per Q3 拍板)。
 - **SC-004**: F9 落地後跑 US1.4 → 2 個新做完整 handler endpoint(getAllRoles / getAllPages)全 HTTP 200 + envelope `data: Vec<...>` 反映實際 sys_role / sys_menu 既有資料。
 - **SC-005**: F9 落地後跑 US1.5 → `psql ... sys_operation_log` 查 batchDelete 後 ≥ 1 row(per-row delete 既有 service hook 自帶 audit 寫入、繼承 §1.5)。
 - **SC-006**: F9 落地後跑 US2.2 → GeneralUser 用 `getUserList` 收 HTTP 200 + F4 envelope `{code:5001, success:false, msg:"您没有访问该资源的权限..."}` — Casbin enforce fail-safe 對 ROLE_USER 生效(per Principle I + F11 R-Q6)。
@@ -242,7 +242,7 @@ operator 跑 F9 acceptance 前 / 後查 postgres `casbin_rule` 表確認 F9 migr
 - **SC-012**: F9 不動 nestjs fork source(`git diff HEAD -- fork260509-soybean-admin-nestjs/` 無輸出、per FR-011 + W-FA*/F10/F11 三邊零改動延伸)。
 - **SC-013**: F9 不動 docker-compose.yml(`git diff HEAD -- docker-compose*.yml` 無輸出、per FR-012)。
 - **SC-014**: F9 acceptance 整套 ≤ 15s(per NFR-001)。
-- **SC-015**: F9 rust-api 改動範圍 = **~12 file** `~330 LOC`(per NFR-002 + brainstorm Section 2 file 結構 + Q4 file org)。
+- **SC-015**: F9 rust-api 改動範圍 = **~12 file** `~315 LOC`(per NFR-002 + brainstorm Section 2 file 結構 + Q4 file org + research.md R-Q1 修正)。
 - **SC-016**: F9 DESIGN-A §4.2 抽離項清單交付進度 = **5/5 完成**(F11 4 條 + F9 batchDeleteUser 1 條收尾、DESIGN-A 抽離項清單收尾)。
 
 ## Assumptions
@@ -315,7 +315,7 @@ operator 跑 F9 acceptance 前 / 後查 postgres `casbin_rule` 表確認 F9 migr
 
 ## Risks
 
-- **R-1**(低)**`update_user_post` 包既有 PUT update_user 邏輯時 body shape 不對齊**:F9 重用既有 `UpdateUserInput` DTO + call `SysUserService::update_user(payload.id, payload)`、若 shape 不對 acceptance C-V4a 會 surface。**緩解**:implement 時直接 Read 既有 `update_user` handler + `UpdateUserInput` DTO 字段確認、重用同 DTO 不另建。
+- **R-1**(低)**`updateUser` POST alias mount 對 既有 `update_user` PUT handler body shape 不對齊**:F9 直接 mount 既有 handler(per research.md R-Q1)、若 base-web 預期 POST body shape 與既有 `ValidatedForm<UpdateUserInput>` 不對齊、acceptance C-V4b 會 surface。**緩解**:既有 `update_user` handler 已 method-agnostic、F9 不改 handler 邏輯、body shape 由既有 handler ValidatedForm 決定、不引入 F9-side body parse 風險;若 shape 與 base-web 預期不對齊屬 B3 camelCase GAP 範疇(per FR-024 留 follow-up)。
 
 - **R-2**(低)**`batchDeleteUser` 中途 fail 後 `{deletedCount: N}` 數值不準**:per-row loop 每 round await `SysUserService::delete_user`、success counter++、若 service raise Err 該 round 不 increment;結束永遠回 200 + counted。**緩解**:用 standard Rust loop `for id in input.ids { match service.delete_user(id).await { Ok(_) => count += 1, Err(_) => continue } }`、acceptance C-V4c 用部分存在 + 部分不存在 ids 驗 N 落在 0..ids.length 區間。
 
