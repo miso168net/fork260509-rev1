@@ -127,8 +127,10 @@ curl -s -X POST http://127.0.0.1:11081/auth/refreshToken \
   -H 'Content-Type: application/json' -d '{}' -w " <-HTTP:%{http_code}\n" | tail -c 80
 ```
 
-**Expected**:亂填 token → envelope `code:3333`、`sys_tokens` 不變;缺 `refreshToken` 欄 → HTTP 400(validation)。
-**Pass criteria**:無效 token 被拒、不核發、不變更 `sys_tokens`;缺欄位回 400。
+**Expected**:亂填 token → envelope `code:3333`、`sys_tokens` 不變;缺 `refreshToken` 欄 → HTTP 200 + body `code:400`(`ValidatedForm` 反序列化失敗、走 F4 envelope 路線 II、與既有 `/auth/login` 缺欄位行為一致、per spec E-1「同既有 DTO 行為」)。
+**Pass criteria**:無效 token 被拒、不核發、不變更 `sys_tokens`;缺欄位回 body `code:400`(HTTP 200)。
+
+> ⚠️ **implement-time 修正**:本 C-V6 原寫「缺欄位 → HTTP 400」。實測既有 `/auth/login`(同 `ValidatedForm` 路徑)與 F13 `/auth/refreshToken` 一致 — 缺欄位/格式錯回 **HTTP 200 + body `{"code":400,...,"success":false}`**(F4 envelope 路線 II,plan Constitution Check IV 已明定 refresh response 走此形態)。spec E-1 的權威要求是「同既有 DTO 行為」,實作正確;原「HTTP 400」為對既有行為的誤述、已修正。
 **備註**:過期 refresh token 走與「簽章無效」相同的 `validate_refresh_token` Err 拒絕路徑(同 `code:3333`),不另植入過期 token。
 
 ---
@@ -233,7 +235,7 @@ echo "outer scope:" && git status --short
 | C-V3 | 輪替 sys_tokens(核心) | 舊 row→used + 新 row unused |
 | C-V4 | 新 access token 可用 | 受保護端點通過、role 正確 |
 | C-V5 | 已用 refresh token 重用被拒 | code 3333、sys_tokens 不變 |
-| C-V6 | 無效 / 缺欄位 | 無效→3333 不副作用、缺欄位→400 |
+| C-V6 | 無效 / 缺欄位 | 無效→3333 不副作用、缺欄位→body `code:400`(HTTP 200) |
 | C-V7 | 軟刪 user 被拒 | code 8888 |
 | C-V8 | 不寫 operation_log / login_log | refresh 前後兩表不變 |
 | C-V9 | dev stack regression + nginx 不變 | stack healthy、TRANSITIONAL 仍在 |
