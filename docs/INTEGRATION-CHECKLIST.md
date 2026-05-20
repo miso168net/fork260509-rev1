@@ -8,9 +8,9 @@
 
 ## 🎯 Current Focus
 
-**Phase**:Phase W deploy **Phase W-4 (P4) 第一個 feature W-F11 rust-horizontal-scaling 落地** — application Phase 3 收尾 3/3(F9 + F7 + F8)後第一個 Phase W deploy feature;W-F11 交付 rust-api 水平擴展能力三塊互相依賴的工作:(A) Casbin redis pub-sub 跨 instance 一致性(channel `casbin:policy:invalidate`、publisher + subscriber 背景 task、policy 異動 publish、收訊息 `load_policy()` full reload + `CachedEnforcer` cache clear)、(B) `docker-compose.prod.yml` rust-api `deploy.replicas: 2`(dev 維持單實例)、(C) `default.conf.prod` `rust_api` upstream 改 resolver-based auto-discovery;無 migration、無 DB schema 改、base-web + nestjs 兩邊零改動;C-V1~C-V9 acceptance 9 個 C-V contract(curl + psql + docker compose exec);application Phase 3 收尾 3/3 完成 + application Phase 4 整套收尾完成 + DESIGN-A §4.2 抽離項清單 5/5 完成 + Phase W deploy P7 Track DESIGN-A 三件套全完成 + Phase W deploy P1/P2 全完成
-**Active feature**:W-F11 rust-horizontal-scaling(兩段式 commit pending push、rust-api worktree + outer 兩段就位)
-**下一步**:Phase W deploy Phase W-4 (P4) 後續;並行候選 F12 cleanup-job / W-F6b acme-cert-acquisition;observability(W-F12/W-F13/W-F14、Phase W-5 P5)為後續候選;F13 rust-refresh-token-impl + F14 DESIGN-A→B cutover 後續(DESIGN-B 階段、`/authorization/assign-users` 為 rust 自有 endpoint、跨 DESIGN-A/B 繼承 identical per DESIGN-B)
+**Phase**:**DESIGN-A 本體收尾** — Phase W deploy Phase W-4 (P4) W-F11 rust-horizontal-scaling 已落地(outer `d02c7c9` + merge `d2d4c4c`、rust-api `d122b23`、C-V1~C-V9 acceptance 9/9 PASS);DESIGN-A §6.1 的 F1–F11 application feature + Track DESIGN-A 部署三件套(W-FA1/W-FA2/W-FA3)+ Phase W deploy P1/P2/P4 皆完成,DESIGN-A 本體只剩 **F12 `cleanup-job`** 一個 application feature 未啟。
+**Active feature**:—(無進行中 feature;W-F11 已完成 merge `d2d4c4c`、已 push;F12 cleanup-job 待 `/speckit-specify` 啟動)
+**下一步**:**F12 `cleanup-job`** — DESIGN-A 本體收尾(§6.1 Phase 4 P4 最後一個 application feature)。獨立 cron job(rust binary 或 standalone container、threshold 從 config 讀、dry-run mode、獨立最小 credential、物理刪除寫 audit);依賴 F3 soft-delete + F2 audit(皆已完成)、無前置阻擋、可立即 `/speckit-specify`。完成 F12 後 DESIGN-A F1–F12 application feature 全落地。後續候選(非 DESIGN-A 本體):F13 rust-refresh-token-impl + F14 design-a-to-b-cutover(§6.1 Phase 5 DESIGN-A→DESIGN-B 遷移、有「過渡橋 F10 在 DESIGN-A 形態下 N 週驗證」time gate)、W-F6b acme-cert-acquisition、observability W-F12/W-F13/W-F14(Phase W-5 P5)。
 
 > **F5.1 階段同期(P2 主體解鎖)**:F5.1 base-web auth-login-and-dynamic-menu 已完成 merge(2026-05-15、outer `be6e237` + merge `e71aefe`、rust-api `a85e88c`),F5.2 Casbin redis pub-sub 與 F10/F14 同期。
 >
