@@ -202,6 +202,31 @@ services:
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
+  # cleanup(F12 一次性清理 job)
+  # profiles: ["jobs"] — 不隨 docker compose up 自動啟動；由 host cron 觸發：
+  #   docker compose run --rm cleanup --execute
+  # - 重用 rust-api image(第 3 個 binary /usr/local/bin/cleanup)
+  # - entrypoint wrapper 從 cleanup_database_url secret 注入 DATABASE_URL
+  # - "$$@" passthrough 讓 docker compose run --rm cleanup --execute 等 arg 流入 cleanup binary
+  # - depends_on postgres healthy(不需 migration/redis/rust-api)
+  # ---------------------------------------------------------------------------
+  cleanup:
+    image: rust-api:${IMAGE_TAG:-rev1-admin-rust-api}
+    profiles: ["jobs"]
+    entrypoint: ["sh", "-c", "DATABASE_URL=\"$$(cat /run/secrets/cleanup_database_url)\" exec /usr/local/bin/cleanup \"$$@\"", "sh"]
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      CLEANUP_RETENTION_DAYS: ${CLEANUP_RETENTION_DAYS:-90}
+    secrets:
+      - cleanup_database_url
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal
+    restart: "no"
+
+  # ---------------------------------------------------------------------------
   # nestjs(W-FA1 Track DESIGN-A transitional service)
   # per specs/014-compose-nestjs-service/contracts/compose-contract.md C-C1~C-C4
   # per specs/014-compose-nestjs-service/contracts/secret-contract.md C-S1~C-S2
@@ -267,7 +292,7 @@ services:
 
 # =============================================================================
 # Secrets(per W-F4 spec FR-004 / contracts C-S3)
-# 5 entries → 6 entries(W-F6 加 acme_email)→ 7 entries(W-FA1 加 refresh_token_secret)
+# 5 entries → 6 entries(W-F6 加 acme_email)→ 7 entries(W-FA1 加 refresh_token_secret)→ 8 entries(F12 加 cleanup_database_url)
 # operator 須先 cp .txt.example 為 .txt + 編輯填值,否則 compose config 渲染抓 file not found
 # =============================================================================
 secrets:
@@ -285,6 +310,8 @@ secrets:
     file: ./deploy/secrets/acme_email.txt
   refresh_token_secret:
     file: ./deploy/secrets/refresh_token_secret.txt
+  cleanup_database_url:
+    file: ./deploy/secrets/cleanup_database_url.txt
 
 # =============================================================================
 # Networks(W-F3 維持)
