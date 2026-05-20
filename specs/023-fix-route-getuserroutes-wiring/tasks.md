@@ -12,7 +12,7 @@ description: "Task list for F7.1 — fix-route-getuserroutes-wiring implementati
 - Acceptance compensate:curl + CDP smoke 二類驗證(per spec FR-016)
 - **Acceptance**:per spec US1 P1 3 + US2 P2 2 = **5 個 US scenario** → 對齊 **10 個 C-V**(per contracts/verification-commands.md C-V1~C-V10)
 
-**Organization**:F7.1 為 2 user story feature、Setup(2)+ Foundational(1)+ US1 impl(1)+ US2 impl(1)+ shared build(2)+ shared acceptance(5)+ Doc(2)+ 兩段式 Commit(3)= **19 task**(對齊 NFR-002 ~10-14 task 範圍略超、因 acceptance C-V 細目拆分;實際 impl task 僅 2 個、F7.1 為小型 follow-up patch)。
+**Organization**:F7.1 為 2 user story feature、Setup(2)+ Foundational(1)+ US1 impl(1)+ US2 impl(1)+ shared build(2)+ shared acceptance(5)+ Doc(2)+ 兩段式 Commit(3)= **17 task**(對齊 NFR-002 ~10-14 task 範圍略超、因 acceptance C-V 細目拆分;實際 impl task 僅 2 個、F7.1 為小型 follow-up patch)。
 
 ## Format: `[ID] [P?] [Story?] Description`
 
@@ -336,7 +336,7 @@ description: "Task list for F7.1 — fix-route-getuserroutes-wiring implementati
 
 **MVP commit policy**:推薦走完整 Phase 1-7 一次到位(對齊 F5.1/F6/F10.1/F10.2/F11/F9/F7 同 session 模式)、不 US1-only commit。
 
-**全 19 task 預估時間**:25-40 分鐘(rust image rebuild 占 2-3 min、cargo unit test 跳過 per FR-015、curl acceptance 各 ~10s、CDP smoke ~10-20s/view;impl task 僅 2 個 in-place 驗證)。
+**全 17 task 預估時間**:25-40 分鐘(rust image rebuild 占 2-3 min、cargo unit test 跳過 per FR-015、curl acceptance 各 ~10s、CDP smoke ~10-20s/view;impl task 僅 2 個 in-place 驗證)。
 
 **Critical path**:T001 → T002 → T010 → T020/T021(並行)→ T030 → T031 → T032/T033/T035/T036(並行)→ T034 → T040/T041(並行)→ T100 → T101 → T102
 
