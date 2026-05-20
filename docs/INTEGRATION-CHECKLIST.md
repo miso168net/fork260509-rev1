@@ -8,9 +8,9 @@
 
 ## 🎯 Current Focus
 
-**Phase**:**DESIGN-A 本體(F1–F12)收尾完成** — F12 `cleanup-job` 已落地(outer `78e585c` + merge `86e56e5`、rust-api `30c8dd4`、C-V1~C-V9 acceptance 9/9 PASS);DESIGN-A §6.1 的 F1–F12 application feature + Track DESIGN-A 部署三件套(W-FA1/W-FA2/W-FA3)+ Phase W deploy P1/P2/P4 皆完成,**DESIGN-A 本體全數收尾**。
-**Active feature**:—(無進行中 feature;F12 已完成、兩段式 commit 落地、push + merge 待 user 同意)
-**下一步**:DESIGN-A 本體(F1–F12)收尾後,後續候選(非 DESIGN-A 本體):F13 rust-refresh-token-impl + F14 design-a-to-b-cutover(§6.1 Phase 5 DESIGN-A→DESIGN-B 遷移、有「過渡橋 F10 在 DESIGN-A 形態下 N 週驗證」time gate)、W-F6b acme-cert-acquisition、observability W-F12/W-F13/W-F14(Phase W-5 P5)。
+**Phase**:**DESIGN-A §6.1 Phase 1–4(F1–F12)完成;P5(F13/F14)待 time gate** — F12 `cleanup-job` 已落地(outer `78e585c` + merge `86e56e5`、rust-api `30c8dd4`、SHA fill `2fda07f`、C-V1~C-V9 acceptance 9/9 PASS);DESIGN-A §6.1 的 **Phase 1–4 全部 application feature(F1–F12:P1 基礎設施 F1–F4 / P2 核心 auth+menu F5–F6 / P3 業務 endpoint F7–F9 / P4 過渡橋+抽離項+cleanup F10–F12)** + Track DESIGN-A 部署三件套(W-FA1/W-FA2/W-FA3)+ Phase W deploy P1/P2/P4 皆完成。**DESIGN-A §6.1 尚餘 Phase 5(P5)F13 + F14** — 即 DESIGN-A→DESIGN-B(rust-only)遷移,設計文件標「P5,未來」、尚未啟動(time gate 見下方「下一步」)。
+**Active feature**:—(無進行中 feature;F12 已完成、兩段式 commit + merge + push 全落地)
+**下一步**:DESIGN-A §6.1 只剩 **P5 — F13 `rust-refresh-token-impl` + F14 `design-a-to-b-cutover`**(DESIGN-A→DESIGN-B 遷移:rust 自實作 refresh token rotation、nginx routing 從 nestjs 改指 rust、移除 nestjs container)。依 §6.2 拍板原則 P5 有 **time gate**:「過渡橋 F10 至少在 DESIGN-A 形態下完整運行 N 週驗證」後才啟動,故 P5 現階段暫不啟。其他後續候選(非 DESIGN-A §6.1 範疇):W-F6b acme-cert-acquisition、observability W-F12/W-F13/W-F14(DESIGN-W Phase W-5)。
 
 > **F5.1 階段同期(P2 主體解鎖)**:F5.1 base-web auth-login-and-dynamic-menu 已完成 merge(2026-05-15、outer `be6e237` + merge `e71aefe`、rust-api `a85e88c`),F5.2 Casbin redis pub-sub 與 F10/F14 同期。
 >
