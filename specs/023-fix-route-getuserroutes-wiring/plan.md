@@ -24,7 +24,7 @@ F7 manage-crud-alignment merge `136b1eb` 後、F7 CDP browser smoke demo 過程 
 **Constraints**: base-web + nestjs fork 三邊零改動(Constitution IV)、無 docker-compose 改、acceptance ≤ 30s(NFR-001)
 **Scale/Scope**: 2 file ~25 LOC rust patch(`router_initialization.rs` ~15 LOC + `sys_system_manage_api.rs` ~10 LOC)、~10-14 task、F7 小型 follow-up
 
-無 NEEDS CLARIFICATION — brainstorm 3 Q 全拍板、spec 0 個 [NEEDS CLARIFICATION] marker。
+無 NEEDS CLARIFICATION — brainstorm 3 Q 全拍板、spec 0 個 [NEEDS CLARIFICATION] marker、`/speckit-clarify` 0 question(taxonomy scan 全 Clear / N/A)。
 
 ## Constitution Check
 
@@ -58,7 +58,7 @@ specs/023-fix-route-getuserroutes-wiring/
 │   └── verification-commands.md   # Phase 1 產出(/speckit-plan)
 ├── checklists/
 │   └── requirements.md  # /speckit-specify 產出 ✓
-└── tasks.md             # /speckit-tasks 產出(非本命令)
+└── tasks.md             # /speckit-tasks 產出
 ```
 
 ### Source Code (rust-api worktree)
@@ -84,9 +84,9 @@ F7.1 為小型 follow-up、brainstorm 已 saturated;Phase 0 紀錄 3 個 impleme
 
 ## Phase 1: Design & Contracts(見 [data-model.md](data-model.md) / [contracts/verification-commands.md](contracts/verification-commands.md) / [quickstart.md](quickstart.md))
 
-- **data-model.md**:E1 `init_protected_menu_router` wiring 改動細目 + E2 `list_menu_for_systemmanage` paginated wrapper 改動細目 + E3 既有 `PaginatedData<T>` envelope shape(F7.1 不改)
+- **data-model.md**:E1 `init_protected_menu_router` wiring 改動細目 + E2 `list_menu_for_systemmanage` paginated wrapper 改動細目 + E3 既有 `PaginatedData<T>` envelope shape(F7.1 不改)+ E4 `/route/getUserRoutes` 修復後 response shape
 - **contracts/verification-commands.md**:C-V1~C-V10 verification scenario(curl + CDP smoke)
-- **quickstart.md**:F7.1 落地操作步驟(rebuild + restart + acceptance)
+- **quickstart.md**:F7.1 落地操作步驟(rebuild + restart + acceptance + 兩段式 commit)
 
 **Constitution Re-check(post-design)**:Phase 1 設計後重新檢查 — F7.1 data-model 確認無 schema 改、無 Casbin row、無 base-web 改;**3 PASS / 1 N/A / 0 violation 維持**。
 
