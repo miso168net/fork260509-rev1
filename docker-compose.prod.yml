@@ -12,6 +12,12 @@ services:
     volumes:
       - ./deploy/front-nginx/conf.d/default.conf.prod:/etc/nginx/conf.d/default.conf:ro
 
+  rust-api:                                                     # ★ W-F11 新增
+    # prod 水平擴展 — 2 replica(per data-model.md E5、spec A-002)
+    # 無 container_name → Compose 自動命名 rev1-admin-rust-api-1 / -2(per FR-011)
+    deploy:
+      replicas: 2
+
   nestjs:                                                       # ★ W-FA1 新增
     # prod 不暴露 host port — 僅內部訪問、透 W-FA2 nginx routing(後續 feature)
     restart: always

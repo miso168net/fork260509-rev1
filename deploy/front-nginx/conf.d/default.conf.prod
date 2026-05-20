@@ -1,9 +1,14 @@
+# Docker embedded DNS — http context(per W-F11 data-model.md E6)
+# upstream `resolve` 需要 resolver;valid=10s 控制 re-resolve 週期、ipv6=off 略過 AAAA
+resolver 127.0.0.11 valid=10s ipv6=off;
+
 upstream base_web {
     server base-web:8080;
 }
 
 upstream rust_api {
-    server rust-api:11081;
+    zone rust_api 64k;                  # shared memory zone — `resolve` 必要前提
+    server rust-api:11081 resolve;      # 動態解析 rust-api replica(nginx 1.27 支援)
     keepalive 32;
 }
 
