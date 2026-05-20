@@ -99,6 +99,8 @@ F12 為 DESIGN-A §6.1 Phase 4(P4)最後一個 application feature。Brainstorm 
 
 ## R-Q5: `cleanup_job` PG role setup SQL 與 GRANT 語法
 
+> ⚠️ **F12 實作修正(2026-05-21)**:下方 `DO $$ … :'cleanup_pw' … $$` 寫法不可行 — 實測 psql 不在 `DO $$ $$` dollar-quoted block 內做變數插值(`syntax error at or near ":"`)。實際 `deploy/cleanup/setup-role.sql` 改用頂層 `SELECT … WHERE NOT EXISTS \gexec` 條件建 role + `\if :{?cleanup_pw}` gate 的頂層 `ALTER ROLE … PASSWORD :cleanup_pw`(bare `:cleanup_pw`、ops 帶引號值 `-v cleanup_pw="'<pw>'"`)。詳見 INTEGRATION-CHECKLIST F12 里程碑 finding ②。
+
 **Question**: `cleanup_job` 最小權限 Postgres role 怎麼建?setup SQL 怎麼 idempotent?
 
 **Evidence / Decision**:

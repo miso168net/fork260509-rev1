@@ -131,6 +131,8 @@ AuditEvent {
 
 ## E6: `cleanup_job` PG role + setup SQL + secret(新增)
 
+> ⚠️ **F12 實作修正(2026-05-21)**:下方「`CREATE ROLE` 包在 `DO` block」的設計不可行 — psql 不在 `DO $$ $$` block 內做變數插值,`PASSWORD :'cleanup_pw'` 會送出字面 `:` 致 `syntax error`。實際 `setup-role.sql` 改用頂層 `SELECT … WHERE NOT EXISTS \gexec` 條件建 role + `\if :{?cleanup_pw}` gate 的頂層 `ALTER ROLE … PASSWORD :cleanup_pw`;idempotent 重跑(不帶 `-v cleanup_pw`)跳過密碼設定。詳見 [research.md](research.md) R-Q5 修正註記。
+
 - **PG role**:`cleanup_job`,最小權限(per research R-Q5 / spec FR-016):
   - `GRANT SELECT, DELETE ON` 7 張軟刪表
   - `GRANT SELECT, INSERT ON sys_operation_log`
