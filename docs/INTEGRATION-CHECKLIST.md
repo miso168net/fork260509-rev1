@@ -192,6 +192,21 @@
 - [ ] **F3 acceptance tests 跑通**（`cargo test --test soft_delete_basics -- --ignored` × 3 test files、共 9 個 `#[ignore]` test fn）— 需 export `TEST_DATABASE_URL` + migration up
 - [ ] **CI lint workflow 在實際 PR 觸發 + block merge** — `.github/workflows/ci-soft-delete-lint.yml` 已建、待第一個 PR 觸發驗證
 
+### DESIGN-B cutover 前完整性盤點(2026-05-21、specs 001–028 全 28 feature spec 對照 review)
+
+對 specs 001–028 全 28 個 feature 做 spec.md 對照 conformance review(7 批平行 review、`superpowers:requesting-code-review` 流程)。**結論:28 feature 全部 COMPLETE(15)或 COMPLETE-WITH-NOTES(13)、0 GAPS / 0 CANNOT-VERIFY** — DESIGN-A 本體在 spec 層面完整,無「規格要求但未做」硬缺口。以下為 review 抓出、需在 F14 cutover 前或同步處理的項目:
+
+- [ ] **R1(cutover 唯一實質風險)— F13 refreshToken response envelope `code` 不一致** — nestjs `/auth/refreshToken` 成功回 `code:200`、rust F13 回 `code:0`(F4 envelope 全 codebase 慣例)。F14 把 nginx 從 nestjs 切到 rust 後,若 base-web token-refresh client 檢查 `code===200` 則 silent refresh 會壞。F13 acceptance 為直連 `:11081` curl 驗、未走 SPA。**F14 必須加 base-web CDP smoke:完整 login → access token 過期 → silent refresh 循環**。
+- [ ] **R2 — F5.1 登入失敗無 audit** — `pwd_login` 只在成功路徑呼叫 `send_login_event`;密碼錯誤時 `sys_login_log` / `sys_operation_log` 皆不寫 row,spec 005 FR-007 / SC-009「登入失敗寫 login_failed row」未實作。若 DESIGN-B 要求 audit 完整性需補。
+- [ ] **R3 — `1xxx` legacy error code 游離於 F4 namespace 外** — `sys_user_error.rs` 的 1001–1005 不在 F4 23-code 表內,技術上違反 F4 FR-005 + SC-006;軟刪 user 登入回 1001(F3 Scenario 9 期望 6001)。功能無害(base-web 無特殊 handler),屬跨 feature 待清理項。
+- [ ] **R4 — `cleanup_database_url.txt.example` 缺失** — `deploy/secrets/` 其他 7 個 secret 皆有 `.txt.example`、僅 F12 `cleanup_database_url` 無。非 spec 違反(F12 FR-018 未明文要求),但破壞慣例、新機器 onboarding 缺範本。
+
+**F14 nestjs 拔除面**(Track DESIGN-A 三件套 W-FA1/2/3 邊界乾淨):W-FA1 nestjs service(`docker-compose.yml` + `docker-compose.dev.yml` + `docker-compose.prod.yml` 移除 `nestjs:` block、`profiles:["track-a"]` 隔離)/ W-FA2 nginx TRANSITIONAL(`sed '/>>>>> TRANSITIONAL BEGIN/,/<<<<< TRANSITIONAL END/d'` — 3 個 block 跨 `default.conf` 80+443 server 與 `default.conf.prod` 443 server)/ W-FA3 `rm deploy/build-nestjs.sh` + 還原 `CLAUDE.md` §5.2.1。**⚠️ `refresh_token_secret` secret 不可刪** — rust 自身 `APP_JWT_REFRESH_SECRET_FILE` 仍指向它(F10.1/F13 用);F14 只移除 nestjs 對它的引用。
+
+**cutover 前置鏈確認**:F10.1(rust 簽 HS256 JWT refresh token)+ F10.2(`unused`/`used` 字串對齊)+ F13(rust 自驗 + 輪替)三者一致 — rust refresh 實作功能上對得上 nestjs(同 refresh secret / HS256、同 status 字串值、同輪替語意),唯一行為差異即 R1 的 envelope `code`。
+
+**其他 minor notes(不阻 cutover)**:F5.1 FR-006 登入成功寫 `sys_login_log` 非 spec 寫的 `sys_operation_log`(收尾時接受)/ `MenuRoute.id` rust `i32` 序列化為 JSON number、base-web TS 宣告 `string`(靠 JS 弱型別吞)/ F13 FR-008 軟刪 user 回 `8888`、token 失敗回 `3333`(刻意分類、已驗收、非 token 存在性洩漏)/ `docker-compose.yml` 檔頭註解 stale(寫「5 service」實際 8 service)。
+
 ---
 
 ## Deferred / future backlog
