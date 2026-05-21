@@ -1,5 +1,7 @@
 # DESIGN-A：rust + nestjs 三方協作整合（過渡至 DESIGN-B）
 
+> **[F14 已封存]** DESIGN-A 過渡期結束(F14 cutover 完成);此文件保留為歷史參考,現行架構見 DESIGN-B。
+
 > 日期：2026-05-14
 > 範圍：rev1 base-web（`fork260509-soybean-admin-base` 的 `example` 分支）↔ rev1 rust-api（`fork260509-soybean-admin-rust` 的 `main` 分支）↔ nestjs（`fork260509-soybean-admin-nestjs`，過渡性補位）
 > 資料來源：[`INTEGRATION-RESEARCH.md`](INTEGRATION-RESEARCH.md) + 直接讀 source + `graphify-out/`（圖譜限制見 [`GRAPHIFY-NOTES.md`](GRAPHIFY-NOTES.md)）

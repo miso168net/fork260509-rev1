@@ -119,13 +119,11 @@ fork260509-rev1/                            ← workspace root（傘狀 repo rev
 |---|---|---|
 | Web (對外) | `:8080` | `:11080` |
 | Rust API（內部，僅 dev 期間 host 直連用） | `:10001` | `:11081` |
-| nestjs（對外、僅 dev 期間 host 直連、`--profile track-a` 啟用） | n/a | `:11082`（dev only、W-FA1 落地） |
 | Postgres | host `:5432` ↔ container `:5432` | container 內仍 `:5432`（不改）；host 暴露 `15432:5432` |
 | docker compose project name | `new-admin`（預設由目錄名衍生） | `rev1-admin`（透過 `COMPOSE_PROJECT_NAME` 環境變數設定） |
 
-**目前現況**（W-F6 + W-F7 + W-FA1 落地、TLS 結構就位、3 種啟動模式 + DESIGN-A track-a profile 變體）：
+**目前現況**（W-F6 + W-F7 落地、TLS 結構就位、3 種啟動模式）：
 - **dev**（`-f -f dev.yml`）：127.0.0.1 loopback、HTTP `:11080` + HTTPS `:11443`（自簽 cert）+ 直連 backend port `:11081 :15432 :16379`（範例見 §5.2.1）
-- **dev DESIGN-A**（`-f -f dev.yml --profile track-a`）：上一行同 + nestjs container 加入 stack、host `:11082` dev only 直連 nestjs container `:9528`（W-FA1 落地、profile=track-a 啟用）
 - **prod baseline**（`-f -f prod.yml`、不帶 `--profile prod`）：0.0.0.0 對外、80 強制 redirect 443、acme.sh 不啟（需先 seed cert into named volume `front_nginx_certs`）
 - **prod + acme**（`-f -f prod.yml --profile prod`）：同 prod baseline + acme.sh skeleton（實際 cert acquisition 留 W-F6b、需真實 domain + DNS provider）
 
@@ -161,27 +159,6 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --wait
 # === prod + acme（7 service、acme skeleton sanity 用）===
 docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile prod up -d --wait
 docker compose exec acme acme.sh --version    # sanity check
-
-# === DESIGN-A 路線 dev（加 --profile track-a 啟 nestjs、共 7 service、W-FA1 落地）===
-# 第一次：build nestjs image（cold ~3-5 min；NODE_VERSION=22.11.0 為 pnpm 9.1.2 必要 override，
-# 內建於 script，per W-FA1 spec assumption A-002）
-bash deploy/build-nestjs.sh
-
-# 第一次：備本機 refresh_token_secret.txt（gitignored、空檔走 fallback to JWT_SECRET）
-touch deploy/secrets/refresh_token_secret.txt
-# 或：openssl rand -hex 32 > deploy/secrets/refresh_token_secret.txt  # 獨立 secret
-
-# 啟 dev with track-a profile（7 service healthy）
-docker compose -f docker-compose.yml -f docker-compose.dev.yml --profile track-a up -d --wait
-docker compose ps    # 7 service healthy(含 nestjs)
-curl -fsS http://127.0.0.1:11082/v1                                 # nestjs 直連 root @Public（W-FA1 healthcheck endpoint）
-
-# === DESIGN-A 路線 refreshToken 驗（W-FA2 落地後、需先 --profile track-a 啟 stack）===
-# 驗 nginx routing 接通 nestjs（business 邏輯正確性留 F10）
-curl -X POST -H "Content-Type: application/json" \
-  -d '{"refreshToken":"invalid-test-token"}' \
-  http://127.0.0.1:11080/api/auth/refreshToken | head -c 200
-# 預期：response 走通 nginx → nestjs（nestjs log 可看到 POST /v1/auth/refreshToken）、回 nestjs envelope（invalid token 會回 NotFoundException、HTTP 404 來自 nestjs 業務邏輯而非 rust-api 攔截）
 ```
 
 > WSL2 NAT mode 不可用 `127.0.0.1` — 設 `.wslconfig` `[wsl2] networkingMode=mirrored`（Win11 22H2+ 預設）、或用 `wsl hostname -I` 拿 WSL IP。
@@ -441,8 +418,8 @@ git log --oneline -5                  # 最近 5 個外層 commit，看 pin 變�
 ## 10. 目前活躍 spec-kit feature
 
 <!-- SPECKIT START -->
-- **Active feature**: F13 `028-rust-refresh-token-impl`([spec](specs/028-rust-refresh-token-impl/spec.md) / [plan](specs/028-rust-refresh-token-impl/plan.md))
-- **Phase**: Planning(brainstorm(3 拍板點:Q1 完整輪替舊 token 標 used 對齊 nestjs / Q2 不額外寫 log 表 sys_tokens 即紀錄 / Q3 refresh 時重查 user 重建 Claims)+ spec(24 FR + 0 NEEDS CLARIFICATION)+ clarify(0 question、taxonomy 全 Clear)+ plan + Phase 0 research(7 R-Q:R-Q1 重用 generate_auth_output + get_user_roles + R-Q2 新增 validate_refresh_token(REFRESH_KEYS + validate_aud=false)+ R-Q3 同 login extractor 取連線 context + R-Q4 輪替單一 transaction(update_many filter 帶 status 解競態)+ R-Q5 error code 3333 統一拒絕/8888 軟刪/4001 validation + R-Q6 public router mount 不需 RouteInfo + R-Q7 重用 sys_user::find_active 一次查詢兼軟刪檢查)+ Phase 1 data-model(E1-E6)/contracts(C-V1-C-V10)/quickstart 完成;Constitution Check 5 PASS / 0 N/A / 0 violation;rust-api 6 檔微改(新增 validate_refresh_token 函式 + refresh_token service method + handler + RefreshTokenInput DTO + public router mount)、無 migration、無 docker-compose / nginx 改、兩段式 commit;F13 屬 DESIGN-A §6.1 Phase 5 P5、有 time gate(過渡橋 F10 在 DESIGN-A 形態運行 N 週驗證)、本 plan 為設計先行;下一步 `/speckit-tasks`)
-- **Previous features**: W-F1 merge `430ada9` / W-F2 merge `ac79ed0` / W-F3 merge `04671d0` / W-F4 merge `ab658d7` / W-F5 merge `dff14c2` / W-F7 merge `62b3475` / W-F6 merge `5e38030` / F6 merge `a431215` / W-FA1 merge `b095d55` / W-FA2 merge `c5b7840` / W-FA3 merge `f23f38e` / F10 merge `8f0e84c` / F10.1 merge `48b70e6` / F10.2 merge `851ec79` / F11 merge `81ecb0d` / F9 merge `b2f910c` / F7 merge `136b1eb` / F7.1 merge `efe910e` / F7.2 merge `476ca88` / F8 merge `c2b0912` / W-F11 merge `d2d4c4c` / F12 merge `86e56e5`(均已 push、acceptance PASS;Phase W deploy P2 進度 **3/3 完成**(W-F5/W-F6/W-F7);W-F11 為 Phase W-4 P4 第一個 feature — rust-api 水平擴展 Casbin redis pub-sub + compose replicas + nginx upstream、9/9 C-V PASS;W-FA1/W-FA2/W-FA3 為 Phase W-7 Track DESIGN-A 三件套全完成;F10/F10.1/F10.2 為 application Phase 4 三件套收尾;F11 為 Phase 4 後第一個 post-Phase-4 feature、DESIGN-A §4.2 抽離項清單 4/5;F9 為 application Phase 3 第一個 feature + DESIGN-A §4.2 5/5 收尾;F7 為 application Phase 3 第二個 feature、manage/* base view shape 對齊 + admin path Casbin 補位 + 解 A-006;F7.1 為 F7 CDP demo catch 出 2 個 backend acceptance gap 的 follow-up — F5.1 /route/getUserRoutes wiring bug + menu paginated wrapper;F7.2 為 F7.1 後 follow-up — getUserInfo role code alias 映射 ROLE_* → R_*、消除 F7.1 CDP role alias workaround;F8 為 application Phase 3 第三個也是最後一個 feature — POST /authorization/assign-users user-role 指派 endpoint wiring、收尾 application Phase 3 至 3/3;F12 為 DESIGN-A §6.1 Phase 4 P4 最後一個 application feature — DESIGN-A 本體 F1-F12 收尾)
+- **Active feature**: F14 `029-design-a-to-b-cutover`([spec](specs/029-design-a-to-b-cutover/spec.md) / [plan](specs/029-design-a-to-b-cutover/plan.md))
+- **Phase**: Planning(brainstorm(3 拍板點:Q1 R3+R4 都納入 F14 / Q2 R3 最小登記進 code.rs namespace 零行為改變 / Q3 驗收 curl 載重 + CDP best-effort;+ 途徑 2 拔除 + 設計文件收尾)+ spec(28 FR + 0 NEEDS CLARIFICATION)+ clarify(0 question、taxonomy 全 Clear)+ plan + Phase 0 research(7 R-Q:R-Q1 3 個 TRANSITIONAL block 行範圍 default.conf 38-48/82-92 + default.conf.prod 52-62、sed range-delete + R-Q2 nestjs service block 邊界 + track-a profile 唯 nestjs + refresh_token_secret 必留 + R-Q3 sys_user_error.rs 5 個 inline literal + code.rs namespace 命名慣例 + R-Q4 CLAUDE.md §5.2/§5.2.1 引用點 + R-Q5 README line 86 + R-Q6 刪 block 後 nginx -t 通過 + R-Q7 DESIGN-A/B doc 檔頭)+ Phase 1 data-model(E1-E6)/contracts(C-V1-C-V11)/quickstart 完成;Constitution Check 5 PASS / 0 violation;F14 為設定拔除型 — outer ~7 檔改 + 1 刪(build-nestjs.sh)+ 1 新增(cleanup_database_url.txt.example)+ rust-api 2 檔(R3:code.rs + sys_user_error.rs)、無 migration、兩段式 commit;F14 屬 DESIGN-A §6.1 Phase 5 P5、有 time gate(過渡橋 F10 在 DESIGN-A 形態運行 N 週驗證)、本 plan 為設計先行;下一步 `/speckit-tasks`)
+- **Previous features**: W-F1 merge `430ada9` / W-F2 merge `ac79ed0` / W-F3 merge `04671d0` / W-F4 merge `ab658d7` / W-F5 merge `dff14c2` / W-F7 merge `62b3475` / W-F6 merge `5e38030` / F6 merge `a431215` / W-FA1 merge `b095d55` / W-FA2 merge `c5b7840` / W-FA3 merge `f23f38e` / F10 merge `8f0e84c` / F10.1 merge `48b70e6` / F10.2 merge `851ec79` / F11 merge `81ecb0d` / F9 merge `b2f910c` / F7 merge `136b1eb` / F7.1 merge `efe910e` / F7.2 merge `476ca88` / F8 merge `c2b0912` / W-F11 merge `d2d4c4c` / F12 merge `86e56e5` / F13 merge `4e9cf07`(均已 push、acceptance PASS;F12 為 DESIGN-A §6.1 Phase 4 P4 最後一個 application feature — DESIGN-A 本體 F1-F12 收尾;F13 為 DESIGN-A §6.1 Phase 5 P5 第一個 feature — rust 補實作 POST /auth/refreshToken refresh token 輪替、10/10 C-V acceptance PASS、subagent-driven-development 執行、time gate 經 user 明示覆寫後 implement;F14 為 P5 第二個也是最後一個 feature — nestjs 退場、DESIGN-B(rust-only)形態正式生效)
 <!-- SPECKIT END -->
 

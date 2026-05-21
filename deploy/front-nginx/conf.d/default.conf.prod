@@ -49,18 +49,6 @@ server {
         include /etc/nginx/snippets/proxy_headers.inc;
     }
 
-    # >>>>> TRANSITIONAL BEGIN — DESIGN-A → DESIGN-B 拔除點(per W-FA2) <<<<<
-    # 過渡期由 nestjs 補位 refreshToken;F13 rust 補實作後 F14 cutover 刪整段
-    # 用 variable proxy_pass + resolver(127.0.0.11)讓 DNS 延遲到 request time
-    # default profile / DESIGN-B 退場 nginx 仍可啟動 + nginx -t OK
-    location = /api/auth/refreshToken {
-        resolver 127.0.0.11 valid=10s ipv6=off;
-        set $nestjs_upstream "nestjs:9528";
-        proxy_pass http://$nestjs_upstream/v1/auth/refreshToken;
-        include /etc/nginx/snippets/proxy_headers.inc;
-    }
-    # <<<<< TRANSITIONAL END >>>>>
-
     location / {
         proxy_pass http://base_web;
         proxy_set_header Host $host;
