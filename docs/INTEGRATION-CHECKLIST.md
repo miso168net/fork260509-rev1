@@ -224,6 +224,13 @@
 | F3-N5 | `data-model.md §E4` 範例 path 與實際 impl 位置 drift | spec hygiene | spec §E4 範例假設 impls 在 server-core、實際因循環 dep 落在 server-model/src/admin/soft_delete_impls.rs（per analyse C3 precedent）；建議補 errata 一行 |
 | F3-N6 | F2 audit-log schema 升級後 F3 helper 對齊 | F2.1 內處理 | F3 FR-022 已預告「F2 升級 sys_operation_log schema 時、F3 callsite 不需動」— F2.1 refactor write_in_txn 時順帶完成 |
 
+### W-FW1 `user-crud-wiring` brainstorm 拆出的 follow-up（2026-05-22）
+
+| ID | 範疇 | 處理 | 備註 |
+|---|---|---|---|
+| W-FW1-N1 | base-web user `userRoles` 接線(讀 + 寫 + Casbin `g` rule 同步) | 獨立 feature(暫定 W-FW5 `user-role-assignment`) | `SystemManageUserOutput.user_roles` 目前硬寫 `vec![]`、rust 無「設定 user 的 roles」寫入路徑(`assign_users` 為 role→users 反方向);接它需 `sys_user_role` 讀+寫+Casbin `g` sync,為獨立 feature 體量。W-FW1 的 drawer `userRoles` 多選欄提交時由後端 transform DTO 忽略 |
+| W-FW1-N2 | user password UX(改密碼 / 重設密碼流程 / drawer password 欄) | 獨立 follow-up | W-FW1 拍板 `addUser` 用後端固定預設密碼(drawer 無 password 欄、純接線);完整密碼 UX(建立時設密碼、admin 重設、user 自改)另案。`update_user` service 現況 `password` 設值未 hash(pre-existing TODO)、此 follow-up 一併處理 |
+
 ---
 
 ## 維護指引
