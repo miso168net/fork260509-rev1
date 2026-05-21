@@ -38,6 +38,8 @@ DESIGN-B §1.3「base 不改動邊界」**維持為預設原則** —— 一般 
 
 ## §2 現況盤點（2026-05-21 稽核）
 
+> **盤點基準**:稽核以 base-web 的 `example` 分支為基礎。執行對象為 `base-web/` worktree(`rev1-admin-base-web` 分支,從 `origin/example` 衍生)。`rev1-admin-base-web` 相對 `example` 僅多 4 個 commit(W-F2 Dockerfile / W-F3 nginx cache / F4 `.env` success code / branch-origin 紀錄),全為部署與設定檔;經 `git diff origin/example HEAD -- src/` 驗證 **`src/` 0 差異**。盤點對象(`src/views/**`、`src/service/api/`、`src/service-alova/` 等)全在 `src/` 底下,故本盤點等同於對 `example` 分支執行。
+
 對 base-web `src/views/**` 全面稽核所有有提交動作的表單,共 **23 個**,分三類:
 
 | 分類 | 數量 | 定義 |
