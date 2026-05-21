@@ -1,23 +1,22 @@
 <!--
-Sync Impact Report (2026-05-14)
+Sync Impact Report (2026-05-21)
 ================================================================
-Version change: (initial template) → 1.0.0 (initial ratification)
-Modified principles: N/A (initial fill from placeholder template)
-Added sections:
-  - Core Principles I-V (RBAC fail-safe / Soft Delete + Audit /
-    嚴版禁 Forward / base 不改動 / 漸進收縮)
-  - 架構約束（Architectural Constraints）
-  - 開發流程（Development Workflow）
-  - Governance（with semver policy + compliance gate）
-Removed sections: None (all placeholder tokens replaced)
+Version change: 1.0.0 → 1.1.0 (MINOR — 新增受管例外條款)
+Modified principles:
+  - IV. base 不改動邊界 — 新增「受管例外 — W-WEBUI 軌道」條款:
+    W-WEBUI 軌道（W-FW1–W-FW4）得在受控範圍內修改 base-web
+    source;base 不改動仍為其餘所有 feature 的預設原則
+Added sections: None（既有 Principle IV 內擴充,非新 principle/section）
+Removed sections: None
 Templates requiring updates:
   - ✅ .specify/templates/plan-template.md — "Constitution Check"
-    consumes principles at runtime; no template change needed
-  - ✅ .specify/templates/spec-template.md — no direct constitution
-    refs; principles enforced via plan-template gate
-  - ✅ .specify/templates/tasks-template.md — no direct refs needed
-  - ✅ .specify/templates/checklist-template.md — generic, no change
-Follow-up TODOs: None (all placeholders filled with concrete values)
+    runtime 消費 principle;W-WEBUI feature 的 plan 標註 Principle IV
+    例外適用,無需模板改動
+  - ✅ .specify/templates/spec-template.md — 無直接 constitution ref
+  - ✅ .specify/templates/tasks-template.md — 無直接 ref
+  - ✅ .specify/templates/checklist-template.md — generic,無 change
+Follow-up TODOs: None
+Prior report (2026-05-14): (initial template) → 1.0.0 initial ratification
 ================================================================
 -->
 
@@ -65,16 +64,23 @@ Follow-up TODOs: None (all placeholders filled with concrete values)
 
 ### IV. base 不改動邊界
 
-base-web source code 為「對齊目標」；後端與 nginx 須適應 base 既有 API 期望。
+base-web source code 為「對齊目標」；後端與 nginx 須適應 base 既有 API 期望。base 不改動為**預設原則**；唯一例外為受管的 W-WEBUI 軌道（見下）。
 
-- **不動**：base-web 的 `src/views/` / `src/components/` / `src/service*/api/*.ts` / `src/router/` / `src/store/`
+- **預設不動**：base-web 的 `src/views/` / `src/components/` / `src/service*/api/*.ts` / `src/router/` / `src/store/`
 - **可動**：`.env` / `.env.dev` / `.env.prod`（application-level config 層）
 - base example 中 mock（`src/service-alova/mocks/`）保留但 prod 不啟（既有 `import.meta.env.DEV` gate 隔離）
 - 所有 API 路徑 / 方法 / payload 形狀 GAP MUST 由**後端適應**（如 `/systemManage/*` alias router 重用既有 service）；base 不修
 - response shape 對齊：rust HTTP **永遠**回 200 + body `code` 為 business code（路線 II）；camelCase 透過 rust struct 加 `#[serde(rename_all = "camelCase")]`
 - success code 對齊由 base `.env` 微調（`VITE_SERVICE_SUCCESS_CODE=0`）+ rust handler 統一改 error code path
 
-**Rationale**: base example 是上游持續演化的 starter；rev1 為使用者，不為改寫者。所有適應行為集中在後端可控、不污染 base fork、未來 base 升級（pull upstream rebase）阻力最小。
+**受管例外 — W-WEBUI 軌道**：唯一得修改 base-web source 的例外為 **W-WEBUI 軌道**（[`docs/INTEGRATION-DESIGN-W-WEBUI.md`](../../docs/INTEGRATION-DESIGN-W-WEBUI.md)）：
+
+- W-WEBUI 軌道內的 feature（`W-FW1`–`W-FW4`）**得修改 base-web source**，範圍受 `INTEGRATION-DESIGN-W-WEBUI.md §4` 嚴格限定：僅限把既有 stub 表單的 `handleSubmit` / list 頁 delete handler 接到 service API、補 `src/service/api/*.ts` 寫入 function
+- W-WEBUI 軌道**仍不得**改動 base-web 的型別定義（`src/typings/`）、表格 render 邏輯、`src/router/` / `src/store/`、i18n key、UI 樣式
+- 此例外**僅適用 W-WEBUI 軌道**；軌道外所有 feature 的 Constitution Check 對 base-web source 改動仍 MUST 為 0 diff
+- W-WEBUI 軌道對 base-web 的修改一律走兩段式 commit（base-web worktree → push fork → outer 更新 SHA pin）
+
+**Rationale**: base example 是上游持續演化的 starter；rev1 為使用者，不為改寫者 — 此立場在「後端適應 API GAP」範疇內成立，使未來 base 升級（pull upstream rebase）阻力最小。但 base example 的管理後台操作表單本質為未接線的 UI stub，僅靠後端適應無法讓其運作；F14 cutover 後 rev1 成為自有產品，base-web 即 rev1 自有前端，補接線為必要的產品工作而非「改寫上游」。W-WEBUI 為此設**受控例外**：例外範圍明文受限（僅補接線，不碰型別 / render / router / store），使「預設不動 base」對其餘所有 feature 維持完整效力，同時不讓管理後台永久停在 demo 殼。
 
 ### V. 漸進收縮（DESIGN-A 過渡 → DESIGN-B 終局）
 
@@ -114,7 +120,7 @@ DESIGN-A（rust + nestjs）為過渡形態；DESIGN-B（rust-only）為終局目
 - **Commit message**：[Conventional Commits](https://www.conventionalcommits.org/) 格式，**subject 用中文**；body 必要時補 why；footer 含 `Co-Authored-By` 標示協作來源
 - **Push 確認紀律**：push 到 remote 之前 MUST 取得 user 明確授權（沿用全域 `~/.claude/CLAUDE.md §5`）；branch protection 例外見全域守則
 - **TLS 紀律**：dev 環境可用自簽 cert；prod / staging **不容**跳過 TLS（HTTP only 在 prod 為違憲）
-- **DESIGN 文件權威**：rev1 整合相關設計決策以 [`docs/INTEGRATION-DESIGN-A-RUST-NESTJS.md`](../../docs/INTEGRATION-DESIGN-A-RUST-NESTJS.md) / [`-B-RUST-ONLY.md`](../../docs/INTEGRATION-DESIGN-B-RUST-ONLY.md) / [`-W-DEPLOYMENT.md`](../../docs/INTEGRATION-DESIGN-W-DEPLOYMENT.md) 為權威；spec-kit feature 階段 `spec.md` 引用對應 DESIGN 章節
+- **DESIGN 文件權威**：rev1 整合相關設計決策以 [`docs/INTEGRATION-DESIGN-A-RUST-NESTJS.md`](../../docs/INTEGRATION-DESIGN-A-RUST-NESTJS.md) / [`-B-RUST-ONLY.md`](../../docs/INTEGRATION-DESIGN-B-RUST-ONLY.md) / [`-W-DEPLOYMENT.md`](../../docs/INTEGRATION-DESIGN-W-DEPLOYMENT.md) / [`-W-WEBUI.md`](../../docs/INTEGRATION-DESIGN-W-WEBUI.md) 為權威；spec-kit feature 階段 `spec.md` 引用對應 DESIGN 章節
 - **抽離項升級紀律**：抽離項 stub 升級為實作時 MUST 同步：(a) 換真 handler 實作；(b) Casbin policy 擴 allow 對象；(c) audit log 與 soft delete 自動繼承 §1.5（無需特別配置）；(d) nginx / 前端 **零改動**
 
 ## Governance
@@ -132,7 +138,8 @@ DESIGN-A（rust + nestjs）為過渡形態；DESIGN-B（rust-only）為終局目
   - [`docs/INTEGRATION-DESIGN-A-RUST-NESTJS.md`](../../docs/INTEGRATION-DESIGN-A-RUST-NESTJS.md)：DESIGN-A 拍板
   - [`docs/INTEGRATION-DESIGN-B-RUST-ONLY.md`](../../docs/INTEGRATION-DESIGN-B-RUST-ONLY.md)：DESIGN-B 拍板（最終形態）
   - [`docs/INTEGRATION-DESIGN-W-DEPLOYMENT.md`](../../docs/INTEGRATION-DESIGN-W-DEPLOYMENT.md)：部署統合
+  - [`docs/INTEGRATION-DESIGN-W-WEBUI.md`](../../docs/INTEGRATION-DESIGN-W-WEBUI.md)：W-WEBUI 軌道拍板（base-web 管理後台接線、Principle IV 受管例外範圍）
 - **衝突解決**：Constitution 與 DESIGN 文件衝突時，以本憲法為最終權威；DESIGN 文件如有不一致需同步修正
 - **Runtime guidance**：日常開發決策參考 `CLAUDE.md`（workspace）+ `~/.claude/CLAUDE.md`（全域）；當 runtime guidance 與本憲法衝突，以本憲法為準
 
-**Version**: 1.0.0 | **Ratified**: 2026-05-14 | **Last Amended**: 2026-05-14
+**Version**: 1.1.0 | **Ratified**: 2026-05-14 | **Last Amended**: 2026-05-21
