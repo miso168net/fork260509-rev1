@@ -232,6 +232,12 @@
 | W-FW1-N1 | base-web user `userRoles` 接線(讀 + 寫 + Casbin `g` rule 同步) | 獨立 feature(暫定 W-FW5 `user-role-assignment`) | `SystemManageUserOutput.user_roles` 目前硬寫 `vec![]`、rust 無「設定 user 的 roles」寫入路徑(`assign_users` 為 role→users 反方向);接它需 `sys_user_role` 讀+寫+Casbin `g` sync,為獨立 feature 體量。W-FW1 的 drawer `userRoles` 多選欄提交時由後端 transform DTO 忽略 |
 | W-FW1-N2 | user password UX(改密碼 / 重設密碼流程 / drawer password 欄) | 獨立 follow-up | W-FW1 拍板 `addUser` 用後端固定預設密碼(drawer 無 password 欄、純接線);完整密碼 UX(建立時設密碼、admin 重設、user 自改)另案。`update_user` service 現況 `password` 設值未 hash(pre-existing TODO)、此 follow-up 一併處理 |
 
+### W-FW2 `menu-crud-wiring` brainstorm 拆出的 follow-up（2026-05-22）
+
+| ID | 範疇 | 處理 | 備註 |
+|---|---|---|---|
+| W-FW2-N1 | base-web menu `query` / `buttons` / `fixedIndexInTab` 持久化 | 獨立 follow-up | base-web menu modal 送出這 3 欄、後端 `MenuInput` DTO 無對應欄位、`SystemManageMenuOutput`(讀側)亦硬回 `None`;W-FW2 brainstorm Q1 拍板 thin wrapper、scope out — transform handler 不對映、提交時由 serde 忽略。完整持久化需擴 `sys_menu` schema(migration)+ entity + `MenuInput` + Output DTO 解除 `None` 硬寫,讀寫雙向接通,為獨立 feature 體量。modal 這 3 個 UI 欄在 W-FW2 落地後變擺設(編輯無持久化效果) |
+
 ---
 
 ## 維護指引
