@@ -29,7 +29,7 @@
 - **外層 `rev1-admin-root`**：把它們當 submodule 處理（gitlink + `.gitmodules`），每次外層 commit 可能含當下使用的 fork SHA pin 變動，也可能含其他追蹤檔（`CLAUDE.md` / `.specify/` / `specs/` / `docs/` 等）的正常 diff。**`base-web` 與 `rust-api` 這兩列 gitlink 只看到 SHA 字串前後不同**（不展開檔案 diff）；其他追蹤檔仍是一般 git diff。
 - **別人 clone 外層**：`git clone --recurse-submodules` 會拉 fork repo 到 base-web/ rust-api/（變正常 clone 而非 worktree，但內容相同）。
 
-**Outer branch 模式**：default branch 為 `rev1-admin-root`；spec-kit 流程啟動時，`before_specify` mandatory pre-hook（`speckit.git.feature`，見 `.specify/extensions/git/scripts/bash/create-new-feature.sh`）會從當前 default 衍生短期 `NNN-<short-name>` feature branch（命名與 `specs/NNN-<short-name>/` 目錄對齊），spec docs（`spec.md` / `plan.md` / `tasks.md` / `checklists/`）+ 該 feature 對應的 submodule SHA pin 變動都落在這個 feature branch 上；feature 完成後 merge 回 `rev1-admin-root`。workspace-wide 設定 / 文件變動（`CLAUDE.md` / `.gitignore` / `.specify/` 結構等）可直接落 default branch。worktree（`base-web/` / `rust-api/`）維持各自長期分支不變、**不**為 feature 另開新分支。
+**Outer branch 模式**：default branch 為 `rev1-admin-root`；spec-kit 流程啟動時（完整 feature 工作流見 §6.5），`before_specify` mandatory pre-hook（`speckit.git.feature`，見 `.specify/extensions/git/scripts/bash/create-new-feature.sh`）會從當前 default 衍生短期 `NNN-<short-name>` feature branch（命名與 `specs/NNN-<short-name>/` 目錄對齊），spec docs（`spec.md` / `plan.md` / `tasks.md` / `checklists/`）+ 該 feature 對應的 submodule SHA pin 變動都落在這個 feature branch 上；feature 完成後 merge 回 `rev1-admin-root`。workspace-wide 設定 / 文件變動（`CLAUDE.md` / `.gitignore` / `.specify/` 結構等）可直接落 default branch。worktree（`base-web/` / `rust-api/`）維持各自長期分支不變、**不**為 feature 另開新分支。
 
 兩段式 commit 是日常工作流，詳見 §6 與 §9 操作手冊。
 
@@ -186,7 +186,7 @@ git commit -m "bump base-web to <短 SHA>: <一行描述>"
 git push origin "$(git branch --show-current)"   # outer feature branch 或 rev1-admin-root（取決於上面那行）
 ```
 
-> **Outer branch 預期**：跑 `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement` 全程，outer 都應該在對應 `NNN-<short-name>` feature branch 上（由 `before_specify` pre-hook 在第一步自動建）。第二段 commit 自然落在這個 feature branch；feature 完成後 merge 回 `rev1-admin-root`。如果跑 spec-kit 流程前發現 outer 不在 `NNN-<short-name>` 上、又即將改 spec / code 相關檔，先讓 pre-hook 跑（或手動 `git switch -c NNN-<short-name>`）對齊。
+> **Outer branch 預期**：§6.5 feature 工作流自 `/speckit-specify`（階段 A）起、到 `superpowers:executing-plans` 實作（階段 B）止全程，outer 都應該在對應 `NNN-<short-name>` feature branch 上（由 `before_specify` pre-hook 在 specify 步自動建）。第二段 commit 自然落在這個 feature branch；feature 完成後 merge 回 `rev1-admin-root`。如果跑 spec-kit 流程前發現 outer 不在 `NNN-<short-name>` 上、又即將改 spec / code 相關檔，先讓 pre-hook 跑（或手動 `git switch -c NNN-<short-name>`）對齊。
 
 第二段的 outer commit 訊息**建議帶 SHA 與 fork 提交標題**，以後在外層 log 看得懂：
 
@@ -262,6 +262,40 @@ git log --oneline -5                  # 最近 5 個外層 commit，看 pin 變�
 
 若 `git submodule status` 看到 `+` 開頭，代表 worktree 的 HEAD 已超前 outer 記的 SHA pin — 主動提示使用者：「base-web/ 或 rust-api/ 的 worktree 已超前 outer pin，要不要更新 pin？」
 
+### 6.5 feature 開發工作流（SDD 設計鏈 → TDD 實作）
+
+> 每個 feature 走「**TDD + SDD 混合工作流**」：step 0 brainstorm 定調後，
+> **SDD（Spec-Driven Development＝github spec-kit）** 設計鏈產出 spec/plan/tasks，
+> 交棒給 **TDD（Test-Driven Development＝superpowers）** 讀 tasks 實作。
+> **★ 核心紀律：實作一律用 `superpowers:executing-plans` 起手，從不使用 `/speckit-implement`。**
+
+**step 0 · 前置 brainstorm**（不屬 SDD/TDD 任一階段）
+`superpowers:brainstorming` 探索需求與設計、產出初步規格「spec-design」，存
+`docs/superpowers/<NNN>-feature-<short-name>.md`；餵給階段 A 的 `/speckit-specify`。
+
+**階段 A · SDD 設計鏈（github spec-kit）**
+
+| 步驟 | 指令 | 產出 |
+|---|---|---|
+| specify | `/speckit-specify`（input＝step 0 brainstorm 文件）| `specs/<NNN>-<short-name>/spec.md`；`before_specify` pre-hook 同步建 `NNN-<short-name>` feature branch |
+| clarify（optional）| `/speckit-clarify` | spec.md 補 `## Clarifications` 段 |
+| plan | `/speckit-plan` | `plan.md` + `research.md`／`data-model.md`／`contracts/`／`quickstart.md`；含 Constitution Check（對照 `.specify/memory/constitution.md`）|
+| tasks | `/speckit-tasks` | `tasks.md`（dependency-ordered task 清單）|
+| analyze | `/speckit-analyze` | spec／plan／tasks 跨檔 consistency 報告（不產檔）|
+
+**═══ 交棒物件：`specs/<NNN>-<short-name>/tasks.md` ═══**
+
+**階段 B · TDD 實作（superpowers）**
+
+實作一律用 **`superpowers:executing-plans`**（**不是 `/speckit-implement`**）：
+
+- `executing-plans` 讀 `specs/<NNN>-<short-name>/tasks.md`；偵測 subagent 可用 → 轉 `superpowers:subagent-driven-development`，把 task 編成執行單元。
+- **每單元派 fresh implementer subagent** 實作；完成後**兩階段 review**：① **spec compliance**（對照 `specs/<NNN>-<short-name>/spec.md` 逐項驗、抓缺漏／overbuild）→ ② **code quality**。有 issue → 同一 subagent 修 → 再 review，通過才換下一單元；全單元完成後跑整體 final review。
+- 每個 implementer subagent 走 **TDD**：有可獨立測的純函式邏輯 → test-first（red → green）；wiring／形狀對映類 feature 無新純函式測試時 → 由 acceptance 覆蓋（`specs/<NNN>-<short-name>/contracts/` 的 C-V contract：CDP browser smoke + curl + psql），且須在 `tasks.md`／`plan.md` **明示「無單元測試」及理由**（對齊全域 `~/.claude/CLAUDE.md` §4）。
+- 收尾：`superpowers:finishing-a-development-branch` → 多段式 commit（§6.1）→ `git merge --no-ff` 回 `rev1-admin-root`。
+
+**branch 紀律**：`/speckit-specify` 起 pre-hook 自動建 `NNN-<short-name>` feature branch、outer 即切於此；spec docs + submodule SHA pin 落此 branch，feature 完成 `merge --no-ff` 回 `rev1-admin-root`（workspace 層級檔如 CLAUDE.md 才直接落 default）。
+
 ## 7. 不要做的事
 
 - ❌ 不要在外層 `rev1-admin-root` repo `git add fork260509-*/`（4 個源倉 gitignored，會變 embedded git）。`base-web/` `rust-api/` **可以** add（它們是 submodule，唯一正確方式就是 `git add base-web` 記 SHA pin）。
@@ -273,22 +307,7 @@ git log --oneline -5                  # 最近 5 個外層 commit，看 pin 變�
 
 ## 8. 進度追蹤
 
-**目前狀態**：剛初始化的純結構重建。
-
-- ✅ **已完成**：
-  - Outer GitHub repo (`miso168net/fork260509-rev1`) 建立
-  - 4 個 fork 源倉本機 clone
-  - `.gitignore` / `.gitattributes` / `.graphifyignore` / `.claude/{settings.json, hook-git-submodule-SOP.sh, skills/}` / `.specify/`（spec-kit 結構）就位
-  - `base-web/` worktree（從 `fork260509-soybean-admin-base` 的 `example` 分支建 `rev1-admin-base-web`，**已推 origin/rev1-admin-base-web**）
-  - `rust-api/` worktree（從 `fork260509-soybean-admin-rust` 的 `main` 分支建 `rev1-admin-rust-api`，**已推 origin/rev1-admin-rust-api**）
-  - `.gitmodules` 註冊兩個 submodule
-  - 首批 outer commits 已 push（`87f4dd4 初始化 rev1-admin-root` / `e47dc1d bump SHA` / `7a13ede 加入 .graphifyignore`）
-  - graphify-out（2026-05-12 完成 fork260509 → rev1 路徑遷移與 incremental update）
-- ⏳ **待補**：
-  - `docs/INTEGRATION-RESEARCH.md` / `docs/INTEGRATION-PLAN.md` 獨立制訂（rev1 重建方向；不繼承 fork260509 決策）
-  - constitution 建立（若要走 spec-kit 流程）
-  - GAP 重新分析（rev1 base-web 基於 `example` 分支，GAP 內容與優先序須重做）
-  - `deploy/` / `specs/` 尚未建立
+整合進度的單一真相在 [`docs/INTEGRATION-CHECKLIST.md`](docs/INTEGRATION-CHECKLIST.md) —— Current Focus（現狀）/ Follow-up Backlog（衍生工作）/ 已完成里程碑 / Roadmap & Phase 狀態 / 跨 feature 待驗證項。每 session SOP hook（`.claude/hook-git-submodule-SOP.sh`）自動 cat 全檔注入。本節不重複。
 
 ## 9. Submodule 操作手冊（給未來 Claude session）
 
