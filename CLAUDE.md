@@ -119,13 +119,11 @@ fork260509-rev1/                            ← workspace root（傘狀 repo rev
 |---|---|---|
 | Web (對外) | `:8080` | `:11080` |
 | Rust API（內部，僅 dev 期間 host 直連用） | `:10001` | `:11081` |
-| nestjs（對外、僅 dev 期間 host 直連、`--profile track-a` 啟用） | n/a | `:11082`（dev only、W-FA1 落地） |
 | Postgres | host `:5432` ↔ container `:5432` | container 內仍 `:5432`（不改）；host 暴露 `15432:5432` |
 | docker compose project name | `new-admin`（預設由目錄名衍生） | `rev1-admin`（透過 `COMPOSE_PROJECT_NAME` 環境變數設定） |
 
-**目前現況**（W-F6 + W-F7 + W-FA1 落地、TLS 結構就位、3 種啟動模式 + DESIGN-A track-a profile 變體）：
+**目前現況**（W-F6 + W-F7 落地、TLS 結構就位、3 種啟動模式）：
 - **dev**（`-f -f dev.yml`）：127.0.0.1 loopback、HTTP `:11080` + HTTPS `:11443`（自簽 cert）+ 直連 backend port `:11081 :15432 :16379`（範例見 §5.2.1）
-- **dev DESIGN-A**（`-f -f dev.yml --profile track-a`）：上一行同 + nestjs container 加入 stack、host `:11082` dev only 直連 nestjs container `:9528`（W-FA1 落地、profile=track-a 啟用）
 - **prod baseline**（`-f -f prod.yml`、不帶 `--profile prod`）：0.0.0.0 對外、80 強制 redirect 443、acme.sh 不啟（需先 seed cert into named volume `front_nginx_certs`）
 - **prod + acme**（`-f -f prod.yml --profile prod`）：同 prod baseline + acme.sh skeleton（實際 cert acquisition 留 W-F6b、需真實 domain + DNS provider）
 
@@ -161,27 +159,6 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --wait
 # === prod + acme（7 service、acme skeleton sanity 用）===
 docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile prod up -d --wait
 docker compose exec acme acme.sh --version    # sanity check
-
-# === DESIGN-A 路線 dev（加 --profile track-a 啟 nestjs、共 7 service、W-FA1 落地）===
-# 第一次：build nestjs image（cold ~3-5 min；NODE_VERSION=22.11.0 為 pnpm 9.1.2 必要 override，
-# 內建於 script，per W-FA1 spec assumption A-002）
-bash deploy/build-nestjs.sh
-
-# 第一次：備本機 refresh_token_secret.txt（gitignored、空檔走 fallback to JWT_SECRET）
-touch deploy/secrets/refresh_token_secret.txt
-# 或：openssl rand -hex 32 > deploy/secrets/refresh_token_secret.txt  # 獨立 secret
-
-# 啟 dev with track-a profile（7 service healthy）
-docker compose -f docker-compose.yml -f docker-compose.dev.yml --profile track-a up -d --wait
-docker compose ps    # 7 service healthy(含 nestjs)
-curl -fsS http://127.0.0.1:11082/v1                                 # nestjs 直連 root @Public（W-FA1 healthcheck endpoint）
-
-# === DESIGN-A 路線 refreshToken 驗（W-FA2 落地後、需先 --profile track-a 啟 stack）===
-# 驗 nginx routing 接通 nestjs（business 邏輯正確性留 F10）
-curl -X POST -H "Content-Type: application/json" \
-  -d '{"refreshToken":"invalid-test-token"}' \
-  http://127.0.0.1:11080/api/auth/refreshToken | head -c 200
-# 預期：response 走通 nginx → nestjs（nestjs log 可看到 POST /v1/auth/refreshToken）、回 nestjs envelope（invalid token 會回 NotFoundException、HTTP 404 來自 nestjs 業務邏輯而非 rust-api 攔截）
 ```
 
 > WSL2 NAT mode 不可用 `127.0.0.1` — 設 `.wslconfig` `[wsl2] networkingMode=mirrored`（Win11 22H2+ 預設）、或用 `wsl hostname -I` 拿 WSL IP。

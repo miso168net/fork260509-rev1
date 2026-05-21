@@ -83,7 +83,7 @@ W-F5 **嚴守邊界**、以下**不在範疇**:
 - **TLS / HTTPS**:留 W-F6(加 `listen 443 ssl` + ssl_certificate + HTTP→HTTPS redirect)
 - **對外 host port**:留 W-F7(`ports: - "11080:80"` + `"11443:443"`)
 - **rate limiting / WAF / IP whitelist**:留後續 follow-up(DESIGN-W §4.1 標「可選」)
-- **Track DESIGN-A nestjs upstream / `track-a.inc` / TRANSITIONAL block**:留 W-FA1
+- **Track DESIGN-A nestjs upstream / `track-a.inc` / TRANSITIONAL block**:已於 F14 移除（歷史參考）
 - **WebSocket 升級**:rev1 暫無需求、留 follow-up if proven need
 - **nginx access log JSON 格式**:留 W-F12 observability stack 階段一起改(配對 promtail / Loki expected schema)
 

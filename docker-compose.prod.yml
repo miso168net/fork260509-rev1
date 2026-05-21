@@ -1,6 +1,6 @@
 # docker-compose.prod.yml — W-F6 prod override(per specs/012-tls-cert-management/)
 # 用法:docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --wait
-#       (加 --profile prod 才啟 acme service;加 --profile track-a 才啟 nestjs per W-FA1)
+#       (加 --profile prod 才啟 acme service)
 # 對外 binding 0.0.0.0(prod 需 LAN/公網可達)、80 強制 redirect 443、443 ssl
 # cert 來源:named volume front_nginx_certs(acme.sh 寫進 / 或手動 seed)
 
@@ -18,6 +18,3 @@ services:
     deploy:
       replicas: 2
 
-  nestjs:                                                       # ★ W-FA1 新增
-    # prod 不暴露 host port — 僅內部訪問、透 W-FA2 nginx routing(後續 feature)
-    restart: always

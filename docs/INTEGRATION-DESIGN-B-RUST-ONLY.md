@@ -1,5 +1,7 @@
 # DESIGN-B：rust-only 整合（DESIGN-A 的最終遷移形態）
 
+> **[F14 現行設計]** DESIGN-A cutover 完成(F14);本檔為 rev1 現行架構、nestjs 已完全退場。
+
 > 日期：2026-05-14
 > 範圍：rev1 base-web（`fork260509-soybean-admin-base` 的 `example` 分支）↔ rev1 rust-api（`fork260509-soybean-admin-rust` 的 `main` 分支）— **單一後端**
 > 資料來源：[`INTEGRATION-RESEARCH.md`](INTEGRATION-RESEARCH.md) + [`INTEGRATION-DESIGN-A-RUST-NESTJS.md`](INTEGRATION-DESIGN-A-RUST-NESTJS.md)
