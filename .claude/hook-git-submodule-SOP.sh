@@ -25,7 +25,6 @@ git log --oneline -5
 
 echo
 echo
-echo "=== docs/INTEGRATION-CHECKLIST.md（進度追蹤 + brainstorming 決策快照）==="
-# 只 cat 到 backlog 之前的高價值 head section（Current Focus + 已完成 + Roadmap + 決策快照）
-# 避免 Deferred backlog / 維護指引等冗長 section 灌爆 session context
-sed -n '1,/^## Deferred/p' docs/INTEGRATION-CHECKLIST.md | sed '$d'
+echo "=== docs/INTEGRATION-CHECKLIST.md（整合進度單一真相）==="
+# 重構後全檔精簡（~150 行）、Follow-up Backlog 升為第 2 節須每 session 可見 —— 全檔注入
+cat docs/INTEGRATION-CHECKLIST.md
