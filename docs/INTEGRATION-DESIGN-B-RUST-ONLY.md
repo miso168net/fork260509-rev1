@@ -259,6 +259,77 @@ P1 foundation ┼─ F3 (soft)  ─┤             │                ├─ F10
 
 ---
 
+## §7 全功能回歸驗證（2026-05-22）
+
+本節記錄 DESIGN-B 落地後的一次全功能回歸驗證 —— 不靠 feature checklist,對 §3.1 全 endpoint 群 + §1 跨切原則實機打一次。
+
+**方法**:CDP 瀏覽器測試（base-web UI 有使用的路徑,Edge `127.0.0.1:9229`）+ curl（未接 base-web / 後端專屬）+ psql / docker（soft delete / audit / Casbin / cleanup）。
+**環境**:dev stack（`docker-compose.yml` + `docker-compose.dev.yml`）、rust-api image `684d55ebb912`（F030 版）、5 service healthy + migration exited 0、front-nginx `127.0.0.1:11080`。
+**結果**:16 項測試案（D-1~D-16）全 PASS,§6.1 的 F1–F12 feature 全部通過。
+
+### §7.1 測試矩陣
+
+| ID | 測試項 | 方法 | 結果 | 證據摘要 |
+|---|---|---|---|---|
+| D-1 | `/auth/login` + `/auth/getUserInfo` | curl + CDP | ✅ | envelope `code:0`、token pair 簽出、getUserInfo 回 `roles:["R_SUPER"]`;CDP 登入 OK |
+| D-2 | `/route/getConstantRoutes` + `/route/getUserRoutes` + 動態 menu | curl + CDP | ✅ | constant 5 routes、user 4 routes + home;CDP `/home` dashboard + 20 menu items 渲染 |
+| D-3 | 三管理列表（user / role / menu） | CDP | ✅ | 三表渲染（4 / 4 / 10 rows）、status·gender 標籤正常、`INVALID_ARGUMENT` 0、console error 0 |
+| D-4 | route guard — 不存在路由 | CDP | ✅ | full-load 不存在路由 → `title:"not-found"` + 「返回首页」頁（非白屏） |
+| D-5 | `/auth/refreshToken` 輪替（F13） | curl + psql | ✅ | 輪替簽新 token pair、舊 RT 重用 `3333` 拒、亂 token `3333` 拒;`sys_tokens` 舊 row `used` / 新 row `unused` |
+| D-6 | 抽離項 stub（sendCaptcha / verifyCaptcha / auth-error） | curl | ✅ | sendCaptcha `{code:"000000"}`、verifyCaptcha `{verified:true}`、`/auth/error` echo |
+| D-7 | manage CRUD 寫入（addUser / delete） | curl | ✅ | `/systemManage/addUser` `code:0`、`DELETE /user/:id` HTTP 200 |
+| D-8 | `/systemManage/*` alias 讀端點 | curl | ✅ | getUserList / getRoleList / getMenuList-v2 / getMenuTree / getAllRoles / getAllPages 全 `code:0` |
+| D-9 | `/authorization/assign-users`（F8） | curl | ✅ | POST `code:0 success:true` |
+| D-10 | `/route/isRouteExist`（F6） | curl | ✅ | home→true、manage_user→true、nonexistent→false |
+| D-11 | 其他 endpoint（domain / api-endpoint / access-key / operation-log / login-log / user / role） | curl | ✅ | 全 HTTP 200 + `code:0` |
+| D-12 | soft delete（F3） | curl + psql | ✅ | `DELETE /user/:id` 後 row 仍在表內、`deleted_at IS NOT NULL` = `t` |
+| D-13 | 全域 audit log（F2） | curl + psql | ✅ | addUser → `sys_operation_log` 383→384（`INSERT|sys_user`）、delete → 384→385 |
+| D-14 | Casbin enforce — 權限拒絕（RBAC fail-safe） | curl | ✅ | GeneralUser（ROLE_USER）打 admin 端點 → `5001` deny |
+| D-15 | cleanup-job（F12） | docker | ✅ | dry-run 正常:retention 90d、掃 7 張 soft-delete 表、`deleted_at < cutoff` 篩選、profile-gated 第 3 binary |
+| D-16 | JWT 簽章 / 驗證（F1） | curl | ✅ | 登入簽 HS256 JWT、getUserInfo / refreshToken 驗證通過（由 D-1 / D-5 涵蓋） |
+
+### §7.2 §6.1 Feature 對照
+
+| Feature | 涵蓋測試 | 結論 |
+|---|---|---|
+| F1 `jwt-secrets` | D-1 / D-16 | ✅ JWT 簽發 + 驗證運作 |
+| F2 `audit-log-infrastructure` | D-13 | ✅ 每次寫入寫 1 筆 `sys_operation_log` |
+| F3 `soft-delete-infrastructure` | D-12 | ✅ DELETE 為 soft delete、`deleted_at` 標記、row 留表 |
+| F4 `response-shape-alignment` | D-1 + 全 curl | ✅ 路線 II:HTTP 200 + body `code` 為 business code、camelCase |
+| F5 `auth-login-and-dynamic-menu` | D-1 / D-2 | ✅ 登入 + 動態 menu（20 items）+ Casbin enforce |
+| F6 `route-guard` | D-10 / D-4 | ✅ isRouteExist 正確、未知路由導向 not-found |
+| F7 `manage-crud-alignment` | D-3 / D-7 | ✅ 三管理表渲染 + CRUD 寫入端點運作 |
+| F8 `assign-users` | D-9 | ✅ `/authorization/assign-users` 運作 |
+| F9 `systemManage-alias-router` | D-8 | ✅ alias 讀端點全運作 |
+| F10 `rust-refresh-token` | D-5 | ✅ refresh token rotation + 舊 token 拒用 |
+| F11 `extracted-stubs` | D-6 | ✅ 3 個抽離項 stub 回固定回應 |
+| F12 `cleanup-job` | D-15 | ✅ cleanup binary dry-run 運作 |
+
+12 / 12 feature 通過。DESIGN-A→B cutover 的 F13（refresh token 已併入 D-5）、F14（nestjs 退場 — 本次測試全程僅 rust-api 單後端、無 nestjs 參與，即 cutover 後形態）亦間接驗證。
+
+### §7.3 跨切原則（§1）驗證
+
+| 原則 | 驗證 | 結果 |
+|---|---|---|
+| §1.1 RBAC 中心（Casbin 後端強制） | D-14:無權限 role 被 `5001` 拒 | ✅ |
+| §1.5 soft delete | D-12:物理 row 保留、`deleted_at` 標記 | ✅ |
+| §1.5 全域 audit log | D-13:每次寫入同步 `sys_operation_log` | ✅ |
+| §1.2 rust 單後端 | 全測試僅 rust-api 參與、無 nestjs | ✅ |
+| §3.1 路線 II response shape | 全 curl 回應 HTTP 200 + body `code` | ✅ |
+
+### §7.4 註記（非缺陷）
+
+1. **`/systemManage/updateUser` 的 HTTP method 為 `POST`**（非 REST 慣例的 PUT）—— 對齊 F9 alias 的 Casbin seed。已於 F030 的 `contracts/verification-commands.md` C-V9 註記。D-7 寫入測試走原生 `DELETE /user/:id`,不受影響。
+2. **D-4 初次判定誤報**:第一輪 CDP 用 `body.innerText` regex 比對「404/not-found」字樣,未命中（not-found 頁可見文字僅「返回首页」按鈕、4 字元）。重測改看 `document.title`（= `"not-found"`）確認 route guard 正常 —— 測試方法問題、非 DESIGN-B 缺陷。
+
+### §7.5 結論
+
+DESIGN-B（rust-only）經 16 項實機測試全數通過 —— §6.1 F1–F12 feature、§3.1 endpoint 群、§1 跨切原則均驗證功能完整。**「DESIGN-B 已全部完成」屬實。**
+
+base-web 前端僅「讀路徑」已接線（登入 / 動態 menu / 三管理列表 GET）;「寫路徑」（CRUD 表單）仍為 UI stub —— 此非 DESIGN-B 缺陷,而是 [`INTEGRATION-DESIGN-W-WEBUI.md`](INTEGRATION-DESIGN-W-WEBUI.md) 軌道（W-FW1~W-FW4）的範疇。
+
+---
+
 ## 附錄：從 DESIGN-A 遷移到 B
 
 若 rev1 起點走 DESIGN-A（過渡有 nestjs），最終 cutover 到 DESIGN-B 形態時的步驟（高層）：
