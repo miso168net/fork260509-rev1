@@ -40,7 +40,8 @@
 | F3-N6 | F3 implement | F2 audit-log schema 升級後 F3 helper 對齊（F3 FR-022 預告 callsite 不需動） | F2.1 內處理 —— F2.1 已完成、本項應已結案、待查證後移除 |
 
 > ⚠️ F3-N1~N5 為 F3 階段（2026-05-14）所留、迄今未正式 review 結案 —— 下次觸及 audit / endpoint facade / `sys_access_key` 區域時應逐項查證並結案。
-> 另有 minor 技術債（`MenuRoute.id` rust `i32` ↔ base-web TS `string` 型別不一致；`docker-compose.yml` 檔頭 service 數註解 stale）—— 非 feature 級、任一相關 feature 順手清。
+> 另有 minor 技術債（`docker-compose.yml` 檔頭 service 數註解 stale）—— 非 feature 級、任一相關 feature 順手清。
+> **base-web TS `id` 型別債**（030–034 回顧 review 三處命中）：`src/typings` 的 `CommonRecord.id` 宣告 `number`、`Menu.parentId` 宣告 `number`，但 rust-api runtime 實際回字串（user / role id 為 ULID、menu `parentId` 為字串；另 `MenuRoute.id` rust `i32` ↔ base-web TS `string` 同類）。runtime 靠 JS 動態型別恰好可運作，TS 編譯器無法捕捉未來 regression。**032 的 `parentId` 字串/數字 deserializer fix（`149dc52`）本質即此型別債的後果**。W-WEBUI 軌道因 FR-015 禁碰 `src/typings` 無法修。建議 base-web cleanup sprint 統一：`CommonRecord.id` / `parentId` 改 `string`、複查相依比較邏輯（如 `parentId === 0`）。
 
 ### 規劃中、未排程（design 規劃、待排 feature）
 
