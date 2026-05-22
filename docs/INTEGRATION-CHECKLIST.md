@@ -8,11 +8,11 @@
 
 ## 🎯 Current Focus
 
-**現狀**：DESIGN-A §6.1 全 14 application feature（F1–F14）+ Phase W deploy（W-F1~W-F7、W-F11、Track DESIGN-A W-FA1/2/3）全部落地，**DESIGN-B（rust-only）形態生效**。W-WEBUI 軌道（base-web 管理後台 CRUD 接線）進行中 —— 031 user-crud、032 menu-crud、033 role-crud 已完成。
+**現狀**：DESIGN-A §6.1 全 14 application feature（F1–F14）+ Phase W deploy（W-F1~W-F7、W-F11、Track DESIGN-A W-FA1/2/3）全部落地，**DESIGN-B（rust-only）形態生效**。**W-WEBUI 軌道（base-web 管理後台接線）已完成** —— 031 user-crud、032 menu-crud、033 role-crud、034 role-authorization 四 feature 全部落地。
 
 **Active feature**：—（無進行中 feature）
 
-**下一步**：W-FW4 `role-authorization-wiring`（role 的 menu-auth / button-auth modal 接線）、observability（W-F12/13/14）、各 feature 衍生 follow-up（見 Follow-up Backlog）。
+**下一步**：observability（W-F12/13/14）、各 feature 衍生 follow-up（見 Follow-up Backlog）。
 
 ---
 
@@ -28,6 +28,9 @@
 | W-FW1-N2 | W-FW1 brainstorm | user password UX（建立設密碼 / admin 重設 / user 自改；連帶處理 `update_user` password 未 hash 的 pre-existing TODO） | 獨立 follow-up |
 | W-FW2-N1 | W-FW2 brainstorm | base-web menu `query` / `buttons` / `fixedIndexInTab` 持久化 —— 需擴 `sys_menu` schema + entity + `MenuInput` + Output DTO、讀寫雙向接通 | 獨立 feature |
 | W-FW3-N1 | W-FW3 brainstorm | role code 改名能力 —— W-FW3 採機制 (a) transform 鎖 code（base-web 送的 roleCode 在 update 被忽略、drawer 仍顯示可編輯）；完整「安全改 code」需 rust `update_role` 改 code 時重同步 `casbin_rule`（`v0`）+ base-web roleCode edit 唯讀 | 獨立 follow-up（若日後需要 role code 改名）|
+| W-FW4-N1 | W-FW4 brainstorm/spec | role 按鈕授權 modal（`button-auth-modal`）接線 —— 後端無「按鈕」資料模型，需評估把按鈕授權映射到既有 API 端點權限機制；牽涉「UI 按鈕 vs API 端點」語意對齊 | 獨立 feature |
+| W-FW4-N2 | W-FW4 brainstorm/spec | role 首頁持久化 —— `menu-auth-modal` 的角色首頁選單需後端儲存（目前無每角色首頁的儲存）；需後端角色資料表結構變更 + 讀寫端點 | 獨立 follow-up |
+| W-FW4-N3 | W-FW4 plan/research | 角色菜單授權寫入無 audit log —— native `assign_routes` 於 transaction 內 delta 更新 `sys_role_menu`、但未寫 `sys_operation_log`（Constitution II pre-existing native gap，類同 R2 登入失敗無 audit）；補 audit 需動 native service、超出 wiring 範疇 | 獨立 follow-up |
 | R2 | F14 DESIGN-B cutover review | F5.1 登入失敗無 audit —— `pwd_login` 只在成功路徑呼 `send_login_event`，密碼錯誤不寫 row（spec 005 FR-007 / SC-009 未實作） | follow-up（DESIGN-B 若要求 audit 完整性則須補） |
 | F3-N1 | F3 implement | `sys_endpoint::insert_many` 繞 facade fully-qualified 呼叫（facade 只封 SELECT/DELETE） | 評估（audit path 若納 INSERT，facade 補 `insert_many` wrapper） |
 | F3-N2 | F3 implement | `sys_access_key` delete atomicity gap —— facade commit → `sign::remove_key` 兩步間 crash 留 orphan key | 評估（改 DB-as-truth + reload pattern） |
@@ -47,7 +50,6 @@
 | F2.2 | F2 拆分（F2.1 已交） | audit-log outbox + Redis subscriber TTL fallback | F2.1 只交 schema + transaction 紀律 + 統一 audit path |
 | W-F6b | W-F6 留下 | acme.sh 真實 cert acquisition / renew 流程 | 需公網 + 真實 domain + DNS provider creds |
 | W-F12/13/14 | DESIGN-W-DEPLOYMENT §11 | observability 三件套（Phase W deploy P5） | Phase W deploy 最後一個 phase、未排程 |
-| W-FW4 | DESIGN-W-WEBUI §5.4 | role-authorization-wiring —— `menu-auth-modal` / `button-auth-modal`（角色菜單 / 按鈕授權）接線；需 Phase 0 research（按鈕授權來源端點） | 接續 W-FW3（033）；逐 feature 走 spec-kit |
 
 ---
 
@@ -80,6 +82,7 @@
 - [x] **F12 cleanup-job** ✅（2026-05-21 完成；outer `78e585c` + merge `86e56e5`、rust-api `30c8dd4`；spec `specs/027-cleanup-job/`）— cleanup binary 物理清除過期軟刪 row，DESIGN-A 本體 F1–F12 收尾
 - [x] **F14 design-a-to-b-cutover** ✅（2026-05-21 完成；outer `33758f0` + merge `1f20a0d`、rust-api `729d3c6`；spec `specs/029-design-a-to-b-cutover/`）— DESIGN-A→B cutover、nestjs 完全退場，DESIGN-B 形態生效
 - [x] **030 systemmanage-status-gender-alignment** ✅（2026-05-21 完成；outer `681dcbe` + merge `0ed2e85`、rust-api `0e1fb95`；spec `specs/030-systemmanage-status-gender-alignment/`）— systemManage status/gender enum 契約對齊
+- [x] **034 role-authorization-wiring** ✅（2026-05-22 完成；outer `bead3fd` + merge `ff5ea63`、rust-api `e9787ed`、base-web `7325b091`；spec `specs/034-role-authorization-wiring/`）— base-web 角色菜單授權接線（menu-auth-modal 讀/寫接 rust `/systemManage/{getRoleMenuIds,assignRoleMenus}` 2 alias）+ assign_routes 空清單 clear-all 修正，13/13 C-V PASS，W-WEBUI 軌道第四個也是最後一個 feature
 - [x] **033 role-crud-wiring** ✅（2026-05-22 完成；outer `fcf7280` + merge `729dbf9`、rust-api `536bf88`、base-web `ceafe62a`；spec `specs/033-role-crud-wiring/`）— base-web role CRUD 接線 + update_role status-drop 修正 + roleCode code-lock，W-WEBUI 軌道第三個 feature
 - [x] **032 menu-crud-wiring** ✅（2026-05-22 完成；outer `d96aafa` + merge `8ccc4b4`、rust-api `149dc52`、base-web `b43634c0`；spec `specs/032-menu-crud-wiring/`）— base-web menu CRUD 接線，W-WEBUI 軌道第二個 feature
 - [x] **031 user-crud-wiring** ✅（2026-05-22 完成；outer `10edf43` + merge `a09d316`、rust-api `2a24e9d`、base-web `1793b361`；spec `specs/031-user-crud-wiring/`）— base-web user CRUD 接線，W-WEBUI 軌道第一個 feature
@@ -109,7 +112,7 @@ DESIGN-A §6.1 application features（F1–F14）與 Phase W deploy（W-F1~W-F7�
 
 Phase 推進規則（P1 全完成才動 P2 等）見 design 文件 `DESIGN-A §6.1 / §6.2`、`DESIGN-W-DEPLOYMENT §11`。
 
-**未排程**：W-WEBUI 軌道後續、observability W-F12/13/14、W-F6b —— 見 Follow-up Backlog。
+**未排程**：observability W-F12/13/14、W-F6b —— 見 Follow-up Backlog。
 
 ---
 
