@@ -23,6 +23,6 @@ C-V 驗證矩陣（CDP browser smoke + curl + psql）。dev stack 啟動見 [`..
 | C-V17 | US3 / SC-005 | CDP 走訪帳號中心：修改密碼面板 —— 舊密碼錯→顯示錯誤不誤報、舊密碼對→成功；新密碼≠確認→前端阻擋送出（FR-012）|
 | C-V18 | FR-010 / FR-015 / SC-007 | CDP：後端拒絕情境（changePassword 舊密碼錯、updateUser 後端拒）→ base-web 呈現錯誤、抽屜 / 面板不關閉、不誤報成功 |
 | C-V19 | SC-009 regression | CDP 登入 + 動態 menu + user / menu / role 三表 CRUD 仍正常 |
-| C-V20 | FR-017,018,019 / SC-008 | git diff：base-web 限 3 受控檔（`user-operate-drawer.vue` / `user-center/index.vue` / `system-manage.ts`｜或 auth service 檔）、且 UI 新增限 §4 amendment 授權範圍（password 欄 / 修改密碼面板）；rust-api 限 plan 列元件；0 nestjs；0 型別 / render / router / store / i18n / 版面重構；後端 user / role / sys_user_role 0 schema 變更 |
+| C-V20 | FR-017,018,019 / SC-008 | git diff：base-web 限 4 受控檔（`user-operate-drawer.vue` / `user-center/index.vue` / `system-manage.ts` / `auth.ts`）、且 UI 新增限 §4 amendment 授權範圍（password 欄 / 修改密碼面板）；rust-api 限 plan 列元件；0 nestjs；0 型別 / render / router / store / i18n / 版面重構；後端 user / role / sys_user_role 0 schema 變更 |
 
 > 針對性 C-V：**C-V7**（角色變更對權限生效、R-Q1 既有 JWT 機制）、**C-V10 / C-V13**（密碼 argon2 hash 落庫、FR-009/013 修正驗證）、**C-V12**（舊密碼錯誤拒絕）為 W-FW5-specific 重點、必跑。

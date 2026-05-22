@@ -23,7 +23,7 @@ spec.md Assumptions A-008 / A-009 列 2 個 plan-phase research question，本�
   - 密碼工具 `server/utils/src/secure_util.rs`：`SecureUtil::hash_password(&[u8]) -> String`（Argon2）、`SecureUtil::verify_password(明文, hash) -> bool` —— 兩者皆備、可直接用。
   - 取當前登入身分：handler 以 `Extension<User>` 取（JWT middleware `jwt.rs` 注入 `User`）；`user.user_id()` 即「我是誰」。
   - 端點落點：`/auth/changePassword`，掛 `init_protected_router`（自助操作、需登入；任何已登入 user 皆可改自己的密碼）。route / handler / DTO 體例比照既有 protected router 端點。
-- **Casbin（待實作期查證）**: `/auth/changePassword` 為自助、應任何已登入 user 可呼叫。protected router 是否受 Casbin enforce —— 實作時對照 `/auth/getUserInfo`（同 protected router、每個 user 都呼叫）在 `casbin_rule` 的處理：若 getUserInfo 有對應 `p` policy（all role allow）則 changePassword 比照補一筆 Casbin seed；若 protected router 不受 enforce 則無需 seed。此為小範圍實作期查證、不阻擋設計。
+- **Casbin（查證已 resolved，2026-05-22 analyze remediation）**: 實查 `server/initialize/src/router_initialization.rs:223-226` —— `init_protected_router` **受 Casbin enforce**、註解明載 `/auth/getUserInfo` 有 F5.1 既有 3-role allow seed。故 `/auth/changePassword`（同 protected router）**須**補 Casbin seed migration（`/auth/changePassword` × {ROLE_SUPER, ROLE_ADMIN, ROLE_USER} allow、`POST`），比照 `/auth/getUserInfo` 既有 seed。
 - **Alternatives considered**: 把自助改密碼塞進 `/systemManage/updateUser` → 否決：updateUser 是 admin 操作、無舊密碼驗證語意；自助改密碼須驗舊密碼、屬 auth 域。
 
 ## R-Q3 — `update_user` 密碼未 hash（實查確認的 pre-existing bug）

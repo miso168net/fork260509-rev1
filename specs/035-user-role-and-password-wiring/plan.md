@@ -17,7 +17,7 @@
 **Project Type**: web —— rust-api backend + base-web frontend，雙 worktree
 **Performance Goals**: N/A（admin 管理操作、低 throughput）
 **Constraints**: W-WEBUI §4 base-web 修改邊界（含 2026-05-22 W-FW5 §4 amendment）；多段式 commit（CLAUDE.md §4.1）
-**Scale/Scope**: rust-api 8 元件（A1 user_roles 填充 / A2 transform DTO + userRoles / A3 user→roles delta service / B1 update_user hash 修正 / B2 transform DTO + password / B3a ChangePasswordInput DTO / B3b change_password service / B3c changePassword route+handler；+ 視查證可能 B3d Casbin seed）+ base-web 3 檔（user-operate-drawer.vue / user-center/index.vue / system-manage.ts｜或 auth service 檔）
+**Scale/Scope**: rust-api 9 元件（A1 user_roles 填充 / A2 transform DTO + userRoles / A3 user→roles delta service / B1 update_user hash 修正 / B2 transform DTO + password / B3a ChangePasswordInput DTO / B3b change_password service / B3c changePassword route+handler / B3d /auth/changePassword Casbin seed）+ base-web 4 檔（user-operate-drawer.vue / user-center/index.vue / system-manage.ts / auth.ts）
 
 ## Constitution Check
 
@@ -29,7 +29,7 @@
 | **II. Soft Delete + 全域 Audit** | W-FW5 的 user→roles 寫入為**新寫入路徑** → 依 II「所有寫入 MUST 寫 `sys_operation_log`、業務 + audit 同 transaction」**必須含 audit**（不沿用 F8 `assign_users` 未稽核的 pre-existing gap）。自助改密碼寫入亦同 transaction 內 audit。`update_user` / `create_user` 既有 audit 路徑沿用。`sys_user_role` 為 M:N 關聯表、delta de-association 採 `delete_many`（關聯表慣例、非業務實體軟刪範疇）。 | ✅ PASS（新寫入路徑均含 audit） |
 | **III. 嚴版禁 Forward + 單一職責** | 全程 rust 單一進程內 service 呼叫、無後端間 HTTP / RPC。`/systemManage/*` 與 `/auth/*` 由 rust 單一 owner enforce。 | ✅ PASS |
 | **IV. base 不改動邊界** | W-FW5 屬 **W-WEBUI 軌道受管例外**（Constitution IV，v1.2.0 起列舉含 `W-FW1`–`W-FW7`）。base-web 改動：Part A **0 改動**（drawer 角色欄 W-FW1 已接）；Part B 限 `user-operate-drawer.vue`（加選填 password 欄）、`user-center/index.vue`（占位頁補修改密碼面板）、service function 檔 —— 前二者為 §4「2026-05-22 W-FW5 amendment」明文授權的「為接通既有後端能力所必需的最小 UI 新增」。不碰型別定義 / 表格 render / router / store / i18n / 版面重構。 | ✅ PASS（行使 v1.2.0 W-WEBUI 受管例外；UI 新增在 §4 amendment 明文授權內） |
-| **V. 漸進收縮** | 0 nestjs 改動（DESIGN-B 形態）；rust-only。DB schema **零結構變更**（`sys_user_role` 既有；唯一可能 DB 變動為 `/auth/changePassword` 的 Casbin policy seed，視 R-Q2 實作期查證而定）。 | ✅ PASS |
+| **V. 漸進收縮** | 0 nestjs 改動（DESIGN-B 形態）；rust-only。DB schema **零結構變更**（`sys_user_role` 既有；唯一 DB 變動為 `/auth/changePassword` 的 Casbin policy seed migration）。 | ✅ PASS |
 
 **Gate 結果**：5 principle 全 PASS、無 violation → `Complexity Tracking` 留空。
 
@@ -65,15 +65,16 @@ rust-api/  (worktree, branch rev1-admin-rust-api)
 ├── server/service/src/admin/sys_user_service.rs              # B1: update_user 密碼 hash 修正；A3: user→roles delta 寫入 service（或置 authorization service）
 ├── server/service/src/admin/sys_auth_service.rs              # B3b: change_password service（驗舊 + hash 新 + audit）
 ├── server/router/src/admin/sys_authentication_route.rs       # B3c: /auth/changePassword route（protected router）
-└── migration/src/datas/<...>.rs                              # B3d（條件性）: /auth/changePassword Casbin seed —— 視 protected router enforce 查證
+└── migration/src/datas/<...>.rs                              # B3d: /auth/changePassword Casbin seed（3-role allow、POST）
 
 base-web/  (worktree, branch rev1-admin-base-web)
 ├── src/views/manage/user/modules/user-operate-drawer.vue     # B2/B4: 加選填 password 欄 + handleSubmit 帶 password（userRoles 已 W-FW1 接線、不動）
 ├── src/views/user-center/index.vue                           # B5: 占位頁補「修改密碼」面板
-└── src/service/api/system-manage.ts（+ 視情況 auth service 檔）  # B6: fetchChangePassword service function；add/update user service function 型別補選填 password
+├── src/service/api/system-manage.ts                          # B6: fetchAddUser/fetchUpdateUser inline 型別補選填 password
+└── src/service/api/auth.ts                                   # B6: 新增 fetchChangePassword service function
 ```
 
-**Structure Decision**: 雙 worktree（rust-api + base-web）。rust-api 8 元件（+1 條件性 Casbin seed）、base-web 3 檔。多段式 commit（worktree commit + push fork → outer 更新 SHA pin）。
+**Structure Decision**: 雙 worktree（rust-api + base-web）。rust-api 9 元件、base-web 4 檔。多段式 commit（worktree commit + push fork → outer 更新 SHA pin）。
 
 ## Complexity Tracking
 

@@ -55,7 +55,7 @@ transform handler（`sys_system_manage_api.rs` 的 `add_user_for_systemmanage` /
 - **transform DTO**：`SystemManageAddUserInput` / `SystemManageUpdateUserInput` 補 `password: Option<String>`（收 `password`）。
 - **addUser transform**：`input.password` 為 `Some` → 用該值；`None` → 沿 W-FW1 既有預設密碼（`123456`）。
 - **updateUser transform**：`input.password` 原樣傳入 `UpdateUserInput.password`（`Some` → 經 B1 修正後正確 hash 寫入；`None` → `update_user` 不動 password 欄，既有行為）。
-- **base-web `user-operate-drawer.vue`**：表單加一個**選填** password 欄（naive-ui `NInput type="password"`）；`model` 加 `password`；`handleSubmit` 送出帶 `password`（留空則不送 / 送空字串由 transform 視為未提供 —— 實作擇一、空字串等同 `None`）。建立模式可填、編輯模式留空＝不改。
+- **base-web `user-operate-drawer.vue`**：表單加一個**選填** password 欄（naive-ui `NInput type="password"`）；`model` 加 `password`；`handleSubmit` 送出帶 `password`。**空值處理**：transform handler 把 `None` 與 `Some("")`（空字串）**皆視為「未提供密碼」**；base-web password 欄留空時送空字串或省略該欄兩者等效。建立模式可填、編輯模式留空＝不改。
 
 ### B3 — 使用者自助修改密碼（changePassword 端點 + user-center 面板）
 
@@ -68,17 +68,15 @@ transform handler（`sys_system_manage_api.rs` 的 `add_user_for_systemmanage` /
 **B3c — route + handler**：
 `POST /auth/changePassword`，掛 `sys_authentication_route.rs` 的 `init_protected_router`（JWT 保護）。handler（`sys_authentication_api.rs`）extractor：`Extension<User>`（取 `user.user_id()` 當「我是誰」）+ `Extension<Arc<SysAuthService>>` + `Json<ChangePasswordInput>` → 呼 `change_password` → `Res<bool>` 或 `Res<()>`。
 
-**B3d — Casbin seed（條件性）**：
-`/auth/changePassword` 應任何已登入 user 可呼叫。實作期查證 `/auth/getUserInfo`（同 protected router）在 `casbin_rule` 的處理：若 protected router 受 Casbin enforce 且 getUserInfo 有 all-role `p` policy → 比照補 `/auth/changePassword` 的 Casbin seed migration（全 role allow、`POST`）；若 protected router 不受 enforce → 無需 seed。
+**B3d — Casbin seed**：
+查證確認（`server/initialize/src/router_initialization.rs:223-226`）`init_protected_router` **受 Casbin enforce**、`/auth/getUserInfo` 有既有 3-role allow seed。`/auth/changePassword` 為自助、任何已登入 user 可呼叫 → **須**補 Casbin seed migration（`migration/src/datas/<...>.rs`）：`/auth/changePassword` × {ROLE_SUPER, ROLE_ADMIN, ROLE_USER} allow、method `POST`、`v4=''`，含反向 DELETE down migration、register `mod.rs` / `lib.rs`；比照 `/auth/getUserInfo` 既有 seed 體例。
 
 **B3e — base-web `user-center/index.vue`**：
 占位頁（`<LookForward/>`）補成一個最小「修改密碼」面板 —— `NForm` 含舊密碼 / 新密碼 / 確認新密碼三個 `NInput type="password"`；送出前驗新密碼 == 確認（FR-012、不一致阻擋）；呼 `fetchChangePassword`；`if (error) return`、成功 `$message.success`。
 
 ## base-web service function
 
-`src/service/api/system-manage.ts`（或既有 auth service 檔，依 changePassword 歸屬）：
-
-- `fetchChangePassword(data)` → `POST /auth/changePassword`，body `{ currentPassword, newPassword }`。
-- `fetchAddUser` / `fetchUpdateUser` 既有 service function的 inline 參數型別補**選填** `password`（型別在 `system-manage.ts` 內、非 `src/typings`，§4 准動）。
+- `fetchChangePassword(data)` → `POST /auth/changePassword`，body `{ currentPassword, newPassword }` —— 置 `src/service/api/auth.ts`（`/auth/*` 端點、auth service 檔已存在）。
+- `fetchAddUser` / `fetchUpdateUser` 既有 service function 的 inline 參數型別補**選填** `password`（型別在 `src/service/api/system-manage.ts` 內、非 `src/typings`，§4 准動）。
 
 > base-web 不改 `src/typings`；`userRoles` 既有型別（`User.userRoles: string[]`）沿用。

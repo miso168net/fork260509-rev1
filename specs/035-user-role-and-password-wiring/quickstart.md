@@ -45,6 +45,6 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --wait
 
 ## 落點與 commit
 
-- **rust-api worktree**（branch `rev1-admin-rust-api`）：A1 user_roles 填充 / A2 transform DTO + userRoles / A3 user→roles delta service / B1 update_user hash 修正 / B2 transform DTO + password / B3 changePassword DTO+service+route+handler（+ 條件性 Casbin seed）。
-- **base-web worktree**（branch `rev1-admin-base-web`）：3 檔（`user-operate-drawer.vue` / `user-center/index.vue` / `system-manage.ts`｜或 auth service 檔）。
+- **rust-api worktree**（branch `rev1-admin-rust-api`）：A1 user_roles 填充 / A2 transform DTO + userRoles / A3 user→roles delta service / B1 update_user hash 修正 / B2 transform DTO + password / B3 changePassword DTO+service+route+handler + `/auth/changePassword` Casbin seed。
+- **base-web worktree**（branch `rev1-admin-base-web`）：4 檔（`user-operate-drawer.vue` / `user-center/index.vue` / `system-manage.ts` / `auth.ts`）。
 - **多段式 commit**（CLAUDE.md §4.1）：各 worktree 內 conventional commit + push fork → outer repo `git add base-web rust-api` 更新 SHA pin + 第二段 commit。
