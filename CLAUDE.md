@@ -33,8 +33,6 @@
 
 兩段式 commit 是日常工作流，詳見 §4 操作手冊。
 
-**目前狀態**：worktree + submodule 已建立、`.gitmodules` 已註冊；尚無 feature work。base-web 從 `example` 分支衍生、rust-api 從 `main` 分支衍生。
-
 ## 2. 目錄結構
 
 ```
@@ -49,8 +47,8 @@ fork260509-rev1/                            ← workspace root（傘狀 repo rev
 │   ├── hook-git-submodule-SOP.sh          ← 每次 session 開頭執行的 SOP 檢查
 │   └── skills/                            ← 本地 skill 集合
 ├── .specify/                              ← spec-kit 安裝結構（templates / scripts / memory / extensions / integrations / workflows）
-├── docs/                                  ← 設計補充文件（GRAPHIFY-NOTES.md 已建；INTEGRATION-RESEARCH.md / INTEGRATION-PLAN.md 待建）
-├── specs/            (尚未建立)            ← 未來：spec-kit feature spec 目錄
+├── docs/                                  ← 整合設計 / 進度 / brainstorm 文件（見 §7 索引）
+├── specs/                                 ← spec-kit feature 規格目錄（每 feature 一個 NNN-<short-name>/；工作流見 §3）
 ├── graphify-out/                          ← 知識圖譜輸出（外層 git 追蹤 GRAPH_REPORT.md + graph.json + graph.html + obsidian/ 內 notes；只排除個人化/可重產項目）
 │   ├── GRAPH_REPORT.md                    ← 含 god nodes / surprises / suggested questions
 │   ├── graph.json                         ← 結構化圖譜資料（可被 graphify query 查）
@@ -66,7 +64,8 @@ fork260509-rev1/                            ← workspace root（傘狀 repo rev
 ├── fork260509-soybean-admin-rust/         ← Rust axum + Casbin backend，rust-api worktree 源倉（gitignored，本機必留）
 ├── base-web/                              ← worktree + submodule（外層記 gitlink SHA）
 ├── rust-api/                              ← worktree + submodule（外層記 gitlink SHA）
-└── deploy/           (尚未建立)            ← 未來：docker-compose / nginx / .env.example
+├── docker-compose.yml                     ← outer root compose；dev/prod override = docker-compose.{dev,prod}.yml（見 §8.2）
+└── deploy/                                ← 部署支援檔（nginx conf / secrets / dev-certs / cleanup 等；見 §8.2）
 ```
 
 **關鍵事實**：
@@ -74,7 +73,7 @@ fork260509-rev1/                            ← workspace root（傘狀 repo rev
 - `fork260509-*` 4 個源倉 gitignored，但**本機必須留著**（worktree 源倉）；別台機器若用 submodule clone 重來則不需要這 4 個源倉。
 - Vue 源倉 GitHub repo 名稱 = `fork260509-soybean-admin-base`（從原 `fork260509-soybean-admin` rename 而來，舊 URL 仍 redirect）。
 - 知識圖譜輸出 `GRAPH_REPORT.md` / `graph.json` / `graph.html` 都只存在 `graphify-out/`；要看就直接開 `graphify-out/GRAPH_REPORT.md`，或瀏覽器開 `graphify-out/graph.html` 看互動圖。
-- 外層 git 追蹤：`CLAUDE.md`、`.gitignore`、`.gitattributes`、`.graphifyignore`、`.gitmodules`、`.claude/{settings.json, hook-git-submodule-SOP.sh, skills/}`、`.specify/`（spec-kit 結構）、`graphify-out/{graph.json, GRAPH_REPORT.md, graph.html, obsidian/}`（graph.html 與 obsidian vault 內 markdown notes 都 tracked）、以及 `base-web` `rust-api` 兩個 gitlink SHA。
+- 外層 git 追蹤：`CLAUDE.md`、`.gitignore`、`.gitattributes`、`.graphifyignore`、`.gitmodules`、`docker-compose*.yml`、`.claude/{settings.json, hook-git-submodule-SOP.sh, skills/}`、`.specify/`（spec-kit 結構）、`docs/`、`specs/`、`deploy/`、`graphify-out/{graph.json, GRAPH_REPORT.md, graph.html, obsidian/}`（graph.html 與 obsidian vault 內 markdown notes 都 tracked）、以及 `base-web` `rust-api` 兩個 gitlink SHA。
 
 ## 3. feature 開發工作流（SDD 設計鏈 → TDD 實作）
 
@@ -306,7 +305,7 @@ git commit -m "bump base-web: rebase on upstream <短 SHA>"
 - ❌ 不要 `git submodule add ../<...> base-web`：這會嘗試 clone 進 base-web/、與既有 worktree 衝突。submodule 設定要**手寫 .gitmodules**（見 §4.4）。
 - ❌ 不要在 worktree 裡跑 `git push` 不指定 remote/branch — `cd base-web` 預設推到 fork260509-soybean-admin-base，可能誤推到非預期分支；用 `git push origin rev1-admin-base-web` 顯式指定。
 - ❌ 不要忘記第二段 commit：worktree 內改完 push 完，**一定要回外層 `git add base-web && git commit`** 更新 pin，否則外層下次 commit 才會包進去（容易混淆 SHA 對應關係）。
-- ❌ 不要直接編輯 `fork260509-soybean-admin-*/` 四個源倉的檔案：base 與 rust 兩個應透過 `base-web/` / `rust-api/` worktree 改；docs / nestjs 兩個目前未列入 rev1 整合範圍。
+- ❌ 不要直接編輯 `fork260509-soybean-admin-*/` 四個源倉的檔案：base 與 rust 兩個應透過 `base-web/` / `rust-api/` worktree 改；docs / nestjs 兩個源倉不在整合範圍（nestjs 已於 F14 退場、現為 DESIGN-B rust-only）。
 - ❌ 不要跳過 spec-kit `.specify/extensions.yml` 內 `optional: false` 的 mandatory pre-hook（如 `before_specify` → `speckit.git.feature` 為 feature 開短期 outer branch）。即使當前 outer branch 是 `rev1-admin-root`（傘狀 monorepo default），spec-kit feature branch 模式**仍是預期工作流**（見 §1 Outer branch 模式）。pre-hook 只在 local 建分支、**不** push，符合「push 前須 user 同意」紀律（§4.1）。
 
 ## 6. 進度追蹤
@@ -341,29 +340,29 @@ rev1 整合的研究與設計文件（authoritative，本檔不重複內容）�
 
 | 帳號 | 角色 | 密碼 |
 |---|---|---|
-| `Soybean` | 超級管理員 | `123456`（待 rev1 重新驗證） |
+| `Soybean` | 超級管理員 | `123456` |
 | `Administrator` | admin | 同上 |
 | `GeneralUser` | 一般 | 同上 |
 
-3 個 user 共用同一個 argon2id 雜湊；plaintext = `123456`（migration 檔案直接埋的測試帳號雜湊，逆推驗證過）。rev1 第一個 login flow feature 跑通時建議再次動態驗證。
+3 個 user 共用同一個 argon2id 雜湊；plaintext = `123456`（migration 檔案直接埋的測試帳號雜湊，逆推驗證過）。F5.1 auth-login feature 已實機驗證 `123456` 可登入。
 
-### 8.2 對外 endpoint 與 port 規劃（rev1 提議，待 INTEGRATION-PLAN 確認）
+### 8.2 對外 endpoint 與 port 配置
 
-> 以下 port 編排為 rev1 提議值（刻意避開 fork260509 既有 port，方便兩個 workspace 並存）；正式定案在 `docs/INTEGRATION-PLAN.md`、實際套用在 `deploy/` 建立並改 `application.yaml` 時生效。
+> 以下為 rev1 現行 port 配置（刻意用 1XXXX 前綴避開 fork260509 既有 port，方便兩個 workspace 並存）；已落地於 `deploy/` 的 docker-compose、dev stack 實機運行中。
 
-| 角色 | 參考專案 fork260509（既有） | rev1 提議 |
+| 角色 | 參考專案 fork260509（既有） | rev1（現行） |
 |---|---|---|
 | Web (對外) | `:8080` | `:11080` |
 | Rust API（內部，僅 dev 期間 host 直連用） | `:10001` | `:11081` |
 | Postgres | host `:5432` ↔ container `:5432` | container 內仍 `:5432`（不改）；host 暴露 `15432:5432` |
 | docker compose project name | `new-admin`（預設由目錄名衍生） | `rev1-admin`（透過 `COMPOSE_PROJECT_NAME` 環境變數設定） |
 
-**目前現況**（W-F6 + W-F7 落地、TLS 結構就位、3 種啟動模式）：
+**啟動模式**（3 種；TLS 結構已就位）：
 - **dev**（`-f -f dev.yml`）：127.0.0.1 loopback、HTTP `:11080` + HTTPS `:11443`（自簽 cert）+ 直連 backend port `:11081 :15432 :16379`（範例見 §8.2.1）
 - **prod baseline**（`-f -f prod.yml`、不帶 `--profile prod`）：0.0.0.0 對外、80 強制 redirect 443、acme.sh 不啟（需先 seed cert into named volume `front_nginx_certs`）
 - **prod + acme**（`-f -f prod.yml --profile prod`）：同 prod baseline + acme.sh skeleton（實際 cert acquisition 留 W-F6b、需真實 domain + DNS provider）
 
-#### 8.2.1 dev 啟動命令範例（W-F6 + W-F7 落地後）
+#### 8.2.1 dev / prod 啟動命令範例
 
 ```bash
 # === 第一次：生成 dev 自簽 cert（只需跑一次、每年 renew）===
