@@ -10,9 +10,9 @@
 
 **現狀**：DESIGN-A §6.1 全 14 application feature（F1–F14）+ Phase W deploy（W-F1~W-F7、W-F11、Track DESIGN-A W-FA1/2/3）全部落地，**DESIGN-B（rust-only）形態生效**。W-WEBUI 軌道（base-web 管理後台 CRUD 接線）進行中 —— 031 user-crud、032 menu-crud 已完成。
 
-**Active feature**：—（無進行中 feature）
+**Active feature**：`033` `role-crud-wiring`（W-FW3）—— brainstorm 完成、進入 spec-kit 設計鏈
 
-**下一步**：見 Follow-up Backlog —— W-WEBUI 軌道後續（role / 角色接線）、observability（W-F12/13/14）、各 feature 衍生 follow-up 為候選。
+**下一步**：033 完成後 —— W-FW4 `role-authorization-wiring`、observability（W-F12/13/14）、各 feature 衍生 follow-up（見 Follow-up Backlog）。
 
 ---
 
@@ -27,6 +27,7 @@
 | W-FW1-N1 | W-FW1 brainstorm | base-web user `userRoles` 接線（讀 + 寫 + Casbin `g` rule 同步）—— `SystemManageUserOutput.user_roles` 現硬寫 `vec![]`、rust 無 user→roles 寫入路徑 | 獨立 feature（暫定 W-FW5 `user-role-assignment`） |
 | W-FW1-N2 | W-FW1 brainstorm | user password UX（建立設密碼 / admin 重設 / user 自改；連帶處理 `update_user` password 未 hash 的 pre-existing TODO） | 獨立 follow-up |
 | W-FW2-N1 | W-FW2 brainstorm | base-web menu `query` / `buttons` / `fixedIndexInTab` 持久化 —— 需擴 `sys_menu` schema + entity + `MenuInput` + Output DTO、讀寫雙向接通 | 獨立 feature |
+| W-FW3-N1 | W-FW3 brainstorm | role code 改名能力 —— W-FW3 採機制 (a) transform 鎖 code（base-web 送的 roleCode 在 update 被忽略、drawer 仍顯示可編輯）；完整「安全改 code」需 rust `update_role` 改 code 時重同步 `casbin_rule`（`v0`）+ base-web roleCode edit 唯讀 | 獨立 follow-up（若日後需要 role code 改名）|
 | R2 | F14 DESIGN-B cutover review | F5.1 登入失敗無 audit —— `pwd_login` 只在成功路徑呼 `send_login_event`，密碼錯誤不寫 row（spec 005 FR-007 / SC-009 未實作） | follow-up（DESIGN-B 若要求 audit 完整性則須補） |
 | F3-N1 | F3 implement | `sys_endpoint::insert_many` 繞 facade fully-qualified 呼叫（facade 只封 SELECT/DELETE） | 評估（audit path 若納 INSERT，facade 補 `insert_many` wrapper） |
 | F3-N2 | F3 implement | `sys_access_key` delete atomicity gap —— facade commit → `sign::remove_key` 兩步間 crash 留 orphan key | 評估（改 DB-as-truth + reload pattern） |
@@ -46,7 +47,7 @@
 | F2.2 | F2 拆分（F2.1 已交） | audit-log outbox + Redis subscriber TTL fallback | F2.1 只交 schema + transaction 紀律 + 統一 audit path |
 | W-F6b | W-F6 留下 | acme.sh 真實 cert acquisition / renew 流程 | 需公網 + 真實 domain + DNS provider creds |
 | W-F12/13/14 | DESIGN-W-DEPLOYMENT §11 | observability 三件套（Phase W deploy P5） | Phase W deploy 最後一個 phase、未排程 |
-| W-WEBUI 軌道後續 | DESIGN-W-WEBUI §5 | role / 角色授權模組 base-web 接線（W-FW3+） | 接續 W-FW1 / W-FW2；逐 feature 走 spec-kit |
+| W-FW4 | DESIGN-W-WEBUI §5.4 | role-authorization-wiring —— `menu-auth-modal` / `button-auth-modal`（角色菜單 / 按鈕授權）接線；需 Phase 0 research（按鈕授權來源端點） | 接續 W-FW3（033）；逐 feature 走 spec-kit |
 
 ---
 
