@@ -103,10 +103,17 @@ W-WEBUI 軌道內的 feature,base-web 修改**僅限**以下三類檔案:
 | `src/views/manage/**/modules/*-operate-*.vue` | 把 stub `handleSubmit` 接到上述 service function;送出參數、處理成功/失敗、`emit('submitted')` 觸發列表 refresh |
 | `src/views/manage/**/index.vue` | 把 stub `handleDelete` / `handleBatchDelete` 接到 service function |
 | `src/views/manage/role/modules/{menu,button}-auth-modal.vue` | 把寫死假資料的 `getChecks`/`getHome`/`getAllButtons` 換成真 GET;`handleSubmit` 接授權 POST |
+| `src/views/manage/user/modules/user-operate-drawer.vue`（password 欄）、`src/views/user-center/index.vue`（修改密碼面板）| **W-FW5 amendment 例外（見下方）**：為接通既有後端密碼能力所必需的最小 UI 新增 |
 
 **不准動**:型別(`src/typings/`、`Api.SystemManage.*`)、表格 column render、`src/router`、`src/store`、i18n key、`.env`、UI 樣式。若接線過程發現需要動到這些,停下來、當作 spec 的 open question 升級處理,不擅自擴大。
 
 **既有後端行為沿用**:rust-api 的 audit log、soft delete、Casbin enforce 在這些寫入端點上已就位(F3/F2.1/F7 交付),W-WEBUI 不碰這些路徑 —— 只是讓 base-web 真的去呼叫它們。
+
+> **§4 amendment（2026-05-22,W-FW5 `user-role-and-password-wiring`）**:W-WEBUI 軌道原則為「只接線、不改 UI」。W-FW5 的密碼 UX 需要兩處**為接通既有後端能力所必需的最小 UI 新增**,明文授權如下、**僅限 W-FW5**:
+> - `user-operate-drawer.vue`:新增一個**選填 password 表單欄**(建立時設初始密碼 / 編輯時 admin 重設;留空則沿 W-FW1 既有行為)。
+> - `user-center/index.vue`(現為 `<LookForward/>` stub):補成一個**最小「修改密碼」面板**(舊密碼 / 新密碼 / 確認新密碼欄)。
+>
+> 此放寬僅及「為接通既有後端能力所必需的最小 UI 新增」—— **不**及版面重構、**不**及非密碼功能(個人資料 / 頭像等)、**不**動 router / store / 型別。上方「不准動」清單其餘項續用。Constitution Principle IV 不需改版(其已將 W-WEBUI 精確範圍 defer 至本 §4)。依據:`docs/superpowers/035-feature-user-role-and-password-wiring.md` brainstorm Q1。
 
 ---
 
