@@ -174,6 +174,59 @@ Constitution IV amendment（前置,/speckit-constitution）
 
 ---
 
+## §7 follow-up feature 切分（W-FW5 ~ W-FW7）
+
+> W-FW1~W-FW4 完成後（2026-05-22，4 feature 全 merge 回 `rev1-admin-root`），各 feature 在 brainstorm / implement / review 階段累積出 **7 個 follow-up 工作項**（INTEGRATION-CHECKLIST 原列為 W-FW1-N1 / N2、W-FW2-N1、W-FW3-N1、W-FW4-N1 / N2 / N3）。本節把這 7 項整併為 **3 個 coherent feature**（W-FW5 / W-FW6 / W-FW7），作為後續 `/speckit-specify` 開 `NNN-<feature-name>` 的依據（`NNN` 由 speckit pre-hook 於 specify 時順序指派）。
+>
+> **整併原則**：依「同一功能面、同一驗收面」歸群 —— 不把 schema 擴充、research spike、native bug fix 等異質工作硬塞同一 feature；沿用 W-FW1~4「最小、後端就緒、測得動」的 scoping 紀律（W-FW4 本身即刻意把 button-auth / role-home 切為 follow-up）。**不**把 7 項全併成單一 mega-feature —— 那會讓 `spec.md` 無法 coherent、混雜風險檔次、且被 research 未決項卡死。
+
+W-WEBUI 受管例外（Constitution Principle IV，v1.1.0）已涵蓋 W-FW5~W-FW7 的 base-web 修改；§4 base-web 修改範圍邊界續用。W-FW6 / W-FW7 另含 rust-api schema 變更（role 表 / `sys_menu` 表）—— 屬 rust-api 側、不受 §4 base-web 邊界約束，仍須各自走 spec-kit Constitution Check。
+
+### §7.1 W-FW5 `user-role-and-password-wiring`
+
+- **整併**：W-FW1-N1（user→roles 指派）+ W-FW1-N2（password UX）。
+- **範疇**：補完 W-FW1 未做的 user 管理兩塊 ——
+  - **user→roles 指派**：base-web user drawer 的角色多選欄接線（讀 user 現有 roles + 寫）；rust-api 補 user→roles 寫入路徑 + Casbin `g` rule 同步（`SystemManageUserOutput.user_roles` 現硬寫 `vec![]`、rust 無 user→roles 寫入路徑）。
+  - **password UX**：建立時設密碼 / admin 重設 / user 自改；連帶修 `update_user` password 未 hash 的 pre-existing TODO。
+- **後端分量**：中 —— user-role 寫入 + Casbin `g` rule 同步；password hash 修正（pre-existing bug）。
+- **前端改動**：`user-operate-drawer.vue` 角色多選欄 + password 欄接線；`system-manage.ts` 對應 service function。
+- **定位**：把 user 管理從「W-FW1 的 CRUD」補成「完整可用」。W-FW1 spec FR-016 當時明示「userRoles 提交後端忽略」—— 解除此限制即 W-FW5 主要交付。
+
+### §7.2 W-FW6 `role-authorization-completion`
+
+- **整併**：W-FW4-N1（button-auth modal）+ W-FW4-N2（role 首頁持久化）+ W-FW4-N3（`assign_routes` audit gap）+ W-FW3-N1（role code 安全改名）。
+- **範疇**：補完 W-FW4 未做的 role 授權部分 + 連帶 RBAC 正確性收尾 ——
+  - **button-auth modal**：`getAllButtons` / `getChecks` 換真 GET、`handleSubmit` 接授權 POST。**需 Phase 0 research**：rust-api 是否有「全部權限按鈕來源」端點、「UI 按鈕 vs API 端點」語意如何對齊（可能需補端點）。
+  - **role 首頁持久化**：`menu-auth-modal` 的角色首頁選單 —— 需 rust-api role 資料表結構變更 + 讀寫端點。
+  - **`assign_routes` audit gap**：native `assign_routes` 補寫 `sys_operation_log`（W-FW4 thin wiring 未補的 pre-existing native gap）。
+  - **role code 安全改名**：rust `update_role` 改 code 時重同步 `casbin_rule`（`v0`）+ base-web roleCode edit 唯讀（W-FW3 採 transform-layer code-lock 為過渡機制）。
+- **後端分量**：大 —— button 來源 research + 可能新端點、role 表 schema 變更、native audit 補寫、casbin `v0` 重同步。
+- **前端改動**：`button-auth-modal.vue` + `menu-auth-modal.vue` 的 `getAllButtons` / `getChecks` / `getHome` / `updateHome` / `handleSubmit`；`role-operate-drawer.vue` roleCode 欄唯讀；`system-manage.ts` 對應 service function。
+- **定位**：W-WEBUI 軌道收尾最複雜的 feature。brainstorm 階段須認真評估是否仍需細分 —— 尤其 button-auth 的 Phase 0 research 結果若顯示工作量過大，得再行拆分。
+
+### §7.3 W-FW7 `menu-field-persistence`
+
+- **整併**：W-FW2-N1（menu `query` / `buttons` / `fixedIndexInTab` 持久化）。
+- **範疇**：base-web `menu-operate-modal` 已有的 `query` / `buttons` / `fixedIndexInTab` UI 欄位目前送出後不被持久化 —— 補 `sys_menu` schema + entity + `MenuInput` / Output DTO、讀寫雙向接通。
+- **後端分量**：大 —— `sys_menu` schema migration + entity + 雙向 DTO。
+- **前端改動**：`menu-operate-modal.vue` 把既有 UI 欄位納入送出參數；`system-manage.ts`（若需要）。
+- **定位**：純 schema 擴充類 feature，與 W-FW5 / W-FW6 不相干、可獨立排程。
+- **open question（brainstorm Phase 0 處理）**：讀回這些欄位是否需動 `Api.SystemManage.Menu` 型別（§4 不准動 `src/typings`）—— starter UI 已含這些欄位、型別宣告可能已具備，brainstorm 查證；若確需動型別則升級為 spec open question。
+
+### §7.4 執行順序
+
+```
+W-FW5 user-role-and-password-wiring  ─┐
+W-FW7 menu-field-persistence         ─┤  三者互不相干、無強制順序
+W-FW6 role-authorization-completion  ─┘  （W-FW6 最複雜、含 research，建議獨立排）
+```
+
+- 三個 feature 彼此無依賴，可依資源任意排序。
+- W-FW6 含 Phase 0 research 與最大後端分量，建議獨立排、留足 research 時間。
+- 每個 feature 各自走 spec-kit 設計鏈（step 0 brainstorm → SDD → TDD）、兩段式 commit、CDP 驗收、merge 回 `rev1-admin-root`，同 W-FW1~W-FW4。
+
+---
+
 ## 附錄：與其他 DESIGN 文件的關係
 
 - **DESIGN-B** 仍是 rev1 現行架構權威;W-WEBUI 不改 DESIGN-B 的後端架構,只在其 §1.3 邊界上開一條受管例外軌。

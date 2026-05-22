@@ -12,7 +12,7 @@
 
 **Active feature**：—（無進行中 feature）
 
-**下一步**：observability（W-F12/13/14）、各 feature 衍生 follow-up（見 Follow-up Backlog）。
+**下一步**：W-WEBUI follow-up（W-FW5 / W-FW6 / W-FW7，切分見 DESIGN-W-WEBUI §7）、observability（W-F12/13/14）。
 
 ---
 
@@ -24,13 +24,6 @@
 
 | ID | 發現來源 | 項目 | 規劃去向 |
 |---|---|---|---|
-| W-FW1-N1 | W-FW1 brainstorm | base-web user `userRoles` 接線（讀 + 寫 + Casbin `g` rule 同步）—— `SystemManageUserOutput.user_roles` 現硬寫 `vec![]`、rust 無 user→roles 寫入路徑 | 獨立 feature（暫定 W-FW5 `user-role-assignment`） |
-| W-FW1-N2 | W-FW1 brainstorm | user password UX（建立設密碼 / admin 重設 / user 自改；連帶處理 `update_user` password 未 hash 的 pre-existing TODO） | 獨立 follow-up |
-| W-FW2-N1 | W-FW2 brainstorm | base-web menu `query` / `buttons` / `fixedIndexInTab` 持久化 —— 需擴 `sys_menu` schema + entity + `MenuInput` + Output DTO、讀寫雙向接通 | 獨立 feature |
-| W-FW3-N1 | W-FW3 brainstorm | role code 改名能力 —— W-FW3 採機制 (a) transform 鎖 code（base-web 送的 roleCode 在 update 被忽略、drawer 仍顯示可編輯）；完整「安全改 code」需 rust `update_role` 改 code 時重同步 `casbin_rule`（`v0`）+ base-web roleCode edit 唯讀 | 獨立 follow-up（若日後需要 role code 改名）|
-| W-FW4-N1 | W-FW4 brainstorm/spec | role 按鈕授權 modal（`button-auth-modal`）接線 —— 後端無「按鈕」資料模型，需評估把按鈕授權映射到既有 API 端點權限機制；牽涉「UI 按鈕 vs API 端點」語意對齊 | 獨立 feature |
-| W-FW4-N2 | W-FW4 brainstorm/spec | role 首頁持久化 —— `menu-auth-modal` 的角色首頁選單需後端儲存（目前無每角色首頁的儲存）；需後端角色資料表結構變更 + 讀寫端點 | 獨立 follow-up |
-| W-FW4-N3 | W-FW4 plan/research | 角色菜單授權寫入無 audit log —— native `assign_routes` 於 transaction 內 delta 更新 `sys_role_menu`、但未寫 `sys_operation_log`（Constitution II pre-existing native gap，類同 R2 登入失敗無 audit）；補 audit 需動 native service、超出 wiring 範疇 | 獨立 follow-up |
 | R2 | F14 DESIGN-B cutover review | F5.1 登入失敗無 audit —— `pwd_login` 只在成功路徑呼 `send_login_event`，密碼錯誤不寫 row（spec 005 FR-007 / SC-009 未實作） | follow-up（DESIGN-B 若要求 audit 完整性則須補） |
 | F3-N1 | F3 implement | `sys_endpoint::insert_many` 繞 facade fully-qualified 呼叫（facade 只封 SELECT/DELETE） | 評估（audit path 若納 INSERT，facade 補 `insert_many` wrapper） |
 | F3-N2 | F3 implement | `sys_access_key` delete atomicity gap —— facade commit → `sign::remove_key` 兩步間 crash 留 orphan key | 評估（改 DB-as-truth + reload pattern） |
@@ -51,6 +44,9 @@
 | F2.2 | F2 拆分（F2.1 已交） | audit-log outbox + Redis subscriber TTL fallback | F2.1 只交 schema + transaction 紀律 + 統一 audit path |
 | W-F6b | W-F6 留下 | acme.sh 真實 cert acquisition / renew 流程 | 需公網 + 真實 domain + DNS provider creds |
 | W-F12/13/14 | DESIGN-W-DEPLOYMENT §11 | observability 三件套（Phase W deploy P5） | Phase W deploy 最後一個 phase、未排程 |
+| W-FW5 | DESIGN-W-WEBUI §7.1 | `user-role-and-password-wiring` —— 整併 W-FW1-N1（user→roles 指派 + Casbin `g` 同步）+ W-FW1-N2（password UX + `update_user` hash 修） | W-WEBUI follow-up；逐 feature 走 spec-kit |
+| W-FW6 | DESIGN-W-WEBUI §7.2 | `role-authorization-completion` —— 整併 W-FW4-N1（button-auth modal，需 Phase 0 research）+ W-FW4-N2（role 首頁持久化）+ W-FW4-N3（`assign_routes` audit）+ W-FW3-N1（role code 安全改名） | W-WEBUI follow-up；最複雜、含 research，建議獨立排 |
+| W-FW7 | DESIGN-W-WEBUI §7.3 | `menu-field-persistence` —— 整併 W-FW2-N1（menu `query`/`buttons`/`fixedIndexInTab` 持久化、`sys_menu` schema 擴充） | W-WEBUI follow-up；純 schema 擴充、獨立 |
 
 ---
 
