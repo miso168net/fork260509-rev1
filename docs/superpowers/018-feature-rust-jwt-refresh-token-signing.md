@@ -24,7 +24,7 @@
 **Scope summary**:rev1 application 階段 Phase 4 **第二個** feature(F10 wire-up + friction surface 後接續、F10.2 之前)。**修 R-8**:rust `AuthOutput.refresh_token` 從 `Ulid::new().to_string()`(26 char 明文)→ **HS256 JWT**(極簡 `RefreshClaims` struct:sub + exp + iat + nbf + jti + iss、用 `refresh_secret` + `refresh_expire` 簽)。落地後 nestjs `jwtService.verifyAsync` PASS、進入 `refreshTokenCheck` 階段、**R-7 friction 將 surface(F10.2 修)**。範疇刻意收緊到「**rust refresh_token JWT 簽署 wire-up**」、**不動 nestjs source / 不改 sys_tokens schema / 不做 status enum 對齊(R-7 屬 F10.2)/ 不驗 base-web e2e / 不升 RS256**。
 
 **Commit 模式**(post Q3 拍板 — F10.1 固定):
-- **兩段式** commit(per CLAUDE.md §6.1):rust-api worktree 1 commit + outer 1-2 commit(spec docs + docker-compose.yml wire + SHA pin)
+- **兩段式** commit(per CLAUDE.md §4.1):rust-api worktree 1 commit + outer 1-2 commit(spec docs + docker-compose.yml wire + SHA pin)
 
 **範疇外**:
 - ❌ nestjs source 任何改動(嚴守 DESIGN-A §3.2 + F10 Q2/Q5 延伸)
@@ -51,7 +51,7 @@
 
 - **自然推論 N-3 (algorithm)**: HS256(沿用 rust `Header::default()` + nestjs `jwtService` 預設、F1.2 升 RS256 範疇)。
 
-- **自然推論 N-4 (測試 user)**: `Soybean`(super admin、對齊 CLAUDE.md §5.1 + F5.1/F6/F10 既有 acceptance pattern)。
+- **自然推論 N-4 (測試 user)**: `Soybean`(super admin、對齊 CLAUDE.md §8.1 + F5.1/F6/F10 既有 acceptance pattern)。
 
 - **自然推論 N-5 (stack)**: W-FA1 dev + `--profile track-a`(7 service healthy、refreshToken 走 nginx → nestjs)— F10.1 acceptance 在此 stack 跑。
 

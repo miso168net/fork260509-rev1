@@ -22,7 +22,7 @@ rev1 **application Phase 3 第二個 feature**(F9 已落、F7 次之、F8 後續
 範疇刻意收緊到「**5 條 read alias shape mapping + 15 row Casbin 補位 + base view 3 個 CDP smoke + 三邊零改動 + base-web src 0 diff**」、**不改 base src / 不補 base 缺的 CRUD fetch fn / 不補 operate-drawer submit handler / 不補 manage/domain view / 不加 sys_user.gender 等缺 column / 不做 userRoles g rule join / 不加 systemManage 寫 alias 的 shape mapping(F9 既有 mount 不動)/ 不加 rust unit test**。
 
 **Commit 模式**(F7 固定):
-- **兩段式** commit(per CLAUDE.md §6.1、類 F11/F9/F10.2/F10.1/F6/F5.1):rust-api worktree 1 commit + outer 1-2 commit + merge `--no-ff` + SHA fill follow-up;**無 docker-compose.yml 改**(對比 F10.1、W-FA1 既有 wire 已涵蓋)
+- **兩段式** commit(per CLAUDE.md §4.1、類 F11/F9/F10.2/F10.1/F6/F5.1):rust-api worktree 1 commit + outer 1-2 commit + merge `--no-ff` + SHA fill follow-up;**無 docker-compose.yml 改**(對比 F10.1、W-FA1 既有 wire 已涵蓋)
 
 ---
 

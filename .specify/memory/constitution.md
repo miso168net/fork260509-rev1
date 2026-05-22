@@ -105,7 +105,7 @@ DESIGN-A（rust + nestjs）為過渡形態；DESIGN-B（rust-only）為終局目
 - **TLS**：對外流量 MUST 走 TLS；prod 用 Let's Encrypt（acme.sh auto-renew），dev / staging 用自簽（提供生成腳本）；HTTP only 僅限本機 dev
 - **Secret 注入**：Docker secrets + `_FILE` pattern 為 prod 預設機制；secret **不進** process env；dev 可用 envvar fallback（透過 `_FILE` 缺省）
 - **DB migration trigger**：init container 模式（rust-api 共 image、不同 entrypoint）；migration container 用獨立 write-schema credential，rust runtime 用低權限 data-only credential
-- **Port 規劃**：對外 port 用 `1XXXX` 前綴避開 fork260509 既有 port（具體值見 `CLAUDE.md §5.2` 與 [`DESIGN-W §6.1`](../../docs/INTEGRATION-DESIGN-W-DEPLOYMENT.md)）
+- **Port 規劃**：對外 port 用 `1XXXX` 前綴避開 fork260509 既有 port（具體值見 `CLAUDE.md §8.2` 與 [`DESIGN-W §6.1`](../../docs/INTEGRATION-DESIGN-W-DEPLOYMENT.md)）
 - **Observability**：promtail → Loki + grafana（logs）+ prometheus + grafana（metrics）為**必要**stack；prod 必啟，dev 可選
 - **結構化 log**：rust / nestjs / nginx 統一 JSON 格式，必要欄位含 `timestamp / level / service / request_id / msg`
 - **Backup**：pg_basebackup + WAL archive（PITR）為 prod 必要；audit log 表 partition by month；retention policy 透過 spec-kit feature 拍板
@@ -116,7 +116,7 @@ DESIGN-A（rust + nestjs）為過渡形態；DESIGN-B（rust-only）為終局目
 
 - **spec-kit 流程紀律**：所有 feature 在 implement 前 MUST 通過 `speckit-specify` → `speckit-clarify`（必要時）→ `speckit-plan` → `speckit-tasks` 流程；spec/plan 階段執行 Constitution Check
 - **Constitution Check 失敗處理**：plan 階段若違反本憲法任一 principle，MUST 在 `plan.md` 的 `Complexity Tracking` 表內陳述 violation + rationale + simpler alternative rejected 理由；無法陳述合理性 → 重新設計而非繞過
-- **兩段式 commit 紀律**（base-web / rust-api worktree）：worktree 內 conventional commit → push fork → outer repo `git add <submodule>` 更新 SHA pin + 第二段 commit；詳見 `CLAUDE.md §6.1`
+- **兩段式 commit 紀律**（base-web / rust-api worktree）：worktree 內 conventional commit → push fork → outer repo `git add <submodule>` 更新 SHA pin + 第二段 commit；詳見 `CLAUDE.md §4.1`
 - **Commit message**：[Conventional Commits](https://www.conventionalcommits.org/) 格式，**subject 用中文**；body 必要時補 why；footer 含 `Co-Authored-By` 標示協作來源
 - **Push 確認紀律**：push 到 remote 之前 MUST 取得 user 明確授權（沿用全域 `~/.claude/CLAUDE.md §5`）；branch protection 例外見全域守則
 - **TLS 紀律**：dev 環境可用自簽 cert；prod / staging **不容**跳過 TLS（HTTP only 在 prod 為違憲）

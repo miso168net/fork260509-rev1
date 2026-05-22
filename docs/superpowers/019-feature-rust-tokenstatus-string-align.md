@@ -12,7 +12,7 @@ rev1 application Phase 4 **第三個** feature(F10 wire-up + F10.1 R-8 修後接
 
 **Application Phase 4 第三個 feature**(F10/F10.1 已落):wire-up baseline + R-8 修完整、R-7 修 = F10.2 收尾,Phase 4 完成後 refreshToken end-to-end pass、F11/F13/F14 解鎖。
 
-**Commit 模式**:**兩段式**(per CLAUDE.md §6.1、類 F10.1/F5.1/F6):rust-api worktree 1 commit + outer 1-2 commit(spec docs + INTEGRATION-CHECKLIST.md milestone + rust-api SHA pin;**無 docker-compose.yml 改**,F10.1 wire 已涵蓋)。
+**Commit 模式**:**兩段式**(per CLAUDE.md §4.1、類 F10.1/F5.1/F6):rust-api worktree 1 commit + outer 1-2 commit(spec docs + INTEGRATION-CHECKLIST.md milestone + rust-api SHA pin;**無 docker-compose.yml 改**,F10.1 wire 已涵蓋)。
 
 ---
 
@@ -151,7 +151,7 @@ mod tests {
 - 其他 TokenStatus consumer(若有、grep 確認)— 全走 enum API、自動跟著新 serialize
 - **無 yaml / 無 envvar / 無 docker-compose / 無 base-web / 無 nestjs / 無 migration / 無 application.yaml**
 
-**Two-stage commit**(per CLAUDE.md §6.1):
+**Two-stage commit**(per CLAUDE.md §4.1):
 - **Stage 1 rust-api worktree commit**:1 file(`consts.rs`)~18 LOC、conventional commit `feat(rust-api): F10.2 對齊 TokenStatus enum 字串值到 nestjs`
 - **Stage 2 outer commit**:spec docs(`specs/019-rust-tokenstatus-string-align/` 8 file)+ CLAUDE.md SOP marker + INTEGRATION-CHECKLIST.md milestone + `.specify/feature.json` + rust-api SHA pin、conventional commit `feat(spec): F10.2 rust-tokenstatus-string-align — R-7 修 + refreshToken end-to-end pass`
 - **Stage 3 push wait**:user 同意後 push rust-api + outer 019 + merge --no-ff + SHA fill follow-up + push rev1-admin-root

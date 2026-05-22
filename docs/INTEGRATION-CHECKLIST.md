@@ -1,7 +1,7 @@
 # INTEGRATION-CHECKLIST — rev1 整合進度追蹤
 
 > **此檔 = 整合進度的單一真相**：Current Focus（現狀）+ Follow-up Backlog（衍生工作）+ 已完成里程碑 + Roadmap 狀態 + 跨 feature 待驗證項。
-> 不放原則（→ `.specify/memory/constitution.md`）、不放規格細節（→ `specs/<NNN>/`）、不放 brainstorm 決策（→ `docs/superpowers/<NNN>-feature.md`）、不放操作參考事實（如預設帳號 → CLAUDE.md §5）。
+> 不放原則（→ `.specify/memory/constitution.md`）、不放規格細節（→ `specs/<NNN>/`）、不放 brainstorm 決策（→ `docs/superpowers/<NNN>-feature.md`）、不放操作參考事實（如預設帳號 → CLAUDE.md §8）。
 > 每次 session SOP hook（`.claude/hook-git-submodule-SOP.sh`）自動 cat 全檔注入 Claude session 第一輪 additional context —— 故各節須維持精簡。
 
 ---
@@ -53,7 +53,7 @@
 ## ✅ 已完成里程碑
 
 - [x] outer git init + push（`miso168net/fork260509-rev1`、default branch `rev1-admin-root`）
-- [x] worktree + submodule 配置（`base-web` / `rust-api` 雙重身分；CLAUDE.md §9 操作手冊）
+- [x] worktree + submodule 配置（`base-web` / `rust-api` 雙重身分；CLAUDE.md §4 操作手冊）
 - [x] spec-kit v0.8.7 + extensions（before_specify pre-hook → `speckit.git.feature`）
 - [x] constitution v1.0.0（`.specify/memory/constitution.md`、Principle I-V）
 - [x] **F4 response-shape-alignment** ✅（2026-05-12 完成；outer `3d357e5`、rust-api `82bbde5`；spec `specs/001-response-shape-alignment/`）— rust↔base-web API 回應 envelope 形狀對齊

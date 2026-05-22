@@ -23,7 +23,7 @@ F3 `soft-delete-infrastructure` 給 7 張 admin 表加了 `deleted_at`、刪除�
 範疇刻意收緊到「**物理清除過期軟刪 row + 寫 audit + curl/psql/docker-exec acceptance**」、**不改 base-web / 不改 nestjs / 不碰 casbin_rule / 不做通知 / 不 cleanup audit 表本身**。
 
 **Commit 模式**(F12 固定):
-- **兩段式** commit(per CLAUDE.md §6.1、類 F8/W-F11):rust-api worktree 1 commit(新 crate `server/cleanup` + Dockerfile 改)+ outer 1 commit(`docker-compose.yml` `cleanup` service + `deploy/` setup SQL + spec docs + INTEGRATION-CHECKLIST)+ merge `--no-ff` + SHA fill follow-up。
+- **兩段式** commit(per CLAUDE.md §4.1、類 F8/W-F11):rust-api worktree 1 commit(新 crate `server/cleanup` + Dockerfile 改)+ outer 1 commit(`docker-compose.yml` `cleanup` service + `deploy/` setup SQL + spec docs + INTEGRATION-CHECKLIST)+ merge `--no-ff` + SHA fill follow-up。
 - **有 docker-compose.yml 改**(加 profiled service);**無 DB migration**(`cleanup_job` role 走文件化的手動 `psql` setup、見 Q4)。
 
 ---

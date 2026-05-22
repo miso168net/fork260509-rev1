@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Claude Code SessionStart hook — 自動執行 CLAUDE.md §6.4 + §8 進度追蹤 SOP
+# Claude Code SessionStart hook — 自動執行 CLAUDE.md §4.3 + §6 進度追蹤 SOP
 # stdout 會被 Claude Code harness 以 additional context 注入到 session 第一輪
 # 修改本檔不需重啟 CLI，下次新 session 就生效
 

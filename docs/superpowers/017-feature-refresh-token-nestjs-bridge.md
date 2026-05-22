@@ -24,7 +24,7 @@
 
 **Commit 模式**(取決於 rust source 改動數):
 - **單段** outer commit(若 rust source 0 改動 — 理想路徑、類 W-F5/W-F6/W-FA*)
-- **兩段式** commit(若 rust source 1-3 改動 — per CLAUDE.md §6.1、類 F5.1/F6)
+- **兩段式** commit(若 rust source 1-3 改動 — per CLAUDE.md §4.1、類 F5.1/F6)
 
 **範疇外**:
 - ❌ nestjs source 任何改動(per Q2 + Q5 拍板、嚴守 DESIGN-A §3.2)— 含 `@Log` decorator / Casbin enforcer reload subscription / refreshJwtSecret 對齊改動 等等
@@ -53,7 +53,7 @@
 
 - **自然推論**:**Acceptance approach 採 inline bash + `contracts/verification-commands.md`**(類 W-FA2 慣例)— rev1 application feature(F4/F5.1/F6)已建立 inline bash + contract 的慣例;F10 不是 deploy feature、不需新 deploy script(W-FA3 已是 transitional script、F14 要刪 1 個就夠、不要再加)。
 
-- **自然推論**:**測試用 user = `Soybean`**(super admin、CLAUDE.md §5.1 列、F5.1 + F6 已用)— 對齊既有 acceptance pattern、無新 user 需求。
+- **自然推論**:**測試用 user = `Soybean`**(super admin、CLAUDE.md §8.1 列、F5.1 + F6 已用)— 對齊既有 acceptance pattern、無新 user 需求。
 
 - **自然推論**:**stack 預設用 W-FA1 dev + track-a profile**(`docker compose -f docker-compose.yml -f docker-compose.dev.yml --profile track-a up -d --wait`)— F10 acceptance 必須 7 service healthy(對齊 W-FA1 baseline)、refreshToken endpoint 走 nginx → nestjs(對齊 W-FA2 wire-up)。
 
@@ -125,9 +125,9 @@ HTTP 層通不代表 DB schema 對齊。W-FA1 implement-time 觀察到 nestjs pr
 - **FR-006**: F10 MUST 不驗 base-web SPA e2e refreshToken 自動化(per Q4 拍板)。
 - **FR-007**: F10 MUST 不驗 JWT shape claim assertion(decode + claim presence assertion、per Q4 拍板)。
 - **FR-008**: F10 MAY 改 rust-api source 1-3 處(出 friction 才動、per Q3 + Q5 拍板);若 friction 落 nestjs 側、F10 改 rust 遷就(per Q5)。
-- **FR-009**: F10 commit 模式:rust source 0 改動 → **單段** outer commit;rust source 1-3 改動 → **兩段式** commit(per CLAUDE.md §6.1)。
+- **FR-009**: F10 commit 模式:rust source 0 改動 → **單段** outer commit;rust source 1-3 改動 → **兩段式** commit(per CLAUDE.md §4.1)。
 - **FR-010**: F10 MUST 在 W-FA1 dev + `--profile track-a` profile 起的 stack 上跑 acceptance(7 service healthy、refreshToken 走 nginx TRANSITIONAL block)。
-- **FR-011**: F10 MUST 用 `Soybean` user 跑 acceptance(對齊 F5.1 / F6 既有慣例、`123456` plain pwd per CLAUDE.md §5.1)。
+- **FR-011**: F10 MUST 用 `Soybean` user 跑 acceptance(對齊 F5.1 / F6 既有慣例、`123456` plain pwd per CLAUDE.md §8.1)。
 - **FR-012**: F10 MUST 不改 W-FA1 / W-FA2 / W-FA3 既有 deploy 配置(`docker-compose*.yml` / `deploy/front-nginx/conf.d/*` / `deploy/build-nestjs.sh` / `deploy/secrets/*`)。
 - **FR-013**: F10 MUST 不改 sys_tokens migration schema(W-FA1 已驗對齊、F10 不動 schema)。
 - **FR-014**: F10 MUST 不改 base-web src(per Constitution Principle IV)。

@@ -286,7 +286,7 @@ pub struct Res<T> {
 - `database.url: "postgres://soybean:soybean@123.@pgbouncer:6432/soybean_admin_rust"` — 走 pgbouncer
 - 其他 Redis / JWT / log 設定
 
-→ rev1 提議 port 規劃（CLAUDE.md §5.2）將改 server port 為 `11081`、container 內 postgres 仍 `5432`、是否保留 pgbouncer 留 PLAN 評估。
+→ rev1 提議 port 規劃（CLAUDE.md §8.2）將改 server port 為 `11081`、container 內 postgres 仍 `5432`、是否保留 pgbouncer 留 PLAN 評估。
 
 ---
 
@@ -530,7 +530,7 @@ base 全走 nestjs。
 - `redis` container
 - 可選：`pgbouncer` container（待 INTEGRATION-PLAN 評估是否保留）
 
-對外暴露 port 規劃見 `CLAUDE.md §5.2`（rev1 提議：web `:11080`、rust `:11081`、postgres host `:15432`）。
+對外暴露 port 規劃見 `CLAUDE.md §8.2`（rev1 提議：web `:11080`、rust `:11081`、postgres host `:15432`）。
 
 ### 8.3 nginx 分流概念
 
@@ -588,7 +588,7 @@ nestjs 用 CQRS + 多 events + Casbin + Prisma — 維運門檻高。
 
 ### 9.6 rev1 不繼承 fork260509 PLAN 決策
 
-如 CLAUDE.md §4 disclaimer 所述，fork260509 過往決策（nginx 同源 / Sea-ORM pool / DB-backed refresh / migration init container / docker compose 部署形態）**都不視為 rev1 預設值**。INTEGRATION-PLAN 階段需逐項重新評估，避免反射性套用。
+fork260509 過往決策（nginx 同源 / Sea-ORM pool / DB-backed refresh / migration init container / docker compose 部署形態）**都不視為 rev1 預設值**。INTEGRATION-PLAN 階段需逐項重新評估，避免反射性套用。
 
 ### 9.7 base example 預設 apifox mock 的隱性影響
 

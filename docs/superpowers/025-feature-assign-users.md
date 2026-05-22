@@ -19,7 +19,7 @@ DESIGN-A §3.1 定義 F8 = 新增 `POST /authorization/assign-users` endpoint。
 範疇刻意收緊到「**1 個 backend user-role 指派 endpoint wiring + curl/psql acceptance**」、**不改 base src / 不改 base `.env` / 不改 nestjs / 不動 docker-compose / 不動 DB schema / 不重寫 service method / 不改 login role 機制**。
 
 **Commit 模式**(F8 固定):
-- **兩段式** commit(per CLAUDE.md §6.1、類 F5.1/F6/F10.x/F11/F9/F7/F7.1/F7.2):rust-api worktree 1 commit + outer 1 commit + merge `--no-ff` + SHA fill follow-up;**無 docker-compose.yml 改**;**有 1 個新 Casbin seed migration**(對比 F7.2 無 migration、同 F6/F9/F7 有 migration)。
+- **兩段式** commit(per CLAUDE.md §4.1、類 F5.1/F6/F10.x/F11/F9/F7/F7.1/F7.2):rust-api worktree 1 commit + outer 1 commit + merge `--no-ff` + SHA fill follow-up;**無 docker-compose.yml 改**;**有 1 個新 Casbin seed migration**(對比 F7.2 無 migration、同 F6/F9/F7 有 migration)。
 
 ---
 

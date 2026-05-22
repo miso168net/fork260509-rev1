@@ -91,7 +91,7 @@ base-web-side 改（改 `EnableStatus` 型別）會違反 Constitution IV,不採
 
 ### Commit 模型
 
-純 rust-side → 兩段式 commit(per CLAUDE.md §6.1):rust-api worktree 1 commit（entity + migration + Output DTO + input DTO + service）+ outer 1 commit（rust-api SHA pin + spec docs）+ merge `--no-ff` + SHA fill follow-up。**有 migration**。
+純 rust-side → 兩段式 commit(per CLAUDE.md §4.1):rust-api worktree 1 commit（entity + migration + Output DTO + input DTO + service）+ outer 1 commit（rust-api SHA pin + spec docs）+ merge `--no-ff` + SHA fill follow-up。**有 migration**。
 
 ### Constitution Check（初判）
 

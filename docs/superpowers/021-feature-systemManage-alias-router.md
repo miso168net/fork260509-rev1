@@ -28,7 +28,7 @@ rev1 **DESIGN-A §4.2 抽離項清單收尾 feature**(F11 補 4 條 stub 後接�
 範疇刻意收緊到「**10 條 alias + Casbin enforce + 三邊零改動 + base-web src 0 diff**」、**不解 B3 camelCase GAP / 不驗 base-web e2e / 不加 sys_menu seed / 不加新 role / 不加 batch tx / 不加 casbin orphan cleanup / 不加 rust unit test**。
 
 **Commit 模式**(post brainstorm 拍板 — F9 固定):
-- **兩段式** commit(per CLAUDE.md §6.1、類 F11/F10.2/F10.1/F6/F5.1):rust-api worktree 1 commit + outer 1-2 commit + merge `--no-ff` + SHA fill follow-up;**無 docker-compose.yml 改**(對比 F10.1、W-FA1 既有 wire 已涵蓋)
+- **兩段式** commit(per CLAUDE.md §4.1、類 F11/F10.2/F10.1/F6/F5.1):rust-api worktree 1 commit + outer 1-2 commit + merge `--no-ff` + SHA fill follow-up;**無 docker-compose.yml 改**(對比 F10.1、W-FA1 既有 wire 已涵蓋)
 
 ---
 
@@ -177,7 +177,7 @@ rev1 **DESIGN-A §4.2 抽離項清單收尾 feature**(F11 補 4 條 stub 後接�
 
 ### Section 4:Commit 模式 + 依賴 + scope 邊界
 
-- **兩段式 commit**(per CLAUDE.md §6.1、F11 同 pattern):rust-api worktree 1 commit + outer 1-2 commit + merge --no-ff + SHA fill follow-up;**無 docker-compose.yml 改**
+- **兩段式 commit**(per CLAUDE.md §4.1、F11 同 pattern):rust-api worktree 1 commit + outer 1-2 commit + merge --no-ff + SHA fill follow-up;**無 docker-compose.yml 改**
 - **Inbound 依賴**:F4 + F5.1 + F6 + F11(全已 merge)+ F11 R-Q5/R-Q6 implement-time finding + W-FA1 stack
 - **Outbound 解鎖**:DESIGN-A §4.2 抽離項清單 **5/5 完成** + F7 + F13 + F14
 - **Out of Scope**(13 條 ❌):B3 camelCase / base-web e2e / sys_menu seed / 新 role / batch tx / orphan cleanup / batch limit / rust unit test / input validation / 改 base-web / 改 nestjs / 改 nginx / 改 docker-compose

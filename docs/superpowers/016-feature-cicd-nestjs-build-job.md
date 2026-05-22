@@ -131,7 +131,7 @@ W-FA3 改動極小(1 個新 script + 2 個 doc)、但仍對齊 Constitution Prin
 | E-3 | nestjs fork rebase 升 Node major(如 24)、`NODE_VERSION=22.11.0` build-arg 變不相容 | docker build fail、operator 改 script 內 `NODE_VERSION` 值對齊新需求(屬 fork drift、W-FA3 不負責 future-proof) |
 | E-4 | BuildKit 未支援 / DOCKER_BUILDKIT=1 失敗 | docker build 用 legacy builder、仍可 work、script 行為一致(實際上 docker 24+ 已預設 BuildKit、`DOCKER_BUILDKIT=1` 變保險)|
 | E-5 | Image 已存在、tag 一致 | docker build 走 cache、image SHA 可能改變(若 layer cache 部分失效),但 `nestjs:rev1-admin-nestjs:latest` tag 仍指向新 SHA |
-| E-6 | DESIGN-B 退場時整支刪 | `rm deploy/build-nestjs.sh` + 改回 CLAUDE.md §5.2.1 + INTEGRATION-CHECKLIST.md;對齊 marker convention(本 script 整支即等於 W-FA2 nginx marker block 在 deploy/ 目錄的 transitional 角色) |
+| E-6 | DESIGN-B 退場時整支刪 | `rm deploy/build-nestjs.sh` + 改回 CLAUDE.md §8.2.1 + INTEGRATION-CHECKLIST.md;對齊 marker convention(本 script 整支即等於 W-FA2 nginx marker block 在 deploy/ 目錄的 transitional 角色) |
 
 ---
 
@@ -184,7 +184,7 @@ W-FA3 改動極小(1 個新 script + 2 個 doc)、但仍對齊 Constitution Prin
 
 ## Assumptions
 
-- **A-001**: docker daemon 已啟、operator 在 workspace root 跑 script(對齊 CLAUDE.md §6.1 / §9 所有命令在 workspace root 慣例)。
+- **A-001**: docker daemon 已啟、operator 在 workspace root 跑 script(對齊 CLAUDE.md §4.1 / §4 所有命令在 workspace root 慣例)。
 - **A-002**: `fork260509-soybean-admin-nestjs/backend/Dockerfile` 既有結構(W-FA1 brainstorm 階段 2026-05-18 已驗、`ARG NODE_VERSION=20.11.1` + multi-stage build + USER node + EXPOSE 9528 + 含 curl)、W-FA3 落地時不變。
 - **A-003**: BuildKit available(docker 24+ 預設啟用;`DOCKER_BUILDKIT=1` 顯式重申不會 break legacy docker)。
 - **A-004**: W-FA1 落定的 NODE_VERSION=22.11.0 build-arg override 在 W-FA3 落地時仍適用(若 fork Dockerfile 升 Node major、屬 fork drift、W-FA3 不負責、operator 改 script 即可)。
@@ -200,7 +200,7 @@ W-FA3 改動極小(1 個新 script + 2 個 doc)、但仍對齊 Constitution Prin
 ### Outbound(本 feature 解鎖)
 
 - **W-F17** `cicd-build-pipeline` 後續抽象階段:W-FA3 local script + W-F1 local docker build + W-F2 local docker build 三者可作為 W-F17 抽象 base — W-F17 把這些 local 模式統一升 CI/CD platform(若有此需求)。
-- **F14** `design-a-to-b-cutover`:W-FA3 build script 為 transitional script、F14 cutover 時 `rm deploy/build-nestjs.sh` + 改 CLAUDE.md §5.2.1 移除 nestjs build 段落(對齊 W-FA1 / W-FA2 marker block 整段刪設計、本 script 整支即為 cutover 點)。
+- **F14** `design-a-to-b-cutover`:W-FA3 build script 為 transitional script、F14 cutover 時 `rm deploy/build-nestjs.sh` + 改 CLAUDE.md §8.2.1 移除 nestjs build 段落(對齊 W-FA1 / W-FA2 marker block 整段刪設計、本 script 整支即為 cutover 點)。
 - **Phase W deploy P7 Track DESIGN-A 全部完成**:W-FA1 + W-FA2 + W-FA3 三件套全 done 後、Track DESIGN-A deploy 結構完整;後續 application Phase 進入 F10 refresh-token-nestjs-bridge(F10 在 nestjs 補實作 sys_tokens prisma + JWT bridge、屬 application Phase Phase 2 與 W-F* deploy 分軌)。
 
 ## Out of Scope

@@ -61,7 +61,7 @@ compose 透過 **base + override** 模型實作環境差異：`docker-compose.ym
 | docker-compose 結構（services / networks / volumes / healthcheck）| ✓ |
 | nginx 反向代理 + TLS 終止 | ✓ |
 | Secret 注入機制 | ✓ |
-| Port 規劃（承 CLAUDE.md §5.2）| ✓ |
+| Port 規劃（承 CLAUDE.md §8.2）| ✓ |
 | DB migration trigger | ✓ |
 | 背景工作（cleanup-job / outbox-worker / backup-job）| ✓ |
 | rust 水平擴展拓樸 | ✓ |
@@ -567,7 +567,7 @@ services:
 | `JWT_REFRESH_TOKEN_TTL_SECS` | compose env | refresh token 有效期 |
 | `CASBIN_PUBSUB_CHANNEL` | compose env | redis channel 名（兩 track 一致）|
 | `RUST_LOG` | compose env | rust log level |
-| `RUST_API_PORT` | compose env | 11081（承 CLAUDE.md §5.2）|
+| `RUST_API_PORT` | compose env | 11081（承 CLAUDE.md §8.2）|
 | `BASE_WEB_PORT` | compose env | 8080（container 內）|
 | `FRONT_NGINX_HTTPS_PORT` | compose env | 11443 對外（或 443，看 §6） |
 | `OUTBOX_POLL_INTERVAL_SECS` | compose env | outbox worker 輪詢間隔 |
@@ -587,7 +587,7 @@ Track DESIGN-B 無需上述 env。
 
 ## §6 Port 規劃 + rust 水平擴展拓樸
 
-### §6.1 對外 / 容器內 Port 規劃（承 CLAUDE.md §5.2）
+### §6.1 對外 / 容器內 Port 規劃（承 CLAUDE.md §8.2）
 
 | 角色 | 對外（host）| 容器內 | 備註 |
 |---|---|---|---|
@@ -1071,7 +1071,7 @@ DESIGN-A → DESIGN-B 遷移時刪除 nestjs build job。
 雖非 CI/CD 範疇但相關：
 - rust：`cargo fmt --check` + `cargo clippy -- -D warnings`
 - TS：`pnpm typecheck` + `eslint`
-- Commit message：[Conventional Commits](https://www.conventionalcommits.org/)（承 CLAUDE.md §6.3）
+- Commit message：[Conventional Commits](https://www.conventionalcommits.org/)（承 CLAUDE.md §4.2）
 
 由各 fork repo 的 `.pre-commit-config.yaml` 或 husky 配置（spec-kit feature 階段落地）。
 
@@ -1093,7 +1093,7 @@ DESIGN-A → DESIGN-B 遷移時刪除 nestjs build job。
 | **Phase W-2：對外服務（P2）** ||||
 | W-F5 | `front-nginx-reverse-proxy` | nginx config 主結構（upstream / location / headers）；track-specific include 機制 | W-F3 | 共用 + Track 差異區 |
 | W-F6 | `tls-cert-management` | dev/staging 自簽腳本 + prod Let's Encrypt acme.sh container；cert volume + nginx 對接 | W-F5 | 共用 |
-| W-F7 | `port-mapping` | 對外 port（11080/11443）+ 容器內 port；CLAUDE.md §5.2 配置落地 | W-F3 | 共用 |
+| W-F7 | `port-mapping` | 對外 port（11080/11443）+ 容器內 port；CLAUDE.md §8.2 配置落地 | W-F3 | 共用 |
 | **Phase W-3：背景工作（P3）** ||||
 | W-F8 | `db-migration-init-container` | migration service（init container）+ healthcheck depends_on；獨立 migration credential | W-F1, W-F3, W-F4 | 共用 + Track DESIGN-A 對齊 |
 | W-F9 | `cleanup-job-deployment` | cleanup-job service + host cron + 獨立最小權限 credential + dry-run mode | W-F1, W-F3, W-F4 | 共用 |

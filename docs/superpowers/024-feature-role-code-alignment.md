@@ -19,7 +19,7 @@ rev1 **F7.1 fix-route-getuserroutes-wiring merge 後第一個 follow-up feature*
 範疇刻意收緊到「**1 個 backend response-layer role code 映射 + base manage/* 3 view CDP smoke acceptance(不帶 workaround)**」、**不改 base src / 不改 base `.env` / 不改 nestjs / 不動 migration / 不動 docker-compose / 不動 Casbin / 不切 dynamic auth route mode**。
 
 **Commit 模式**(F7.2 固定):
-- **兩段式** commit(per CLAUDE.md §6.1、類 F5.1/F6/F10.1/F10.2/F11/F9/F7/F7.1):rust-api worktree 1 commit + outer 1 commit + merge `--no-ff` + SHA fill follow-up;**無 docker-compose.yml 改**、**無 migration 改**。
+- **兩段式** commit(per CLAUDE.md §4.1、類 F5.1/F6/F10.1/F10.2/F11/F9/F7/F7.1):rust-api worktree 1 commit + outer 1 commit + merge `--no-ff` + SHA fill follow-up;**無 docker-compose.yml 改**、**無 migration 改**。
 
 ---
 
@@ -150,7 +150,7 @@ F7.2 mapping helper 是純函式 — 比照 F10.2 precedent(`test_token_status_s
 
 **Outer(改):**
 - 改:`docs/INTEGRATION-CHECKLIST.md`(F7.2 row + Current Focus)
-- 改:`CLAUDE.md` §10 SPECKIT marker(`/speckit-specify` 後)
+- 改:`CLAUDE.md` §6 SPECKIT marker(`/speckit-specify` 後)
 - 新建:`docs/superpowers/024-feature-role-code-alignment.md`(本檔)
 - spec docs:`specs/<NNN>-role-code-alignment/`(`/speckit-specify` 後)
 

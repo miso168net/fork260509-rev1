@@ -21,14 +21,14 @@ A 是 B/C 能正確運作的**硬前提** — 沒有 A,多 replica 下各 instan
 範疇刻意收緊到「**rust 水平擴展 + Casbin 跨 instance 一致性 + curl/psql/docker-exec acceptance**」、**不改 base-web / 不改 nestjs / 不動 DB schema / 不做 metrics 監控 / 不做 autoscaling**。
 
 **Commit 模式**(W-F11 固定):
-- **兩段式** commit(per CLAUDE.md §6.1、類 F8/F7.x/F6/F9):rust-api worktree 1 commit(Casbin pub-sub code)+ outer 1 commit(`docker-compose.prod.yml` + nginx prod conf + rust-api SHA pin + spec docs)+ merge `--no-ff` + SHA fill follow-up。
+- **兩段式** commit(per CLAUDE.md §4.1、類 F8/F7.x/F6/F9):rust-api worktree 1 commit(Casbin pub-sub code)+ outer 1 commit(`docker-compose.prod.yml` + nginx prod conf + rust-api SHA pin + spec docs)+ merge `--no-ff` + SHA fill follow-up。
 - **有 docker-compose.prod.yml 改 + nginx prod conf 改**(對比 F8 無 compose 改);**無 migration、無 DB schema 改、無 Casbin seed**。
 
 ---
 
 ## 關鍵發現:roadmap doc 矛盾(brainstorm 階段 catch)
 
-對照 **DESIGN-W §11(roadmap 權威來源、line 1102 / 1147)** 與 `INTEGRATION-CHECKLIST.md` / `CLAUDE.md §10`,發現後者有命名/計數錯誤:
+對照 **DESIGN-W §11(roadmap 權威來源、line 1102 / 1147)** 與 `INTEGRATION-CHECKLIST.md` / `CLAUDE.md §6`,發現後者有命名/計數錯誤:
 
 | | DESIGN-W §11(權威) | CHECKLIST / CLAUDE.md(錯誤) |
 |---|---|---|
@@ -36,7 +36,7 @@ A 是 B/C 能正確運作的**硬前提** — 沒有 A,多 replica 下各 instan
 | **Phase W P2** | W-F5 + W-F6 + W-F7 共 3 個、全 ✅ → **P2 已 3/3 完成** | 誤算為「3/4、剩 W-F11」 |
 | **Observability** | W-F12 `log-aggregation-loki` / W-F13 `metrics-prometheus` / W-F14 `grafana-dashboards`(Phase W-5 / P5) | — |
 
-→ **W-F11 的 feature 流程(spec / INTEGRATION-CHECKLIST 更新 task)須一併修正此 mislabel**:CHECKLIST §11.2「剩 W-F11 / W-2 P2:3/4」改為「P2 3/3 完成」、CLAUDE.md §10 與 CHECKLIST next-step 的「W-F11 observability」label 更正為「W-F11 rust-horizontal-scaling」。brainstorm 階段先文件化、不在本 commit 動 CHECKLIST(留 W-F11 doc-update task)。
+→ **W-F11 的 feature 流程(spec / INTEGRATION-CHECKLIST 更新 task)須一併修正此 mislabel**:CHECKLIST §11.2「剩 W-F11 / W-2 P2:3/4」改為「P2 3/3 完成」、CLAUDE.md §6 與 CHECKLIST next-step 的「W-F11 observability」label 更正為「W-F11 rust-horizontal-scaling」。brainstorm 階段先文件化、不在本 commit 動 CHECKLIST(留 W-F11 doc-update task)。
 
 ---
 

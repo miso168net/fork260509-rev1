@@ -18,7 +18,7 @@ rev1 **F7 manage-crud-alignment merge `136b1eb` 後第一個 post-F7 follow-up f
 範疇刻意收緊到「**2 個 backend wiring/shape fix + base manage/* 3 view CDP smoke acceptance**」、**不改 base src / 不改 nestjs / 不動 migration / 不動 docker-compose / 不解 role code mismatch follow-up**。
 
 **Commit 模式**(F7.1 固定):
-- **兩段式** commit(per CLAUDE.md §6.1、類 F5.1/F6/F10.1/F10.2/F11/F9/F7):rust-api worktree 1 commit + outer 1 commit + merge `--no-ff` + SHA fill follow-up;**無 docker-compose.yml 改**(對比 F10.1)
+- **兩段式** commit(per CLAUDE.md §4.1、類 F5.1/F6/F10.1/F10.2/F11/F9/F7):rust-api worktree 1 commit + outer 1 commit + merge `--no-ff` + SHA fill follow-up;**無 docker-compose.yml 改**(對比 F10.1)
 
 ---
 

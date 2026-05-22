@@ -6,24 +6,24 @@
 **Status**: Draft(brainstorming 完成、待 `/speckit-specify` 接手轉為正式 feature spec)
 **Source**: superpowers:brainstorming 2026-05-17 session
 **Authoritative parents**:
-- [`docs/INTEGRATION-DESIGN-W-DEPLOYMENT.md`](../INTEGRATION-DESIGN-W-DEPLOYMENT.md) §6.1(對外 / 容器內 Port 規劃 — dev 4 個 host port 表)、§6.3(dev vs prod host port 暴露差異)、§11.1(W-F7 scope:「對外 port(11080/11443)+ 容器內 port;CLAUDE.md §5.2 配置落地」)、§11.2(W-F7 依賴 W-F3;P2 序 W-F5 → W-F6 → W-F7)、§11.3(Day 1 dev 部署形態包含 W-F7)
+- [`docs/INTEGRATION-DESIGN-W-DEPLOYMENT.md`](../INTEGRATION-DESIGN-W-DEPLOYMENT.md) §6.1(對外 / 容器內 Port 規劃 — dev 4 個 host port 表)、§6.3(dev vs prod host port 暴露差異)、§11.1(W-F7 scope:「對外 port(11080/11443)+ 容器內 port;CLAUDE.md §8.2 配置落地」)、§11.2(W-F7 依賴 W-F3;P2 序 W-F5 → W-F6 → W-F7)、§11.3(Day 1 dev 部署形態包含 W-F7)
 - [`CLAUDE.md`](../../CLAUDE.md) §5.2(對外 endpoint 與 port 規劃 — rev1 提議 port 表 + 「目前現況:rev1 提議尚未套用」段落待 W-F7 落地後更新)
 - [`docs/INTEGRATION-CHECKLIST.md`](../INTEGRATION-CHECKLIST.md) Current Focus(「dev / WSL 本機驗:直接走 W-F7」建議)、Phase W deploy Roadmap(W-F7 row)
 - [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md) v1.0.0(Principle I「最小變動範圍」、Principle II「dev/prod 明確分離」— W-F7 走拆檔 `docker-compose.dev.yml` 模式體現)
 - [`specs/008-compose-base-structure/`](../../specs/008-compose-base-structure/)(W-F3 主 compose 結構 — W-F7 不動主檔、僅新增 dev override 拆檔)
 - [`specs/010-front-nginx/`](../../specs/010-front-nginx/)(W-F5 front-nginx service — W-F7 對它加 host port `127.0.0.1:11080:80`、不動其他配置)
 
-**Scope summary**:rev1 deploy 階段 Phase W-2 P2 第二個 feature(W-F5 之後)— **新建** `docker-compose.dev.yml` 拆檔、為 dev 場景顯式暴露 4 個 host port。範疇刻意收緊:**只新增 1 個 outer-repo root 檔案**(docker-compose.dev.yml)+ 2 個既有檔案文件更新(CLAUDE.md §5.2、INTEGRATION-CHECKLIST.md)、**不動**主 `docker-compose.yml`(維持 W-F5 結束的 internal-only baseline、prod safe)、**不動** worktree(base-web / rust-api)、**不動** secret / TLS / nginx config。Host port 全綁 `127.0.0.1` loopback、不暴露 LAN。Dev 啟動:`docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d`;Prod 啟動:`docker compose up -d`(不帶 dev 檔)。範疇外:HTTPS `11443`(W-F6 TLS)、自簽 / Let's Encrypt cert(W-F6)、`docker-compose.prod.yml`(後續 deploy hardening)、rate limiting / WAF(後續)、0.0.0.0 binding(不支援、需要時手動編輯本機 dev 檔)、WSL2 networking mode 自動偵測(不做、文檔提示)。
+**Scope summary**:rev1 deploy 階段 Phase W-2 P2 第二個 feature(W-F5 之後)— **新建** `docker-compose.dev.yml` 拆檔、為 dev 場景顯式暴露 4 個 host port。範疇刻意收緊:**只新增 1 個 outer-repo root 檔案**(docker-compose.dev.yml)+ 2 個既有檔案文件更新(CLAUDE.md §8.2、INTEGRATION-CHECKLIST.md)、**不動**主 `docker-compose.yml`(維持 W-F5 結束的 internal-only baseline、prod safe)、**不動** worktree(base-web / rust-api)、**不動** secret / TLS / nginx config。Host port 全綁 `127.0.0.1` loopback、不暴露 LAN。Dev 啟動:`docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d`;Prod 啟動:`docker compose up -d`(不帶 dev 檔)。範疇外:HTTPS `11443`(W-F6 TLS)、自簽 / Let's Encrypt cert(W-F6)、`docker-compose.prod.yml`(後續 deploy hardening)、rate limiting / WAF(後續)、0.0.0.0 binding(不支援、需要時手動編輯本機 dev 檔)、WSL2 networking mode 自動偵測(不做、文檔提示)。
 
 ## Clarifications
 
 ### Session 2026-05-17(brainstorming 階段拍板、3 項)
 
-- **Q1**: dev 場景要暴露哪些 host port?CLAUDE.md §5.2 與 DESIGN-W §6.1 列了完整 dev 4 port 表、但 INTEGRATION-CHECKLIST Current Focus 建議「給 front-nginx 加 ports: - 11080:80,3-5 行 yaml」最小化版。 → **A: DESIGN-W §6.1 dev 全套 4 ports**(`127.0.0.1:11080:80` front-nginx + `127.0.0.1:11081:11081` rust-api 直連 + `127.0.0.1:15432:5432` postgres + `127.0.0.1:16379:6379` redis;`11443` HTTPS 留 W-F6)。理由:W-F7 既然要落地 DESIGN-W §6.1,一次到位 dev 完整 port mapping,後續 prod 透過 不帶 `-f docker-compose.dev.yml` 的啟動命令自動收緊到 baseline、無 yaml 改動風險;避免後續再開 feature 加 port。代價接受:dev 機若有 port 衝突一次撞 4 個、但每個 port 都用 `1XXXX` 前綴避開 fork260509 既有 port(per CLAUDE.md §5.2 設計理由)。
+- **Q1**: dev 場景要暴露哪些 host port?CLAUDE.md §8.2 與 DESIGN-W §6.1 列了完整 dev 4 port 表、但 INTEGRATION-CHECKLIST Current Focus 建議「給 front-nginx 加 ports: - 11080:80,3-5 行 yaml」最小化版。 → **A: DESIGN-W §6.1 dev 全套 4 ports**(`127.0.0.1:11080:80` front-nginx + `127.0.0.1:11081:11081` rust-api 直連 + `127.0.0.1:15432:5432` postgres + `127.0.0.1:16379:6379` redis;`11443` HTTPS 留 W-F6)。理由:W-F7 既然要落地 DESIGN-W §6.1,一次到位 dev 完整 port mapping,後續 prod 透過 不帶 `-f docker-compose.dev.yml` 的啟動命令自動收緊到 baseline、無 yaml 改動風險;避免後續再開 feature 加 port。代價接受:dev 機若有 port 衝突一次撞 4 個、但每個 port 都用 `1XXXX` 前綴避開 fork260509 既有 port(per CLAUDE.md §8.2 設計理由)。
 
 - **Q2**: Host port binding 要綁 127.0.0.1 還是 0.0.0.0?Docker compose 預設 0.0.0.0(all interfaces)、LAN 其他機可達。 → **A: 127.0.0.1 (loopback only)**。理由:符合 workspace memory 偏好「文件、範例、設定一律寫 127.0.0.1」延伸到 binding;dev 場景只需 host 機本身可達(WSL2 + Windows host)、不需 LAN 其他機;LAN binding 在公共 wifi / 共用網路有風險(W-F4 secrets 雖已對 redis / postgres 加密碼、但 redis-stack 暴露 RedisInsight 端口、postgres 暴露 metadata 仍是攻擊面)。WSL2 兼容:Win11 22H2+ 預設 mirrored networking mode 下 `127.0.0.1` 可從 Windows host 達;NAT 模式則需 wsl IP — spec 邊界檔文檔提示。代價接受:LAN 其他機(手機、同網段同事機)不能訪問 dev 環境,需要時 user 手動把單一 service binding 改 `0.0.0.0` 即可。
 
-- **Q3**: dev/prod 切換機制 — 拆檔(`docker-compose.dev.yml` 手動 -f)vs auto-load override(`docker-compose.override.yml`)vs 直接寫主 compose 配 profile? → **A: docker-compose.dev.yml 拆檔、手動 -f 切換**。理由:Docker compose `override.yml` 預設 auto-load、prod CI 若忘記加 `-f docker-compose.yml` 顯式指定主檔會誤暴露 host port — 安全風險顯著;profile 機制只控制 service 啟動、無法控制單一 service 的 ports 區段(技術上不可行,排除);直接寫主檔簡單但 prod 部署要記得改 yaml 註解或刪除、容易忘。拆檔 + 手動 -f 是最明確的「dev / prod 顯式選擇」紀律:dev 跑 `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d`、prod 跑 `docker compose up -d`(不帶 dev 檔);主 compose 維持 internal-only baseline、prod safe by default。代價接受:dev 啟動命令長一截(但可以寫進 CLAUDE.md §5.2 / 將來 deploy/README 或 Makefile)。
+- **Q3**: dev/prod 切換機制 — 拆檔(`docker-compose.dev.yml` 手動 -f)vs auto-load override(`docker-compose.override.yml`)vs 直接寫主 compose 配 profile? → **A: docker-compose.dev.yml 拆檔、手動 -f 切換**。理由:Docker compose `override.yml` 預設 auto-load、prod CI 若忘記加 `-f docker-compose.yml` 顯式指定主檔會誤暴露 host port — 安全風險顯著;profile 機制只控制 service 啟動、無法控制單一 service 的 ports 區段(技術上不可行,排除);直接寫主檔簡單但 prod 部署要記得改 yaml 註解或刪除、容易忘。拆檔 + 手動 -f 是最明確的「dev / prod 顯式選擇」紀律:dev 跑 `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d`、prod 跑 `docker compose up -d`(不帶 dev 檔);主 compose 維持 internal-only baseline、prod safe by default。代價接受:dev 啟動命令長一截(但可以寫進 CLAUDE.md §8.2 / 將來 deploy/README 或 Makefile)。
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -79,8 +79,8 @@
 | E-2 | host 機既有服務占用 `11080` / `11081` / `15432` / `16379` 其一 | `docker compose up` 啟動失敗回 `bind: address already in use`;排查:`ss -tlnp \| grep ':<port>'`;解決:停用占用者或臨時改 dev 檔對應 host port(`127.0.0.1:11080` → `127.0.0.1:11090`,只動 host 側、container 側不動) |
 | E-3 | host 直連 postgres / redis 需要密碼但 secret file 路徑 | W-F4 secrets 在 `deploy/secrets/<name>.txt`,host operator `cat deploy/secrets/postgres_password.txt` 即可取得;spec 文檔在 US-1 步驟 8/9 直接示範 |
 | E-4 | dev override 檔不慎被 prod CI 拉進啟動命令 | docker-compose.dev.yml tracked(別人 clone 可重現 dev)但 prod 啟動命令明確不帶 `-f docker-compose.dev.yml`;CI/CD pipeline(W-F18)文檔須明寫;短期內無 CI 機制故主要靠紀律 |
-| E-5 | dev 啟動命令過長、operator 容易忘 -f flag | spec 在 CLAUDE.md §5.2 文檔化「dev 啟動範例」段落;將來 W-F17 / W-F18 可加 Makefile target(留後續、不在 W-F7 範疇) |
-| E-6 | postgres 15432 / redis 16379 與 fork260509 並存衝突 | per CLAUDE.md §5.2「rev1 提議 port」設計理由 — `1XXXX` 前綴避開 fork260509 預設(8080 / 10001 / 5432 等);本 spec 不額外處理、若衝突則 fork260509 stack 應自行避讓或停掉 |
+| E-5 | dev 啟動命令過長、operator 容易忘 -f flag | spec 在 CLAUDE.md §8.2 文檔化「dev 啟動範例」段落;將來 W-F17 / W-F18 可加 Makefile target(留後續、不在 W-F7 範疇) |
+| E-6 | postgres 15432 / redis 16379 與 fork260509 並存衝突 | per CLAUDE.md §8.2「rev1 提議 port」設計理由 — `1XXXX` 前綴避開 fork260509 預設(8080 / 10001 / 5432 等);本 spec 不額外處理、若衝突則 fork260509 stack 應自行避讓或停掉 |
 
 ---
 
@@ -95,7 +95,7 @@
 - **FR-005**: 所有 host port binding 必須 **限 `127.0.0.1`**(不可 `0.0.0.0` / `*` / `[::]`)。
 - **FR-006**: dev 啟動命令 `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d` 後 6 service(postgres / redis / migration / rust-api / base-web / front-nginx)全 `healthy`(等同 W-F5 baseline)、且 4 個 host port 在 host 機可達。
 - **FR-007**: prod baseline 啟動 `docker compose up -d`(不帶 dev 檔)後,4 個 host port **無任何 listener**、stack 仍 internal-only 工作正常。
-- **FR-008**: CLAUDE.md §5.2 文件更新 — 「目前現況」段落改為「W-F7 落地、dev 環境 4 port 已暴露(127.0.0.1)、prod 維持 internal-only」;追加「dev 啟動命令範例」段落示範 `-f -f` 雙檔啟動 + 4 個 curl/psql/redis-cli 驗證命令。
+- **FR-008**: CLAUDE.md §8.2 文件更新 — 「目前現況」段落改為「W-F7 落地、dev 環境 4 port 已暴露(127.0.0.1)、prod 維持 internal-only」;追加「dev 啟動命令範例」段落示範 `-f -f` 雙檔啟動 + 4 個 curl/psql/redis-cli 驗證命令。
 - **FR-009**: docs/INTEGRATION-CHECKLIST.md 文件更新 — W-F7 row 從待辦改 ✅ 完成、Current Focus 段落改下一步為 W-F6 / W-F11(任一)、Phase W deploy P2 進度從 1/4 改 2/4。
 - **FR-010**: spec 必須在 `Out of scope` 段明列以下範疇**不包含**:HTTPS `:11443` port、TLS cert(自簽 / acme)、`docker-compose.prod.yml`、rate limiting / WAF、`0.0.0.0` LAN binding 模式、WSL2 networking mode 自動偵測、Makefile target 化、CI/CD pipeline 改動。
 
@@ -160,7 +160,7 @@ services:
 - 別人 clone outer repo 後可直接 dev 啟動、無需額外設定
 - 將來若需 LAN 暴露,user 個人本機編輯改 `127.0.0.1` 為 `0.0.0.0`(本檔仍 tracked、改動算 dirty;不鼓勵)
 
-### E-2:CLAUDE.md §5.2 「目前現況」段落 + 「dev 啟動命令」段落(既有檔、文件更新)
+### E-2:CLAUDE.md §8.2 「目前現況」段落 + 「dev 啟動命令」段落(既有檔、文件更新)
 
 **Purpose**:讓 session 開頭 SOP hook 注入 CLAUDE.md 時、Claude / operator 立即看到 W-F7 已落地、dev 啟動命令範例就在手邊。
 
@@ -190,7 +190,7 @@ services:
 5. `docker compose -f docker-compose.yml -f docker-compose.dev.yml down` + `docker compose up -d --wait` 驗 prod baseline
 6. 跑 US-2 acceptance(ss + curl refused)
 7. 跑 US-3 acceptance(loopback binding verification)
-8. 改 CLAUDE.md §5.2 + INTEGRATION-CHECKLIST.md
+8. 改 CLAUDE.md §8.2 + INTEGRATION-CHECKLIST.md
 9. **單段 commit**(只動 outer、不動 worktree)— `feat(deploy): W-F7 dev host port forward(docker-compose.dev.yml + CLAUDE/checklist 更新)`
 
 ### 風險點 / 已知限制
@@ -230,7 +230,7 @@ services:
 | AC-6 | prod baseline 不暴露 | `docker compose -f docker-compose.yml -f docker-compose.dev.yml down -v && docker compose up -d --wait`、`ss -tlnp 2>/dev/null \| grep -E ':(11080\|11081\|15432\|16379)\b'` | 無輸出 |
 | AC-7 | binding 限 loopback | `ss -tlnp 2>/dev/null \| grep -E ':(11080\|11081\|15432\|16379)\b'`(dev mode) | 4 行、每行 Local Address `127.0.0.1:<port>`(非 0.0.0.0 / * / [::])|
 | AC-8 | SPA → API e2e | host 瀏覽器 `http://127.0.0.1:11080` → login `Soybean / 123456` | 進入 dashboard、看到 menu |
-| AC-9 | CLAUDE.md §5.2 已更新 | `grep -A 5 "目前現況" CLAUDE.md`(或人工檢視) | 包含「W-F7 落地」/「dev 4 port 已暴露」字眼 |
+| AC-9 | CLAUDE.md §8.2 已更新 | `grep -A 5 "目前現況" CLAUDE.md`(或人工檢視) | 包含「W-F7 落地」/「dev 4 port 已暴露」字眼 |
 | AC-10 | INTEGRATION-CHECKLIST.md 已更新 | `grep -E "W-F7.*✅" docs/INTEGRATION-CHECKLIST.md` | 至少 1 match |
 
 ---
@@ -239,7 +239,7 @@ services:
 
 | 決策 | 拍板於 | Source |
 |---|---|---|
-| Port 範疇:DESIGN-W §6.1 dev 全套 4 ports | 2026-05-17 brainstorm Q1 | DESIGN-W §6.1 + CLAUDE.md §5.2 |
+| Port 範疇:DESIGN-W §6.1 dev 全套 4 ports | 2026-05-17 brainstorm Q1 | DESIGN-W §6.1 + CLAUDE.md §8.2 |
 | Host binding:127.0.0.1 loopback only | 2026-05-17 brainstorm Q2 | workspace memory feedback_no_localhost + 安全考量 |
 | dev/prod 切換:`docker-compose.dev.yml` 拆檔 + 手動 -f | 2026-05-17 brainstorm Q3 | prod safe by default 紀律 |
 | 11443 HTTPS port 不在範疇 | 自然推論 | DESIGN-W §11.1 W-F6 範疇 |

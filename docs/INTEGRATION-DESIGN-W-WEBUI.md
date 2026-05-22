@@ -24,7 +24,7 @@ DESIGN-B §1.3「base 不改動邊界」**維持為預設原則** —— 一般 
 
 - W-WEBUI 軌道內的 feature **被明文授權修改 base-web**,但範圍受控(見 §4)。
 - 修改僅限「補接線」性質:把既有 stub `handleSubmit` 接到 service API、補 service function、接 list 頁的 delete handler。**不**改型別定義、表格 render、router、store、設計風格。
-- base-web 修改一律走 worktree 兩段式 commit(CLAUDE.md §6.1)—— 與 rust-api 改動同等紀律。
+- base-web 修改一律走 worktree 兩段式 commit(CLAUDE.md §4.1)—— 與 rust-api 改動同等紀律。
 
 ### §1.3 Constitution IV 的處理
 

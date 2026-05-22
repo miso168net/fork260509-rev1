@@ -39,7 +39,7 @@
 - user-specific 可訪問性查詢(那是 getUserRoutes 範疇)
 - DESIGN-A vs DESIGN-B 分歧:F6 對兩個 track 完全 identical(per DESIGN-B §6.1「繼承 DESIGN-A F6 identical」)、無 track-specific 邏輯
 
-**Commit 模式**:**兩段式 commit**(per CLAUDE.md §6.1)— F6 動 rust-api worktree(handler / service / DTO / route mount)、必須走 worktree commit + outer SHA pin 更新。**有別於** W-F5/W-F7/W-F6 的單段(那些純 outer)。
+**Commit 模式**:**兩段式 commit**(per CLAUDE.md §4.1)— F6 動 rust-api worktree(handler / service / DTO / route mount)、必須走 worktree commit + outer SHA pin 更新。**有別於** W-F5/W-F7/W-F6 的單段(那些純 outer)。
 
 ## Clarifications
 
@@ -117,10 +117,10 @@
 - **FR-007**: Service layer MUST 新增 method `is_route_exist(&self, route_name: &str) -> Result<bool, AppError>`(在 `sys_menu_service.rs` 或對齊既有 module 結構)。
 - **FR-008**: DTO MUST 新增 input struct `IsRouteExistInput { #[serde(rename = "routeName")] route_name: String }` + 對應 validate / Deserialize derive(放在現有 DTO 模組對齊既有 pattern;`rust-api/server/service/src/admin/dto/` 目錄目前僅有 `sys_auth_dto.rs`、plan 階段拍板新建 `sys_menu_dto.rs` 或 inline 在 handler 檔)。
 - **FR-009**: Endpoint MUST 對齊既有 OpenAPI doc 機制(若 F5.1 既有 utoipa macro 已 wire、F6 同步補 `#[utoipa::path]`)。
-- **FR-010**: F6 MUST 為 **兩段式 commit**(per CLAUDE.md §6.1):第 1 段 worktree 內(`cd rust-api && git commit + push fork`),第 2 段 outer(`git add rust-api && git commit -m 'chore(submodule): bump rust-api to <sha>: ...'` 更新 SHA pin)。
+- **FR-010**: F6 MUST 為 **兩段式 commit**(per CLAUDE.md §4.1):第 1 段 worktree 內(`cd rust-api && git commit + push fork`),第 2 段 outer(`git add rust-api && git commit -m 'chore(submodule): bump rust-api to <sha>: ...'` 更新 SHA pin)。
 - **FR-011**: base-web `src/` 任何檔案 MUST 零改動(per Constitution Principle IV、既有 `fetchIsRouteExist` wiring 已對齊新 endpoint)。
 - **FR-012**: F6 完成後、`grep -rn "isRouteExist" rust-api/` MUST 含 ≥ 1 match(handler / service / route mount);base-web src 改動 MUST 為 0 個檔。
-- **FR-013**: 文件更新:`docs/INTEGRATION-CHECKLIST.md` MUST 更新 F6 row ✅ + Phase 2 進度;`CLAUDE.md` §10 SPECKIT marker 更新。
+- **FR-013**: 文件更新:`docs/INTEGRATION-CHECKLIST.md` MUST 更新 F6 row ✅ + Phase 2 進度;`CLAUDE.md` §6 SPECKIT marker 更新。
 
 ### Non-Functional Requirements
 
@@ -198,7 +198,7 @@
 | Endpoint mount = `init_protected_menu_router` nested `/route` | 自然推論 | 對齊 F5.1 既有 mount pattern(`sys_menu_route.rs:73`)|
 | Response shape = `{code:0, data: boolean}` | 自然推論 | base-web `<boolean>` 型別 + `Boolean(data)` 抽取 |
 | F6 範疇排除 getConstantRoutes / getUserRoutes | 自然推論 | F5.1 已實作 |
-| 兩段式 commit(動 rust-api worktree)| 自然推論 | per CLAUDE.md §6.1 |
+| 兩段式 commit(動 rust-api worktree)| 自然推論 | per CLAUDE.md §4.1 |
 | base-web 零改動 | 自然推論 | per Constitution Principle IV + 既有 wiring 已對齊 |
 
 ---

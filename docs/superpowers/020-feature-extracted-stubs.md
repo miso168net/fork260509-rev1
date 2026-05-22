@@ -21,7 +21,7 @@ rev1 application Phase 4 收尾後**第一個** post-Phase-4 feature(F10 wire-up
 
 範疇刻意收緊到「**4 條 stub 補位 + Casbin enforce + 三邊零改動**」、**不加 sys_menu seed / 不加新 role / 不寫 audit log / 不加 unit test / 不驗 base-web e2e / 不接真 SMS provider**。
 
-**Commit 模式**(post brainstorm 拍板):**兩段式**(per CLAUDE.md §6.1、類 F10.1/F10.2/F6/F5.1):rust-api worktree 1 commit + outer 1-2 commit(spec docs + INTEGRATION-CHECKLIST.md milestone + SHA pin + CLAUDE.md SOP marker;**無 docker-compose.yml 改**,W-FA1 既有 wire 已涵蓋)。
+**Commit 模式**(post brainstorm 拍板):**兩段式**(per CLAUDE.md §4.1、類 F10.1/F10.2/F6/F5.1):rust-api worktree 1 commit + outer 1-2 commit(spec docs + INTEGRATION-CHECKLIST.md milestone + SHA pin + CLAUDE.md SOP marker;**無 docker-compose.yml 改**,W-FA1 既有 wire 已涵蓋)。
 
 ---
 
@@ -285,7 +285,7 @@ impl MigrationTrait for Migration {
 
 ## Commit 模式
 
-**兩段式**(per CLAUDE.md §6.1 + F5.1/F6/F10.1/F10.2 慣例):
+**兩段式**(per CLAUDE.md §4.1 + F5.1/F6/F10.1/F10.2 慣例):
 
 - **Stage 1 — rust-api worktree commit**:9 file ~170-200 LOC、message `feat(rust-api): F11 補 4 條抽離項 stub endpoint + Casbin policy seed`
 - **Stage 2 — outer commit on `020-extracted-stubs` feature branch**:specs/020-extracted-stubs/(spec docs)+ CLAUDE.md SOP marker + docs/INTEGRATION-CHECKLIST.md milestone + .specify/feature.json + rust-api SHA pin;**無 docker-compose.yml 改**(F11 不需動 deploy 配置);message `feat(spec): F11 extracted-stubs — 4 條抽離項 stub + Casbin policy seed`

@@ -121,7 +121,7 @@
 - **FR-017**: prod baseline 啟動命令 `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --wait`(不帶 `--profile prod`、預先把 cert 放進 named volume)後 6 service healthy + `curl -fsSI http://127.0.0.1:11080/health` 回 301 Location https + `curl -kfsS https://127.0.0.1:11443/health` 回 ok。
 - **FR-018**: prod + acme 啟動命令 `docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile prod up -d --wait` 後 7 service running(含 acme container)+ `docker compose exec acme acme.sh --version` 印版本 + `docker compose exec acme cat /run/secrets/acme_email` 印 email content。
 - **FR-019**: 本 feature MUST 為 **單段 commit**(只動 outer、不動 worktree base-web / rust-api)— 對齊 W-F7 模式。
-- **FR-020**: CLAUDE.md §5.2 MUST 更新「目前現況」段反映 W-F6 落地(11080 HTTP + 11443 HTTPS 已暴露、dev 自簽流程、prod redirect + acme skeleton)、§5.2.1「dev 啟動命令範例」加 cert script 生成步驟 + HTTPS 驗證命令。
+- **FR-020**: CLAUDE.md §8.2 MUST 更新「目前現況」段反映 W-F6 落地(11080 HTTP + 11443 HTTPS 已暴露、dev 自簽流程、prod redirect + acme skeleton)、§5.2.1「dev 啟動命令範例」加 cert script 生成步驟 + HTTPS 驗證命令。
 - **FR-021**: `docs/INTEGRATION-CHECKLIST.md` MUST 更新 W-F6 row ✅ + Current Focus 進度 3/4 + 已完成里程碑加 W-F6 條目。
 
 ### Non-Functional Requirements

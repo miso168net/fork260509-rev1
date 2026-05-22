@@ -23,7 +23,7 @@ DESIGN-A §6.1 對 F14 的字面定義:「nginx routing 從 nestjs 改 rust;dock
 | **保留** | Casbin redis pub-sub channel、`refresh_token_secret` secret 本身、rust refresh endpoint、base-web、DB / migration — 皆不動 |
 
 **Commit 模式**(F14 固定,因納入 R3 而為兩段式):
-- **兩段式** commit(per CLAUDE.md §6.1):rust-api worktree 1 commit(R3 — `code.rs` + `sys_user_error.rs`)+ outer 1 commit(nginx + docker-compose×3 + 刪 build script + R4 + CLAUDE.md + 3 份 design doc + spec docs)+ merge `--no-ff` + SHA fill follow-up。
+- **兩段式** commit(per CLAUDE.md §4.1):rust-api worktree 1 commit(R3 — `code.rs` + `sys_user_error.rs`)+ outer 1 commit(nginx + docker-compose×3 + 刪 build script + R4 + CLAUDE.md + 3 份 design doc + spec docs)+ merge `--no-ff` + SHA fill follow-up。
 - **無 DB migration、無 base-web 改動、無新 secret**。
 
 ---

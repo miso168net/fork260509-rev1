@@ -25,7 +25,7 @@ F10 `refresh-token-nestjs-bridge` 把 refreshToken 端點交給 nestjs 補位(ng
 範疇刻意收緊到「**rust refresh endpoint + 輪替 + curl/psql acceptance**」、**不改 base-web / 不改 nestjs / 不動 nginx / 不做 logout/revocation / 無 migration**。
 
 **Commit 模式**(F13 固定):
-- **兩段式** commit(per CLAUDE.md §6.1):rust-api worktree 1 commit(handler + service + router + jwt + input DTO)+ outer 1 commit(spec docs + `CLAUDE.md` SPECKIT marker + `INTEGRATION-CHECKLIST.md`)+ merge `--no-ff` + SHA fill follow-up。
+- **兩段式** commit(per CLAUDE.md §4.1):rust-api worktree 1 commit(handler + service + router + jwt + input DTO)+ outer 1 commit(spec docs + `CLAUDE.md` SPECKIT marker + `INTEGRATION-CHECKLIST.md`)+ merge `--no-ff` + SHA fill follow-up。
 - **無 docker-compose.yml 改、無 nginx 改、無 DB migration**(`sys_tokens` schema F10 已建)— outer 端為純 spec-docs,類似 F7.2 / F10。
 
 ---
