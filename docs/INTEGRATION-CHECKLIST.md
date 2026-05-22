@@ -8,11 +8,11 @@
 
 ## 🎯 Current Focus
 
-**現狀**：DESIGN-A §6.1 全 14 application feature（F1–F14）+ Phase W deploy（W-F1~W-F7、W-F11、Track DESIGN-A W-FA1/2/3）全部落地，**DESIGN-B（rust-only）形態生效**。W-WEBUI 軌道（base-web 管理後台 CRUD 接線）進行中 —— 031 user-crud、032 menu-crud 已完成。
+**現狀**：DESIGN-A §6.1 全 14 application feature（F1–F14）+ Phase W deploy（W-F1~W-F7、W-F11、Track DESIGN-A W-FA1/2/3）全部落地，**DESIGN-B（rust-only）形態生效**。W-WEBUI 軌道（base-web 管理後台 CRUD 接線）進行中 —— 031 user-crud、032 menu-crud、033 role-crud 已完成。
 
-**Active feature**：`033` `role-crud-wiring`（W-FW3）—— brainstorm 完成、進入 spec-kit 設計鏈
+**Active feature**：—（無進行中 feature）
 
-**下一步**：033 完成後 —— W-FW4 `role-authorization-wiring`、observability（W-F12/13/14）、各 feature 衍生 follow-up（見 Follow-up Backlog）。
+**下一步**：W-FW4 `role-authorization-wiring`（role 的 menu-auth / button-auth modal 接線）、observability（W-F12/13/14）、各 feature 衍生 follow-up（見 Follow-up Backlog）。
 
 ---
 
@@ -80,6 +80,7 @@
 - [x] **F12 cleanup-job** ✅（2026-05-21 完成；outer `78e585c` + merge `86e56e5`、rust-api `30c8dd4`；spec `specs/027-cleanup-job/`）— cleanup binary 物理清除過期軟刪 row，DESIGN-A 本體 F1–F12 收尾
 - [x] **F14 design-a-to-b-cutover** ✅（2026-05-21 完成；outer `33758f0` + merge `1f20a0d`、rust-api `729d3c6`；spec `specs/029-design-a-to-b-cutover/`）— DESIGN-A→B cutover、nestjs 完全退場，DESIGN-B 形態生效
 - [x] **030 systemmanage-status-gender-alignment** ✅（2026-05-21 完成；outer `681dcbe` + merge `0ed2e85`、rust-api `0e1fb95`；spec `specs/030-systemmanage-status-gender-alignment/`）— systemManage status/gender enum 契約對齊
+- [x] **033 role-crud-wiring** ✅（2026-05-22 完成；outer `fcf7280` + merge `729dbf9`、rust-api `536bf88`、base-web `ceafe62a`；spec `specs/033-role-crud-wiring/`）— base-web role CRUD 接線 + update_role status-drop 修正 + roleCode code-lock，W-WEBUI 軌道第三個 feature
 - [x] **032 menu-crud-wiring** ✅（2026-05-22 完成；outer `d96aafa` + merge `8ccc4b4`、rust-api `149dc52`、base-web `b43634c0`；spec `specs/032-menu-crud-wiring/`）— base-web menu CRUD 接線，W-WEBUI 軌道第二個 feature
 - [x] **031 user-crud-wiring** ✅（2026-05-22 完成；outer `10edf43` + merge `a09d316`、rust-api `2a24e9d`、base-web `1793b361`；spec `specs/031-user-crud-wiring/`）— base-web user CRUD 接線，W-WEBUI 軌道第一個 feature
 - [x] **F13 rust-refresh-token-impl** ✅（2026-05-21 完成；outer `a1e739c` + merge `4e9cf07`、rust-api `d019d8f`；spec `specs/028-rust-refresh-token-impl/`）— rust 自實作 refresh token 輪替，DESIGN-A §6.1 P5 起點
