@@ -8,11 +8,11 @@
 
 ## 🎯 Current Focus
 
-**現狀**：DESIGN-A §6.1 全 14 application feature（F1–F14）+ Phase W deploy（W-F1~W-F7、W-F11、Track DESIGN-A W-FA1/2/3）全部落地，**DESIGN-B（rust-only）形態生效**。**W-WEBUI 軌道（base-web 管理後台接線）已完成** —— 031 user-crud、032 menu-crud、033 role-crud、034 role-authorization 四 feature 全部落地。
+**現狀**：DESIGN-A §6.1 全 14 application feature（F1–F14）+ Phase W deploy（W-F1~W-F7、W-F11、Track DESIGN-A W-FA1/2/3）全部落地，**DESIGN-B（rust-only）形態生效**。**W-WEBUI 軌道（base-web 管理後台接線）已完成** —— 031 user-crud、032 menu-crud、033 role-crud、034 role-authorization 四 feature 全部落地。**W-WEBUI follow-up 軌道啟動** —— 035 user-role-and-password-wiring（W-FW5）已落地。
 
 **Active feature**：—（無進行中 feature）
 
-**下一步**：W-WEBUI follow-up（W-FW5 / W-FW6 / W-FW7，切分見 DESIGN-W-WEBUI §7）、observability（W-F12/13/14）。
+**下一步**：W-WEBUI follow-up（W-FW6 / W-FW7，切分見 DESIGN-W-WEBUI §7）、observability（W-F12/13/14）。
 
 ---
 
@@ -31,6 +31,7 @@
 | F3-N4 | F3 G6 review | pre-existing `print!("user is {:#?}", user)` debug 痕 3 處（sys_user_api / sys_menu_api / sys_authorization_service） | 任一後續 feature 順手清 |
 | F3-N5 | F3 analyse | `specs/002` data-model §E4 範例 path 與實際 impl 位置 drift（impl 落 `server-model/soft_delete_impls.rs`） | spec hygiene（補 errata 一行） |
 | F3-N6 | F3 implement | F2 audit-log schema 升級後 F3 helper 對齊（F3 FR-022 預告 callsite 不需動） | F2.1 內處理 —— F2.1 已完成、本項應已結案、待查證後移除 |
+| 035-N1 | 035 final review | `add/update_user_for_systemmanage` 的 `create_user`/`update_user`（各自 txn）與 `assign_roles_to_user`（另一 txn）跨 service call 非單一 atomic —— 角色指派失敗時 user row + audit 已 commit。各寫入路徑自身 txn+audit 完整（Constitution II 逐 path 滿足）；真正單 txn 需把 `&txn` 穿過 service trait（較大重構） | 評估（service-layering 限制，比照既有 `assign_users` 體例；admin 低頻操作、失敗可重編輯） |
 
 > ⚠️ F3-N1~N5 為 F3 階段（2026-05-14）所留、迄今未正式 review 結案 —— 下次觸及 audit / endpoint facade / `sys_access_key` 區域時應逐項查證並結案。
 > 另有 minor 技術債（`docker-compose.yml` 檔頭 service 數註解 stale）—— 非 feature 級、任一相關 feature 順手清。
@@ -44,7 +45,6 @@
 | F2.2 | F2 拆分（F2.1 已交） | audit-log outbox + Redis subscriber TTL fallback | F2.1 只交 schema + transaction 紀律 + 統一 audit path |
 | W-F6b | W-F6 留下 | acme.sh 真實 cert acquisition / renew 流程 | 需公網 + 真實 domain + DNS provider creds |
 | W-F12/13/14 | DESIGN-W-DEPLOYMENT §11 | observability 三件套（Phase W deploy P5） | Phase W deploy 最後一個 phase、未排程 |
-| W-FW5 | DESIGN-W-WEBUI §7.1 | `user-role-and-password-wiring` —— 整併 W-FW1-N1（user→roles 指派 + Casbin `g` 同步）+ W-FW1-N2（password UX + `update_user` hash 修） | W-WEBUI follow-up；逐 feature 走 spec-kit |
 | W-FW6 | DESIGN-W-WEBUI §7.2 | `role-authorization-completion` —— 整併 W-FW4-N1（button-auth modal，需 Phase 0 research）+ W-FW4-N2（role 首頁持久化）+ W-FW4-N3（`assign_routes` audit）+ W-FW3-N1（role code 安全改名） | W-WEBUI follow-up；最複雜、含 research，建議獨立排 |
 | W-FW7 | DESIGN-W-WEBUI §7.3 | `menu-field-persistence` —— 整併 W-FW2-N1（menu `query`/`buttons`/`fixedIndexInTab` 持久化、`sys_menu` schema 擴充） | W-WEBUI follow-up；純 schema 擴充、獨立 |
 
@@ -79,6 +79,7 @@
 - [x] **F12 cleanup-job** ✅（2026-05-21 完成；outer `78e585c` + merge `86e56e5`、rust-api `30c8dd4`；spec `specs/027-cleanup-job/`）— cleanup binary 物理清除過期軟刪 row，DESIGN-A 本體 F1–F12 收尾
 - [x] **F14 design-a-to-b-cutover** ✅（2026-05-21 完成；outer `33758f0` + merge `1f20a0d`、rust-api `729d3c6`；spec `specs/029-design-a-to-b-cutover/`）— DESIGN-A→B cutover、nestjs 完全退場，DESIGN-B 形態生效
 - [x] **030 systemmanage-status-gender-alignment** ✅（2026-05-21 完成；outer `681dcbe` + merge `0ed2e85`、rust-api `0e1fb95`；spec `specs/030-systemmanage-status-gender-alignment/`）— systemManage status/gender enum 契約對齊
+- [x] **035 user-role-and-password-wiring** ✅（2026-05-23 完成；outer `<pending>` + merge `<pending>`、rust-api `1de553e`、base-web `003de689`；spec `specs/035-user-role-and-password-wiring/`）— W-FW5；補完 W-FW1 留下的 user→roles 指派（rust `SystemManageUserOutput.user_roles` 真實批次填充 + transform DTO 收 `userRoles` delta 寫 `sys_user_role` 含 audit）+ 密碼 UX（修 `update_user` 密碼未 hash pre-existing bug + user 抽屜選填 password 欄 + 新增 `POST /auth/changePassword` 自助改密碼端點 + user-center 修改密碼面板），20/20 C-V PASS，W-WEBUI follow-up 軌道第一個 feature；含 `change_password` audit actor 型別 build-gate 修正 + user 抽屜角色欄 mock scaffolding 殘留去重（W-FW1 遺留、被 user_roles 真實填充曝出）2 個收尾修正
 - [x] **034 role-authorization-wiring** ✅（2026-05-22 完成；outer `bead3fd` + merge `ff5ea63`、rust-api `e9787ed`、base-web `7325b091`；spec `specs/034-role-authorization-wiring/`）— base-web 角色菜單授權接線（menu-auth-modal 讀/寫接 rust `/systemManage/{getRoleMenuIds,assignRoleMenus}` 2 alias）+ assign_routes 空清單 clear-all 修正，13/13 C-V PASS，W-WEBUI 軌道第四個也是最後一個 feature
 - [x] **033 role-crud-wiring** ✅（2026-05-22 完成；outer `fcf7280` + merge `729dbf9`、rust-api `536bf88`、base-web `ceafe62a`；spec `specs/033-role-crud-wiring/`）— base-web role CRUD 接線 + update_role status-drop 修正 + roleCode code-lock，W-WEBUI 軌道第三個 feature
 - [x] **032 menu-crud-wiring** ✅（2026-05-22 完成；outer `d96aafa` + merge `8ccc4b4`、rust-api `149dc52`、base-web `b43634c0`；spec `specs/032-menu-crud-wiring/`）— base-web menu CRUD 接線，W-WEBUI 軌道第二個 feature
