@@ -68,7 +68,7 @@ W-FW5 = 補完 base-web user 管理的兩塊缺口，分兩個 user story / 增�
 
 W-WEBUI §4 現範圍是「只接線、不改 UI」。B2（drawer 加 password 欄）/ B3（user-center 補面板）**新增 UI**，超出 §4。
 
-→ **前置**：W-FW5 `/speckit-specify` 前先 amend `DESIGN-W-WEBUI §4`，加一類准動：「user 管理 / 帳號 password 相關的必要 UI 新增（drawer password 欄、user-center 修改密碼面板）」。Constitution Principle IV **不需改版**（其已將 W-WEBUI 精確範圍 defer 至 DESIGN-W-WEBUI §4）。比照 W-FW1 啟動前的 Constitution IV amendment 前置動作。此 amendment 是「W-WEBUI 受管例外」從「只接線」擴及「必要 UI 新增」的一次有意識放寬 —— §4 amendment 文字須明白寫出此放寬、spec-kit Constitution Check 會據以驗。
+→ **前置**：W-FW5 設計鏈須先 amend `DESIGN-W-WEBUI §4`（加一類准動：密碼相關必需的最小 UI 新增）**+ amend `Constitution Principle IV`**。**更正紀錄**：brainstorm 階段曾誤判「Constitution IV 不需改版（已 defer 範圍至 §4）」—— 實則 IV 條文明文列舉 `W-FW1`–`W-FW4` 且內聯限定「僅接線、不得 UI 樣式」，依憲法 §Governance「衝突解決：以憲法為最終權威」，§4 amendment（DESIGN 層）無法蓋過憲法本文。此誤判於 `/speckit-plan` Constitution Check gate 被攔下、已更正：2026-05-22 由 `/speckit-constitution` amend Constitution 至 **v1.2.0**（W-WEBUI 軌道列舉擴至 `W-FW1`–`W-FW7`、准動範圍納入「§4 明文授權下必需的最小 UI 新增」）。比照 W-FW1 啟動前的 Constitution IV amendment 前置動作。
 
 ### 範疇外
 

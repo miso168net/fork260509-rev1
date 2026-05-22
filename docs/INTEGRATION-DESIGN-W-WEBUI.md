@@ -113,7 +113,7 @@ W-WEBUI 軌道內的 feature,base-web 修改**僅限**以下三類檔案:
 > - `user-operate-drawer.vue`:新增一個**選填 password 表單欄**(建立時設初始密碼 / 編輯時 admin 重設;留空則沿 W-FW1 既有行為)。
 > - `user-center/index.vue`(現為 `<LookForward/>` stub):補成一個**最小「修改密碼」面板**(舊密碼 / 新密碼 / 確認新密碼欄)。
 >
-> 此放寬僅及「為接通既有後端能力所必需的最小 UI 新增」—— **不**及版面重構、**不**及非密碼功能(個人資料 / 頭像等)、**不**動 router / store / 型別。上方「不准動」清單其餘項續用。Constitution Principle IV 不需改版(其已將 W-WEBUI 精確範圍 defer 至本 §4)。依據:`docs/superpowers/035-feature-user-role-and-password-wiring.md` brainstorm Q1。
+> 此放寬僅及「為接通既有後端能力所必需的最小 UI 新增」—— **不**及版面重構、**不**及非密碼功能(個人資料 / 頭像等)、**不**動 router / store / 型別。上方「不准動」清單其餘項續用。Constitution Principle IV 已於 2026-05-22 同步 amend 至 **v1.2.0**(W-WEBUI 軌道列舉擴至 `W-FW1`–`W-FW7`、准動範圍納入「§4 明文授權下必需的最小 UI 新增」;§4 為 base-web 准動範圍唯一細節權威)。依據:`docs/superpowers/035-feature-user-role-and-password-wiring.md` brainstorm Q1。
 
 ---
 
@@ -187,7 +187,7 @@ Constitution IV amendment（前置,/speckit-constitution）
 >
 > **整併原則**：依「同一功能面、同一驗收面」歸群 —— 不把 schema 擴充、research spike、native bug fix 等異質工作硬塞同一 feature；沿用 W-FW1~4「最小、後端就緒、測得動」的 scoping 紀律（W-FW4 本身即刻意把 button-auth / role-home 切為 follow-up）。**不**把 7 項全併成單一 mega-feature —— 那會讓 `spec.md` 無法 coherent、混雜風險檔次、且被 research 未決項卡死。
 
-W-WEBUI 受管例外（Constitution Principle IV，v1.1.0）已涵蓋 W-FW5~W-FW7 的 base-web 修改；§4 base-web 修改範圍邊界續用。W-FW6 / W-FW7 另含 rust-api schema 變更（role 表 / `sys_menu` 表）—— 屬 rust-api 側、不受 §4 base-web 邊界約束，仍須各自走 spec-kit Constitution Check。
+W-WEBUI 受管例外（Constitution Principle IV，**v1.2.0 起**）涵蓋 W-FW5~W-FW7 的 base-web 修改 —— v1.2.0（2026-05-22）把軌道列舉自 `W-FW1`–`W-FW4` 擴至 `W-FW1`–`W-FW7`、並把准動範圍納入「§4 明文授權下必需的最小 UI 新增」；§4 base-web 修改範圍邊界（含其 amendment）續用。W-FW6 / W-FW7 另含 rust-api schema 變更（role 表 / `sys_menu` 表）—— 屬 rust-api 側、不受 §4 base-web 邊界約束，仍須各自走 spec-kit Constitution Check。
 
 ### §7.1 W-FW5 `user-role-and-password-wiring`
 
