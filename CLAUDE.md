@@ -317,8 +317,8 @@ git commit -m "bump base-web: rebase on upstream <短 SHA>"
 <!-- SPECKIT START -->
 **Active Spec**: 無
 **Active Plan**: 無
-**Phase**: 無 — 039 rust-entity-id-numeric-migration 已落地（merge 待回填於 `docs/INTEGRATION-CHECKLIST.md` 已完成里程碑）
-**下一步**: observability（W-F12/13/14、Phase W deploy 最後一個 phase）或 base-web cleanup sprint
+**Phase**: 無 — 040 wire-id-consistency 已落地（merge 待回填於 `docs/INTEGRATION-CHECKLIST.md` 已完成里程碑）
+**下一步**: observability（W-F12/13/14、Phase W deploy 最後一個 phase）
 <!-- SPECKIT END -->
 
 ## 7. 整合設計文件索引
