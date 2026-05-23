@@ -26,7 +26,7 @@
 **Acceptance Scenarios**：
 
 1. **Given** dev stack baseline、Soybean token；**When** 依 030 C-V8 改正後命令送 `POST /api/systemManage/addUser` body `{"userName":"...", "userGender":"1", ...}`；**Then** envelope `code:0 success:true`、DB 新增 row（過去因 `username`/`gender` snake 命名被 422 拒）。
-2. **Given** 已登入 user token；**When** 依 039 C-V31 改正後命令送 `POST /api/auth/changePassword body` `{"currentPassword":"...","newPassword":"..."}`；**Then** envelope `code:0`（過去因 `oldPassword` 命名被 422 拒）。
+2. **Given** 已登入 user token；**When** 依 039 C-V31 **augmented** 後命令送 `POST /api/auth/changePassword` body `{"currentPassword":"...","newPassword":"..."}`；**Then** envelope `code:0`（過去 C-V31 為 summary-only、operator 自行猜 payload 用 `oldPassword` 被 422 拒）。
 3. **Given** Soybean token；**When** 依 040 C-V10 改正後 `GET /api/role?current=1&size=10`；**Then** envelope 0 + paginated `{current,records,size,total}`（過去 `/api/role/list` 404）。
 4. **Given** 從 `getRoleList` 取得 records；**When** 對照 022 C-V3 改正後 expected shape；**Then** `userGender`/`userRoles`/`status` 為實值（過去 spec 寫 hardcode null/[]、實際已是實值、誤導讀者）。
 5. **Given** Soybean token + 改正前後的 021 C-V10 命令；**When** 跑 `GET /api/user?page=1` 與 `GET /api/role?page=1`；**Then** 兩者皆 HTTP 200 + envelope 0（前後皆 PASS，因主命令改為無 trailing slash）。
@@ -78,12 +78,12 @@
 ### Functional Requirements
 
 - **FR-001**：`specs/030-systemmanage-status-gender-alignment/contracts/verification-commands.md` 內 C-V8 與 C-V9 的 curl payload 必須使用 camelCase 欄位名（`userName`、`userGender`、`userEmail`、`userPhone`）而非舊 snake (`username`/`gender`/`email`/`phone`)。
-- **FR-002**：`specs/039-rust-entity-id-numeric-migration/contracts/verification-commands.md` 內 C-V31 的 curl payload 必須使用 `currentPassword`（非 `oldPassword`）。
+- **FR-002**：`specs/039-rust-entity-id-numeric-migration/contracts/verification-commands.md` 內 C-V31 目前為 summary-only table row、未列 `changePassword` payload 範例，導致 regression operator 須自行拼 payload（憑慣例容易誤用 `oldPassword`、被 rust DTO 422 拒）。本 FR 要求 **augment** C-V31 row 加完整 curl block + 明確標示 DTO 欄位為 `currentPassword`（非 `oldPassword`、per W-FW5 035 `change_password` service）、避免猜測。
 - **FR-003**：`specs/040-wire-id-consistency/contracts/verification-commands.md` 內 C-V10 與 C-V12 的 URL 必須使用 paginated root 路徑（`/api/role?...`、`/api/user?...`），不使用 `/list` suffix；並補一行 errata 註明 paginated root pattern 慣例。
 - **FR-004**：`specs/022-manage-crud-alignment/contracts/verification-commands.md` 內 C-V3 的 expected shape 描述必須對齊 F8/039 後實際行為——`userGender`/`userRoles`/`status` 為實值、非 hardcode `null`/`[]`/`'enabled'`。
 - **FR-005**：`specs/021-systemmanage-alias-router/contracts/verification-commands.md` 內 C-V10 的主命令 URL 必須使用無 trailing slash 形式（`/user?page=...`、`/role?page=...`）、並附加一行 errata 註明 trailing slash 亦支援（041 NormalizePathLayer 後）。
 - **FR-006**：`specs/021-systemmanage-alias-router/contracts/verification-commands.md` 內 C-V2 的期望 casbin row 數必須使用 `≥20` 形式、並註明「隨後續 alias 成長」（避免硬編碼 count 隨 feature 演進失準）。
-- **FR-007**：`specs/002-soft-delete-infrastructure/data-model.md` §E4 內範例 path 必須對齊實際 impl 位置（為 `server-model/soft_delete_impls.rs` 或實際 grep 確認的路徑、以 grep 結果為準）。
+- **FR-007**：`specs/002-soft-delete-infrastructure/data-model.md` §E4 內範例 comment path 必須對齊實際 impl 位置 `rust-api/server/model/src/admin/soft_delete_impls.rs`（per Phase 0 grep 確認、見 [research.md R-3 ⑦](./research.md)；原 spec 寫 `server/core/src/db/soft_delete.rs` 為 F3 brainstorm 期推測、implementer 移到 model crate 避循環依賴後未回 update）。
 - **FR-008**：rust-api **整個 router compose 最外層**（涵蓋 admin / auth / authorization / 未來新增 router 全部）必須套用 `NormalizePathLayer::trim_trailing_slash()` 等價的 path normalization、使 nested `Router::new().route("/", ...)` 模式的端點對「帶與不帶 trailing slash」request 皆回 HTTP 200（而非當前 404）。scope 限**單一外層 layer**、不允許每 router 分別掛（per Clarifications 2026-05-24）。
 - **FR-009**：path normalization 必須在 Casbin enforce、audit、所有 protected middleware 之前 apply、確保 enforce/audit 看到 normalized path、與 `sys_endpoint` 表記錄字面一致。本 FR 對 admin / auth / authorization 全部適用。
 - **FR-010**：本 feature 0 base-web 改動、0 schema migration、0 新 entity、0 nestjs（已退場、F14）。
@@ -103,7 +103,7 @@
 - **SC-003**：抽樣端點跨 router 類別測 trailing-slash 一致行為——admin 類（如 `/api/menu/`、`/api/domain/`）、auth 類（如 `/api/auth/getUserInfo/`）、authorization 類（如 `/api/authorization/assign-users/` POST）—— request 行為與不帶 trailing slash 一致（皆非 404、視 endpoint 業務回 HTTP 200 或正常業務 envelope），證明 fix 套於 router compose 最外層、跨 router 一致生效（per Clarifications 2026-05-24）。
 - **SC-004**：GeneralUser token 對 admin nested 端點 trailing-slash request 仍 envelope `code:5001 success:false`（Casbin enforce 在 normalized path 上正常、無權限繞過）。
 - **SC-005**：rust-api cargo build clean、無 unused import warning、無 new clippy 違規。
-- **SC-006**：grep 確認 7 處 spec md edit 後對應檔內舊字串（`username`、`oldPassword`、`/api/role/list`、`/api/user/list` 等）在應修區域回 0 hit。
+- **SC-006**：grep 確認 7 處 spec md edit：（a）030/040 等 string-replace 區的舊字串（`username`、`/api/role/list`、`/api/user/list`）回 0 hit；（b）039 C-V31 augmented 區出現 `currentPassword` 並含完整 curl block；（c）002 §E4 path 指向 `rust-api/server/model/src/admin/soft_delete_impls.rs`。
 - **SC-007**：0 base-web 改動、0 schema migration、0 新 cargo crate dep（最多 +1 既有 dep 的 feature flag）。
 - **SC-008**：本 feature merge 後、`docs/INTEGRATION-CHECKLIST.md` 衍生 follow-up table 不再含 R4、F3-N5 兩 row；已完成里程碑加一行 041 entry。
 
