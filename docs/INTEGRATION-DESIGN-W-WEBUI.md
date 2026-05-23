@@ -181,7 +181,7 @@ Constitution IV amendment（前置,/speckit-constitution）
 
 ---
 
-## §7 follow-up feature 切分（W-FW5 ~ W-FW7）
+## §7 follow-up feature 切分（W-FW5 ~ W-FW9）
 
 > W-FW1~W-FW4 完成後（2026-05-22，4 feature 全 merge 回 `rev1-admin-root`），各 feature 在 brainstorm / implement / review 階段累積出 **7 個 follow-up 工作項**（INTEGRATION-CHECKLIST 原列為 W-FW1-N1 / N2、W-FW2-N1、W-FW3-N1、W-FW4-N1 / N2 / N3）。本節把這 7 項整併為 **3 個 coherent feature**（W-FW5 / W-FW6 / W-FW7），作為後續 `/speckit-specify` 開 `NNN-<feature-name>` 的依據（`NNN` 由 speckit pre-hook 於 specify 時順序指派）。
 >
@@ -220,17 +220,31 @@ W-WEBUI 受管例外（Constitution Principle IV，**v1.2.0 起**）涵蓋 W-FW5
 - **定位**：純 schema 擴充類 feature，與 W-FW5 / W-FW6 不相干、可獨立排程。
 - **open question（brainstorm Phase 0 處理）**：讀回這些欄位是否需動 `Api.SystemManage.Menu` 型別（§4 不准動 `src/typings`）—— starter UI 已含這些欄位、型別宣告可能已具備，brainstorm 查證；若確需動型別則升級為 spec open question。
 
-### §7.4 執行順序
+### §7.4 W-FW9 `wire-id-consistency`（040 落地、Constitution v1.4.0 dynamic 授權首次案例）
+
+- **整併**：039 `rust-entity-id-numeric-migration` 落地後外顯 3 個遺留 + 032 留下的 parentId deserializer workaround：
+  - **A critical 修**：base-web 2 modal（`button-auth-modal.vue` + `menu-auth-modal.vue`）body 內 `roleId: String(props.roleId)` 撞 039 後 rust DTO `i64`（serde "expected i64 got string"）—— `src/service/api/system-manage.ts` 4 處 inline type annotation 從 `string` 改 `Api.SystemManage.Role['id']`、2 modal 拿掉 `String(...)`；TS compile gate。
+  - **B URL path String() 餘料**：A 副產品、4 處 cosmetic `String(...)` 自然消（template literal 自動轉）。
+  - **C 拆 032 parentId deserializer workaround**（軌道**外**、rust-only）：`server/model/src/admin/input/sys_menu.rs` 內 `deserialize_i32_or_string` 函式 + `SystemManageAddMenuInput.parent_id` + `SystemManageUpdateMenuInput.parent_id` `serde(deserialize_with = ...)` 屬性全拆，base-web typings 已 number-only 安全。
+  - **D raw endpoint wire DTO wrap**（軌道**外**、rust-only）：為 sys_role / sys_user / sys_access_key 新增 `RoleDetail` / `UserDetail` / `AccessKeyDetail` 3 wire DTO + handler `.map(Detail::from)` wrap、wire 上 `id: i64` from `display_id`、無 `id: ULID-string` + `displayId: i64` 重複欄位；Sea-ORM Model 0 改動（internal SoT 完整保留）。
+- **後端分量**：中 —— 7 rust 檔（1 deserializer drop + 3 output struct + 3 api handler）+ 0 schema migration、0 新 entity、0 input DTO 改動（039 T030.5 已完成）。
+- **前端改動**：3 base-web 檔（service.ts + 2 modal）—— §4 邊界內。typings/api 0 改動（grep 證實 `*Params` 型在 typings 不存在、Param 全為 service.ts inline type）。
+- **定位**：Constitution v1.4.0「DESIGN-W-WEBUI 文件權威 dynamic 模式」生效後**首次行使**—— 加 W-FW9 條目至本 §7 即取得授權、不需 Constitution amendment。混 W-WEBUI 軌道內（A+B base-web）+ 軌道外（C+D rust-only）；單 feature 內歸屬明示。
+- **Acceptance summary（040 C-V matrix）**：C-V3/V4/V6 base-web cleanup PASS；C-V7/V8 parentId workaround PASS；C-V9/V11/V12 wire DTO wrap PASS；C-V15/V16/V17 039 alias regression PASS；C-V18/V19/V21/V22 039 internal SoT PASS；C-V23/V24/V27 scope discipline PASS；C-V1/V2 CDP smoke defer 同 039 慣例。
+
+### §7.5 執行順序
 
 ```
 W-FW5 user-role-and-password-wiring  ─┐
 W-FW7 menu-field-persistence         ─┤  三者互不相干、無強制順序
 W-FW6 role-authorization-completion  ─┘  （W-FW6 最複雜、含 research，建議獨立排）
+
+W-FW9 wire-id-consistency            ─── 039 落地後接著做、4 themes bundled
 ```
 
-- 三個 feature 彼此無依賴，可依資源任意排序。
-- W-FW6 含 Phase 0 research 與最大後端分量，建議獨立排、留足 research 時間。
-- 每個 feature 各自走 spec-kit 設計鏈（step 0 brainstorm → SDD → TDD）、兩段式 commit、CDP 驗收、merge 回 `rev1-admin-root`，同 W-FW1~W-FW4。
+- W-FW5/W-FW6/W-FW7 三個 feature 彼此無依賴，可依資源任意排序；W-FW6 含 Phase 0 research 與最大後端分量，建議獨立排。
+- W-FW9 為 039 落地後的 wire-side consumer cleanup + 移除 historical workaround；先決條件 = 039 落地。
+- 每個 feature 各自走 spec-kit 設計鏈（step 0 brainstorm → SDD → TDD）、兩段式 commit（W-FW9 為三段式：base-web + rust-api + outer）、CDP 驗收、merge 回 `rev1-admin-root`，同 W-FW1~W-FW4。
 
 ---
 
