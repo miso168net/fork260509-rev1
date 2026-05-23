@@ -1,14 +1,13 @@
 <!--
-Sync Impact Report (2026-05-22)
+Sync Impact Report (2026-05-23)
 ================================================================
-Version change: 1.1.0 → 1.2.0 (MINOR — 受管例外條款範圍擴充)
+Version change: 1.2.0 → 1.3.0 (MINOR — 受管例外列舉範圍延伸)
 Modified principles:
-  - IV. base 不改動邊界 — 受管例外條款更新:
-    (a) W-WEBUI 軌道列舉 W-FW1–W-FW4 → W-FW1–W-FW7
-        (涵蓋 DESIGN-W-WEBUI §7 follow-up 切分新增的 W-FW5/6/7)
-    (b) 准動範圍由「僅接線」擴為「接線為主 + §4 明文授權下
-        必需的最小 UI 新增」;§4 為 base-web 准動範圍唯一細節權威
-Added sections: None（既有 Principle IV 內擴充）
+  - IV. base 不改動邊界 — 受管例外條款列舉更新:
+    (a) W-WEBUI 軌道列舉 W-FW1–W-FW7 → W-FW1–W-FW8
+        (涵蓋 W-FW6 brainstorm Q1 拆分新增的 W-FW8 button-auth-completion)
+    其餘條款（准動範圍、紀律規範、其餘 principle）皆**不變**
+Added sections: None（既有 Principle IV 內列舉延伸）
 Removed sections: None
 Templates requiring updates:
   - ✅ .specify/templates/plan-template.md — Constitution Check
@@ -16,12 +15,15 @@ Templates requiring updates:
   - ✅ .specify/templates/spec-template.md — 無直接 constitution ref
   - ✅ .specify/templates/tasks-template.md — 無直接 ref
   - ✅ .specify/templates/checklist-template.md — generic、無 change
-  - ✅ docs/INTEGRATION-DESIGN-W-WEBUI.md §4 amendment note + §7 —
-    已修正「Constitution IV 不需改版」為「IV 同步 amend 至 v1.2.0」
-  - ✅ docs/superpowers/035-feature-user-role-and-password-wiring.md —
-    已同步修正「Constitution IV 不需改版」陳述
+  - ✅ docs/INTEGRATION-DESIGN-W-WEBUI.md — W-FW8 已於 §7.2 列出（W-FW6
+    brainstorm Q1 拆分時記錄），W-FW8 spec 已明標 Constitution v1.3.0 前置
+  - ✅ docs/superpowers/038-feature-button-auth-completion.md — 已標明
+    需 v1.3.0 amendment 作為 plan 階段 Constitution Check 前置
+  - ✅ specs/038-button-auth-completion/spec.md — FR-017 列為 pre-gate
 Follow-up TODOs: None
 Prior reports:
+  - (2026-05-22) 1.1.0 → 1.2.0: 受管例外條款範圍擴充
+    (W-FW1–W-FW4 → W-FW1–W-FW7、准動範圍擴「最小 UI 新增」)
   - (2026-05-21) 1.0.0 → 1.1.0: 新增受管例外條款
   - (2026-05-14) (initial template) → 1.0.0 initial ratification
 ================================================================
@@ -82,7 +84,7 @@ base-web source code 為「對齊目標」；後端與 nginx 須適應 base 既�
 
 **受管例外 — W-WEBUI 軌道**：唯一得修改 base-web source 的例外為 **W-WEBUI 軌道**（[`docs/INTEGRATION-DESIGN-W-WEBUI.md`](../../docs/INTEGRATION-DESIGN-W-WEBUI.md)）：
 
-- W-WEBUI 軌道內的 feature（`W-FW1`–`W-FW7` —— `INTEGRATION-DESIGN-W-WEBUI.md` §5 的 W-FW1–W-FW4 與 §7 follow-up 切分的 W-FW5–W-FW7）**得修改 base-web source**，範圍受 `INTEGRATION-DESIGN-W-WEBUI.md §4`（含其後續 amendment）嚴格限定；§4 為 base-web 准動範圍的唯一細節權威
+- W-WEBUI 軌道內的 feature（`W-FW1`–`W-FW8` —— `INTEGRATION-DESIGN-W-WEBUI.md` §5 的 W-FW1–W-FW4、§7 follow-up 切分的 W-FW5–W-FW7、與 W-FW6 brainstorm Q1 拆分新增的 W-FW8）**得修改 base-web source**，範圍受 `INTEGRATION-DESIGN-W-WEBUI.md §4`（含其後續 amendment）嚴格限定；§4 為 base-web 准動範圍的唯一細節權威
 - 准動範圍以接線為主 —— 把既有 stub 表單的 `handleSubmit` / list 頁 delete handler 接到 service API、補 `src/service/api/*.ts` 寫入 function；並得在 §4 明文授權下，為接通既有後端能力做**必需的最小 UI 新增**（如表單欄位、既有占位頁補面板）
 - W-WEBUI 軌道**仍不得**改動 base-web 的型別定義（`src/typings/`）、表格 column render 邏輯、`src/router/` / `src/store/`、i18n key、版面重構 / 設計風格
 - 此例外**僅適用 W-WEBUI 軌道**；軌道外所有 feature 的 Constitution Check 對 base-web source 改動仍 MUST 為 0 diff
@@ -150,4 +152,4 @@ DESIGN-A（rust + nestjs）為過渡形態；DESIGN-B（rust-only）為終局目
 - **衝突解決**：Constitution 與 DESIGN 文件衝突時，以本憲法為最終權威；DESIGN 文件如有不一致需同步修正
 - **Runtime guidance**：日常開發決策參考 `CLAUDE.md`（workspace）+ `~/.claude/CLAUDE.md`（全域）；當 runtime guidance 與本憲法衝突，以本憲法為準
 
-**Version**: 1.2.0 | **Ratified**: 2026-05-14 | **Last Amended**: 2026-05-22
+**Version**: 1.3.0 | **Ratified**: 2026-05-14 | **Last Amended**: 2026-05-23
