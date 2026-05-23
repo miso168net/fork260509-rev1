@@ -15,7 +15,7 @@
 - **新 schema / table / migration**：Path A 0 新 table。
 
 **Authoritative parents**：
-- [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md) Principle IV「base 不改動邊界」的**受管例外 — W-WEBUI 軌道**（v1.2.0，列舉含 `W-FW1`–`W-FW7`；本 feature 為 W-FW8、繼續沿用同例外、不需 v1.3.0 修訂，因 base-web 改 ≤ 2 檔且皆在准動範圍）。
+- [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md) Principle IV「base 不改動邊界」的**受管例外 — W-WEBUI 軌道**（v1.2.0，列舉 `W-FW1`–`W-FW7`；W-FW8 嚴格說不在列舉內）。**本 feature 需要 Constitution v1.3.0 amendment**：把列舉擴為 `W-FW1`–`W-FW8`（amendment 性質與 v1.2.0 同——§7 follow-up 切分延續、W-FW6 brainstorm Q1 拍板「W-FW8 = W-FW4-N1 button-auth 推遲」即此 feature 來源）。amendment 應於 spec-kit 階段 A `/speckit-specify` 或 plan 階段 Constitution Check 觸發前完成。base-web 改 ≤ 2 檔且皆在 §4 准動範圍。
 - [`docs/INTEGRATION-DESIGN-W-WEBUI.md`](../INTEGRATION-DESIGN-W-WEBUI.md) §7.2 W-FW4-N1 button-auth path + §4 base-web 修改範圍邊界。
 - W-FW6 `role-authorization-completion`（037，merge `10b5bee`）：本 feature 之 audit 體例（payload camelCase keys、entity_type='sys_role'、trait signature append `actor: &Actor` 末尾參數）完全比照 N3。
 - W-F11 `rust-horizontal-scaling`（merge `d2d4c4c`）：Casbin enforcer 多 replica reload；既有 `assign_permission` 末段已呼叫 `notify_casbin_changed`（本 feature 不重做、保留）。
@@ -61,7 +61,7 @@ W-WEBUI follow-up 軌道收尾 feature。把 W-FW4 / W-FW6 過渡留下的最後
 
 | Path | 設計 | Pros | Cons | 決策 |
 |---|---|---|---|---|
-| **Path A** | base-web modal 直接列 sys_endpoint 為 tree（by resource）；admin 勾 endpoint → call 既有 `assign_permission`（已寫 Casbin policy）。 | 0 新 table；複用 W-F11 既有 Casbin reload 機制；Casbin server-side 真實 enforce（不只 UI hide）；admin 行為與 effect 一致；rust ~6 處 + base-web 2 檔 = 最低 scope。 | UI 上看的「按鈕」實際是 API endpoint，非完全 UI button 語意。但 sys_endpoint 含中文 `summary` 欄（如「获取访问密钥列表」「分配权限」），UX 上是 acceptable 的 "API operation" 表達。 | ✅ **採用** |
+| **Path A** | base-web modal 直接列 sys_endpoint 為 tree（by resource）；admin 勾 endpoint → call 既有 `assign_permission`（已寫 Casbin policy）。 | 0 新 table；複用 W-F11 既有 Casbin reload 機制；Casbin server-side 真實 enforce（不只 UI hide）；admin 行為與 effect 一致；rust ~12 處（含 service trait/impl/handler/router/seed/DTO，細節見 §3 表）+ base-web 2 檔 = 最低 scope。 | UI 上看的「按鈕」實際是 API endpoint，非完全 UI button 語意。但 sys_endpoint 含中文 `summary` 欄（如「获取访问密钥列表」「分配权限」），UX 上是 acceptable 的 "API operation" 表達。 | ✅ **採用** |
 | **Path B** | 新 `sys_role_menu_button` junction（role_id, menu_id, button_code）；用 W-FW7 持久化的 `sys_menu.buttons` JSONB 作為 button source；新 3 個 endpoint。 | UX 上完全 UI-aligned（button-by-menu）。 | 需新 table + migration + 3 個新 endpoint + ~25 處工作；**該 model 不驅動 Casbin server-side enforcement**（純 UI hide，admin 期待「拒絕按鈕點擊 = 拒絕 API call」會被打破）；新 RBAC 子系統會與 Casbin enforcement 重複，未來維護成本高。 | ❌ 否決 |
 | **Path C** | 推遲 backend、只做 B audit；A 留 W-FW9。 | 工作量最小。 | W-FW8 變成只半補窟窿 + W-WEBUI follow-up 軌道再留尾巴。違反「收尾 feature」設定。 | ❌ 否決 |
 
@@ -114,10 +114,10 @@ W-WEBUI follow-up 軌道收尾 feature。把 W-FW4 / W-FW6 過渡留下的最後
 | **I. RBAC Fail-safe** | 3 新 alias 受 Casbin 保護（A2 seed 6 row）、與既有 systemManage alias 一致。`assign_permission` 本身既有 Casbin enforcement 機制，本 feature 不弱化。 | ✅ PASS |
 | **II. Soft Delete + 全域 Audit** | B 補完 sys_authorization_service.rs 三個 `assign_*` 中最後一個（assign_permission），補完 W-FW6 留下的最後 audit gap。Casbin policy UPDATE 為 side effect、屬「跨資源 side effect」範疇、Principle II 不要求 audit（同 W-FW6 N4 update_role Casbin sync 設計）。 | ✅ PASS |
 | **III. 嚴版禁 Forward + 單一職責** | 全程 rust 單一進程內 service 呼叫、無後端間 HTTP/RPC。Casbin 同步透過既有 enforcer API；reload 透過 W-F11 既有 redis pub-sub channel。3 alias 端點 rust 單一 owner enforce。 | ✅ PASS |
-| **IV. base 不改動邊界** | W-FW8 屬 **W-WEBUI 軌道受管例外**（Constitution IV v1.2.0，列舉含 `W-FW1`–`W-FW7`；W-FW8 同 follow-up 軌道延續沿用、不需 v1.3.0 修訂）。base-web 改 ≤ 2 檔：`button-auth-modal.vue`（接 3 endpoint、替換硬編 mock、無新 UI render 結構，是 stub-replacement）+ `system-manage.ts`（加 3 service function、無新型別）；不動 typings/router/store/i18n/版面/role-operate-drawer.vue/menu-auth-modal.vue。v-permission 推遲、不在本 feature 範圍。 | ✅ PASS（行使 v1.2.0 W-WEBUI 受管例外、≤ 2 檔變動皆在准動範圍） |
+| **IV. base 不改動邊界** | W-FW8 屬 **W-WEBUI 軌道受管例外**（Constitution IV v1.2.0 列舉 `W-FW1`–`W-FW7`，**W-FW8 不在內、需 v1.3.0 amendment 擴為 `W-FW1`–`W-FW8`**——同 §7 follow-up 切分性質、與 v1.2.0 同類型的條款範圍延伸）。amendment 應於 spec-kit 階段 A 或 plan 階段 Constitution Check 觸發前完成。base-web 改 ≤ 2 檔：`button-auth-modal.vue`（接 3 endpoint、替換硬編 mock、無新 UI render 結構，是 stub-replacement）+ `system-manage.ts`（加 3 service function、無新型別）；不動 typings/router/store/i18n/版面/role-operate-drawer.vue/menu-auth-modal.vue。v-permission 推遲、不在本 feature 範圍。 | ⚠️ 待 v1.3.0 amendment 後 PASS |
 | **V. 漸進收縮** | 0 nestjs 改動（DESIGN-B 形態）；rust-only。0 schema migration；DB 變更僅 Casbin policy 6 row data seed、可對稱回退。0 新 table。「複用 sys_endpoint」符合「漸進收縮」精神——既有 RBAC 能力（API endpoint 權限）直接套上 UI，避免新增 RBAC 子系統的維護負擔。 | ✅ PASS |
 
-**Gate 結果**：5 principle 全 PASS、無 violation → spec-kit Phase 1 plan 階段 `Complexity Tracking` 將留空。
+**Gate 結果**：4 principle (I/II/III/V) 已 PASS、Principle IV 待 Constitution v1.3.0 amendment 後 PASS（amendment 為 §7 follow-up 切分延續、低風險、條款範圍延伸性質與 v1.2.0 同）。amendment 完成後 Phase 1 plan 階段 `Complexity Tracking` 將留空。
 
 ---
 
