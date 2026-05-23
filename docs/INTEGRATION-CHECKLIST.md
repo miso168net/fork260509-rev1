@@ -8,11 +8,11 @@
 
 ## 🎯 Current Focus
 
-**現狀**：DESIGN-A §6.1 全 14 application feature（F1–F14）+ Phase W deploy（W-F1~W-F7、W-F11、Track DESIGN-A W-FA1/2/3）全部落地，**DESIGN-B（rust-only）形態生效**。**W-WEBUI 軌道（base-web 管理後台接線）已完成** —— 031 user-crud、032 menu-crud、033 role-crud、034 role-authorization 四 feature 全部落地。**W-WEBUI follow-up 軌道啟動** —— 035 user-role-and-password-wiring（W-FW5）已落地。
+**現狀**：DESIGN-A §6.1 全 14 application feature（F1–F14）+ Phase W deploy（W-F1~W-F7、W-F11、Track DESIGN-A W-FA1/2/3）全部落地，**DESIGN-B（rust-only）形態生效**。**W-WEBUI 軌道（base-web 管理後台接線）已完成** —— 031 user-crud、032 menu-crud、033 role-crud、034 role-authorization 四 feature 全部落地。**W-WEBUI follow-up 軌道進行中** —— 035 user-role-and-password-wiring（W-FW5）+ 036 menu-field-persistence（W-FW7）已落地，剩 W-FW6。
 
 **Active feature**：—（無進行中 feature）
 
-**下一步**：W-WEBUI follow-up（W-FW6 / W-FW7，切分見 DESIGN-W-WEBUI §7）、observability（W-F12/13/14）。
+**下一步**：W-WEBUI follow-up（W-FW6，切分見 DESIGN-W-WEBUI §7）、observability（W-F12/13/14）。
 
 ---
 
@@ -46,7 +46,6 @@
 | W-F6b | W-F6 留下 | acme.sh 真實 cert acquisition / renew 流程 | 需公網 + 真實 domain + DNS provider creds |
 | W-F12/13/14 | DESIGN-W-DEPLOYMENT §11 | observability 三件套（Phase W deploy P5） | Phase W deploy 最後一個 phase、未排程 |
 | W-FW6 | DESIGN-W-WEBUI §7.2 | `role-authorization-completion` —— 整併 W-FW4-N1（button-auth modal，需 Phase 0 research）+ W-FW4-N2（role 首頁持久化）+ W-FW4-N3（`assign_routes` audit）+ W-FW3-N1（role code 安全改名） | W-WEBUI follow-up；最複雜、含 research，建議獨立排 |
-| W-FW7 | DESIGN-W-WEBUI §7.3 | `menu-field-persistence` —— 整併 W-FW2-N1（menu `query`/`buttons`/`fixedIndexInTab` 持久化、`sys_menu` schema 擴充） | W-WEBUI follow-up；純 schema 擴充、獨立 |
 
 ---
 
@@ -91,6 +90,7 @@
 - [x] **032 menu-crud-wiring** ✅（2026-05-22 完成；outer `d96aafa` + merge `8ccc4b4`、rust-api `149dc52`、base-web `b43634c0`；spec `specs/032-menu-crud-wiring/`）— base-web menu CRUD 接線，W-WEBUI 軌道第二個 feature
 - [x] **031 user-crud-wiring** ✅（2026-05-22 完成；outer `10edf43` + merge `a09d316`、rust-api `2a24e9d`、base-web `1793b361`；spec `specs/031-user-crud-wiring/`）— base-web user CRUD 接線，W-WEBUI 軌道第一個 feature
 - [x] **035 user-role-and-password-wiring** ✅（2026-05-23 完成；outer `4332a49` + merge `7020899`、rust-api `1de553e`、base-web `003de689`；spec `specs/035-user-role-and-password-wiring/`）— W-FW5；補完 W-FW1 留下的 user→roles 指派（rust `SystemManageUserOutput.user_roles` 真實批次填充 + transform DTO 收 `userRoles` delta 寫 `sys_user_role` 含 audit）+ 密碼 UX（修 `update_user` 密碼未 hash pre-existing bug + user 抽屜選填 password 欄 + 新增 `POST /auth/changePassword` 自助改密碼端點 + user-center 修改密碼面板），20/20 C-V PASS，W-WEBUI follow-up 軌道第一個 feature；含 `change_password` audit actor 型別 build-gate 修正 + user 抽屜角色欄 mock scaffolding 殘留去重（W-FW1 遺留、被 user_roles 真實填充曝出）2 個收尾修正
+- [x] **036 menu-field-persistence** ✅（2026-05-23 完成；outer `<pending>`、rust-api `8116080`、base-web 0 改動；spec `specs/036-menu-field-persistence/`）— W-FW7；補完 W-FW2 留下的 menu 欄位持久化缺口（W-FW2-N1）—— `sys_menu` 加 `query`/`buttons` (JSONB nullable) + `fixed_index_in_tab` (INTEGER nullable) 三欄、entity 同步、寫入路徑透傳（systemManage transform → native MenuInput → menu service）、admin CRUD 讀回（`SystemManageMenuOutput.From<MenuTree>` 填真值）、runtime 動態路由 `RouteMeta` 加 `query`+`fixedIndexInTab`（buttons 不進、Q2 拍板），20/20 C-V PASS（含 CDP modal 預填驗證），W-WEBUI follow-up 軌道第二個 feature；base-web 0 改動（exploration + Phase 0 R-Q1/R-Q2 驗證 modal UI 與 null 防護齊備）；Constitution v1.2.0「W-WEBUI 受管例外」第二次行使；既有 audit 路徑（`audit_log::write_in_txn` + `audit_snapshot`）自動涵蓋新 3 欄無需新邏輯
 
 ---
 
