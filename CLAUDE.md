@@ -96,6 +96,13 @@ fork260509-rev1/                            ← workspace root（傘狀 repo rev
 | tasks | `/speckit-tasks` | `tasks.md`（dependency-ordered task 清單）|
 | analyze | `/speckit-analyze` | spec／plan／tasks 跨檔 consistency 報告（不產檔）|
 
+**Phase 0 research 紀律**（040 落地後加入；`research.md` 必含以下 grep 結果、不信 brainstorm 階段的命名/抽象假設）：
+
+- **rust service trait 真實返回型 grep**：`grep "Result<" rust-api/server/service/src/admin/sys_*_service.rs` —— 不同 entity 的 service 可能設計不一致（e.g. sys_user 返 `UserWithoutPassword`、sys_role 返 raw `SysRoleModel`），spec 設計 wire DTO 前須對齊。
+- **wire 鏈條 3 端對齊 grep**：對每條 wire endpoint，**同時** grep（a）rust handler 真實 return type / DTO field 型，（b）base-web `service/api/*.ts` 內 inline type 與 `typings/api/*.d.ts` 宣告型，（c）frontend component 對該 wire 的內部 state 型。3 端不對齊 = runtime bug 或 type lie。
+- **struct/function 命名對照 grep**：`data-model.md` 內每個 `file:line` 引用務必 grep 真實命名；過往 spec 用 brainstorm 推測命名（如 `MenuInput.parent_id` / `deserialize_parent_id_compat`）、實際是 `SystemManageAddMenuInput.parent_id` / `deserialize_i32_or_string`、implementer 須 act on actual code 而非盲信 spec naming。
+- **CDP smoke defer 風險自覺**：若 `contracts/verification-commands.md` 內 CDP browser smoke 計劃 defer、要在 spec 內明示「curl 直送 number 過 ≠ base-web modal 對齊」風險、並在 follow-up backlog 登記補測（040 修的 039 critical bug 即由此模式漏看）。
+
 **═══ 交棒物件：`specs/<NNN>-<short-name>/tasks.md` ═══**
 
 **階段 B · TDD 實作（superpowers）**
