@@ -36,7 +36,7 @@ description: "Task list for 039 rust-entity-id-numeric-migration implementation"
 
 故 T002 必須在 US1 開始前完成。
 
-- [ ] T002 rust-api 新檔 `server/global/src/snowflake.rs` —— Snowflake i64 generator helper（self-roll ~50-80 行 + 1 unit test `test_unique_and_time_ordered`）：41bit timestamp from EPOCH_2020_MS + 10bit machine_id from `HOSTNAME` env hash mod 1024 + 12bit seq；clock 倒退 wait-for-next-ms；`AtomicU64 LAST_STATE` + CAS retry；unit test 跑 1000 連續 id 全唯一 + time-ordered + < 2^53 JS safe integer。register in `server/global/src/lib.rs`（加 `pub mod snowflake;`）。data-model.md A1 含完整 skeleton implementation。**0 新 cargo dep**（self-roll、不引入外部 crate；若 implementer 偏好 well-tested crate 可改 `idgenerator = "0.4"` 等價、皆可）。
+- [ ] T002 rust-api 新檔 `server/global/src/snowflake.rs` —— Snowflake i64 generator helper（self-roll ~50-80 行 + 1 unit test `test_unique_and_time_ordered`）：41bit timestamp from EPOCH_2020_MS + 5bit machine_id from `HOSTNAME` env hash mod 32 + 7bit seq（**總 53bit、完全填滿 JS safe integer = 2^53 - 1**）；clock 倒退 wait-for-next-ms；`AtomicU64 LAST_STATE` + CAS retry；unit test 跑 1000 連續 id 全唯一 + time-ordered + ≤ 2^53 - 1 JS safe integer。register in `server/global/src/lib.rs`（加 `pub mod snowflake;`）。data-model.md A1 含完整 skeleton implementation。**0 新 cargo dep**（self-roll、不引入外部 crate；若 implementer 偏好 well-tested crate 須驗證所選 crate 可配置成 41/5/7 layout、預設 41/10/12 不符）。
 
 **Checkpoint**: Foundational 完成、US1 可開始。
 
@@ -94,7 +94,10 @@ description: "Task list for 039 rust-entity-id-numeric-migration implementation"
   - `Validate` macro `length(min=1)` 改 `range(min=1)` 或拿掉（i64 不適用 length）
   （data-model.md C2.1）
 
-- [ ] T019 [P] [US1] rust-api `server/model/src/admin/input/sys_role.rs` —— `UpdateRoleHomeInput.role_id: String → i64`（W-FW6 N2、line ~88-99）；`Validate` macro 同改（data-model.md C2.2）
+- [ ] T019 [P] [US1] rust-api `server/model/src/admin/input/sys_role.rs` —— 2 個 DTO `role_id: String → i64`：
+  - `AssignRoleMenusInput.role_id`（line ~88，W-FW4 /systemManage/assignRoleMenus 用、handler at sys_system_manage_api.rs:349；C-V11 要求 roleId i64）
+  - `UpdateRoleHomeInput.role_id`（line ~99，W-FW6 N2 /systemManage/updateRoleHome 用）
+  `Validate` macro `length(min=1)` 對 String 用、對 i64 不適用 → 改 `range(min=1)` 或拿掉（business validity 由 lookup 階段 reject）。`menu_ids: Vec<i32>` 不動（已 i32 對齊）。（data-model.md C2.2）
 
 ### Phase 3e: Service Trait + Lookup Helper（[P] 各 service 互不相關）
 
@@ -135,6 +138,20 @@ description: "Task list for 039 rust-entity-id-numeric-migration implementation"
   同 T028 pattern（data-model.md C3.2）
 
 - [ ] T030 [US1] rust-api `server/api/src/admin/sys_access_key_api.rs` `Path(id): Path<String>` (line ~39) 改 `Path<i64>` + access key lookup（data-model.md C3.2）
+
+- [ ] T030.5 [US1] rust-api 補 6 個 body DTO `id/ids: String/Vec<String> → i64/Vec<i64>` + 對應 handler lookup cascade（執行 ⑤ 期間發現 spec gap、編譯通過但 runtime base-web 送 number 會撞 serde deser；C-V11/C-V12 acceptance 需此修才能過）：
+  - `server/model/src/admin/input/sys_role.rs`:
+    - `UpdateRoleInput.id`（line ~41）→ i64
+    - `SystemManageUpdateRoleInput.id`（line ~61）→ i64
+    - `DeleteRoleByBodyInput.id`（line ~72）→ i64
+    - `BatchDeleteRoleInput.ids`（line ~79）→ Vec<i64>
+  - `server/model/src/admin/input/sys_user.rs`:
+    - `UpdateUserInput.id`（line ~52）→ i64
+    - `SystemManageUpdateUserInput.id`（line ~107）→ i64
+    - `DeleteUserByBodyInput.id`（line ~74）→ i64
+    - `BatchDeleteUserInput.ids`（line ~81）→ Vec<i64>
+  - handler cascade：每處消費 `input.id` / `input.ids` 的 handler（`sys_role_api.rs` update_role、`sys_user_api.rs` update_user / delete / batchDelete、`sys_system_manage_api.rs` add/update/delete/batchDelete）加 `let id_ulid = role_svc.lookup_ulid_by_display_id(input.id).await?;` cascade
+  - Validate macro 同 T018/T019 處理（單 i64 → `range(min=1)`、Vec<i64> 保留 length 或加 each(range)）
 
 ### Phase 3g: Build + US1 Acceptance（依 T003-T030）
 

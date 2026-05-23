@@ -24,7 +24,8 @@
 
 ```rust
 //! Snowflake i64 generator for 5 業務 entity display_id（W-FW9 同類設計 / 此 feature 039）。
-//! Structure: 41bit timestamp ms from EPOCH_2020 + 10bit machine_id + 12bit sequence。
+//! Structure: 41bit timestamp ms from EPOCH_2020 + 5bit machine_id + 7bit sequence
+//! (= 53bit total, 完全填滿 JS Number.MAX_SAFE_INTEGER = 2^53 - 1)。
 //! machine_id 從 HOSTNAME env hash 取（自動、無 manual config、跟 W-F11 多 replica 預備對齊）。
 
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -32,8 +33,8 @@ use std::sync::OnceLock;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 const EPOCH_2020_MS: u64 = 1577836800000;  // 2020-01-01 UTC
-const MACHINE_BITS: u64 = 10;
-const SEQ_BITS: u64 = 12;
+const MACHINE_BITS: u64 = 5;
+const SEQ_BITS: u64 = 7;
 const SEQ_MASK: u64 = (1 << SEQ_BITS) - 1;
 const MAX_MACHINE_ID: u64 = (1 << MACHINE_BITS) - 1;
 
@@ -326,9 +327,16 @@ pub struct SystemManageAssignRoleEndpointsInput {
 
 `Validate` macro `length(min=1)` 對 i64 不適用 —— 改 `range(min=1)` 或拿掉（business validity 由 lookup 階段 reject）。
 
-#### C2.2 sys_role.rs UpdateRoleHomeInput (W-FW6 N2)
+#### C2.2 sys_role.rs AssignRoleMenusInput (W-FW4) + UpdateRoleHomeInput (W-FW6 N2)
 
 ```rust
+// AssignRoleMenusInput (W-FW4)
+pub struct AssignRoleMenusInput {
+    pub role_id: i64,                  // was String
+    pub menu_ids: Vec<i32>,            // 不動（menu.id i32）
+}
+
+// UpdateRoleHomeInput (W-FW6 N2)
 pub struct UpdateRoleHomeInput {
     pub role_id: i64,                  // was String
     pub home: Option<String>,

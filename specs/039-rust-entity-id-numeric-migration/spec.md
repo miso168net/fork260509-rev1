@@ -21,7 +21,7 @@
 | 子項 | deliverable |
 |---|---|
 | **A 雙欄 schema 擴充**（主） | 5 entity（user / role / endpoint / organization / access_key）各加 `display_id BIGINT UNIQUE NOT NULL` + INDEX；既有 row 透過 backfill migration 一次填充 Snowflake i64；ULID PK 完全保留。 |
-| **B Snowflake i64 generator helper** | 新檔 `server/global/src/snowflake.rs`（外部 crate 或自寫 lightweight）+ machine_id 從 container hostname hash mod 1024（多 replica 衝突低機率 + 0 manual config）。 |
+| **B Snowflake i64 generator helper** | 新檔 `server/global/src/snowflake.rs`（外部 crate 或自寫 lightweight）+ machine_id 從 container hostname hash mod 32（5bit 容量、< 32 replica 衝突低機率 + 0 manual config）。 |
 | **C API 邊界 transform** | 5 entity output struct `From<Model>` impl 內 `id = model.display_id`；input handler 開頭加 `lookup_ulid_by_display_id(i64) -> String` 反查;既有 `xxx_id: String` 型 input DTO 改 `i64`（~10 處 cascade）。 |
 
 **範疇外**：
@@ -42,7 +42,7 @@
 - **Q1（ULID 替代型）**：**Snowflake i64**。保留 distributed + time-ordered 特性、跟 W-F11 多 replica 對齊。否決 i32/i64 sequence（單 DB lock、不適多 replica）/ UUID string（仍是 string、不解決問題）。
 - **Q2/X1（ULID 是否保留）**：**保留 ULID PK + 新增 display_id BIGINT UNIQUE 欄、API 邊界 transform**（雙欄設計）。rust 內部 0 業務邏輯改動。否決 drop ULID 改 BIGINT PK（JWT/audit/Casbin/FK 全 cascade、規模大、丟失歷史相容）/ API hash transform（collision 風險 + lookup cache 複雜）。
 - **Q3（entity 範圍）**：**5 entity** —— user / role / endpoint / organization / access_key（現班接通 + 快將接通的）。否決最小 3（未來再補多次 feature 拆分浪費）/ 全業務 entity（log/token 暴露給 base-web 機率低、加欄 bloat）。
-- **Q4（Snowflake machine_id）**：**container hostname hash mod 1024**（自動、無 config、container 重啟 hostname 通常一致；衝突需「同 ms + 同 machine_id + 同 seq」三撞、低機率）。否決 env var SNOWFLAKE_MACHINE_ID（手動 config 負擔、scale 麻煩）/ redis-based 動態分配（lock + heartbeat、為 1 feature 過度設計）。
+- **Q4（Snowflake machine_id）**：**container hostname hash mod 32**（5bit 容量、自動、無 config、container 重啟 hostname 通常一致；衝突需「同 ms + 同 machine_id + 同 seq」三撞、低機率；< 32 replica 場景充足）。否決 env var SNOWFLAKE_MACHINE_ID（手動 config 負擔、scale 麻煩）/ redis-based 動態分配（lock + heartbeat、為 1 feature 過度設計）。**Note**：原 brainstorm 拍板 mod 1024（10bit）對應原始 Snowflake 結構；後 plan 階段發現 < 2^53 約束需總 ≤ 53bit、調整為 41/5/7（同 hostname hash 機制、僅 modulo 改 32）。
 - **Q5（API 邊界 transform 機制）**：**output struct From impl 改 `id: model.display_id`**（直接、可讀、5 entity 不需抽象）。否決 serde custom serializer hook（仍需 attr、價值低）/ trait + macro 自動化（過度抽象、5 entity 不值）。
 - **Q6（base-web `String(...)` 餘料清理）**：**不清留 backlog**。W-FW1~W-FW8 既有 `String(roleId)` 等仍 work、不會 break；屬另一個 base-web cleanup sprint 範圍、不該包進 rust feature。
 
@@ -86,8 +86,8 @@ rust-api 內部所有業務邏輯（service-layer 操作、audit_log 寫入、JW
 | # | 場景 | 期望 |
 |---|---|---|
 | E-1 | Snowflake clock 倒退（NTP 失誤 / container time 漂移） | next_display_id() 偵測 timestamp 倒退、等到下一個 ms 再生成（避免 id 重複）；極端 case 可加 sequence wait-for-next-ms 邏輯。 |
-| E-2 | 兩個 container 撞同 hostname hash slot（machine_id 衝突） | 1024 個 slot 中實務幾十個 container 衝突機率 < 5%；若衝突 + 同 ms + 同 seq 才會撞 id（極低機率）；dev/staging 接受；prod 若 scale 上百 replica 改 redis-based 分配。 |
-| E-3 | Snowflake i64 序列化 JSON 超過 JS Number.MAX_SAFE_INTEGER（2^53） | Snowflake 結構：sign 1bit + timestamp 41bit + machine_id 10bit + seq 12bit = 64bit 含 sign；實務值 < 2^53 安全範圍（時間在合理 epoch 內）；本 feature 採此設計保證 base-web JS 正確 parse。 |
+| E-2 | 兩個 container 撞同 hostname hash slot（machine_id 衝突） | 32 個 slot（5bit 容量）中實務 1-2 個 container 衝突機率低；衝突僅在「同 machine_id + 同 ms + 同 seq」三撞才造成 id 重複（極低機率、且 CAS retry 內 seq increment 防護）；dev/staging 接受；prod 若 scale 接近 32 replica 改 redis-based 分配。 |
+| E-3 | Snowflake i64 序列化 JSON 超過 JS Number.MAX_SAFE_INTEGER（2^53） | Snowflake 變體結構：41bit timestamp + 5bit machine_id + 7bit seq = **53bit 總長度**、max id = 2^53 - 1 = Number.MAX_SAFE_INTEGER；本 feature 採此變體保證 base-web JS `JSON.parse()` 精度 0 失真。 |
 | E-4 | backfill migration 對大型 DB 慢 | rev1 未上 prod、5 entity 既有 row 量小（dev 數十 row 級）、UPDATE 全表幾秒完；prod 上線時若必要拆 batch UPDATE。 |
 | E-5 | 既有歷史 audit_log row 內 payload roleId（ULID）跟新 wire 看到 roleId（number）跨期不對應 | 設計接受。rust internal SoT 不變、audit 保 ULID；未來 audit 顯示 page 加 ULID→display_id transform 解決（屬另一 feature 範圍）。 |
 | E-6 | 既有 admin 用 ULID-style id（admin 自建 user / role 的 ULID PK）對 base-web 端的影響 | base-web 透過 display_id i64 操作、ULID PK 不暴露；admin 端不需感知 ULID 的存在。 |
@@ -107,8 +107,8 @@ rust-api 內部所有業務邏輯（service-layer 操作、audit_log 寫入、JW
 
 **B. Snowflake i64 generator helper**
 
-- **FR-005**: 後端 MUST 提供 `next_display_id() -> i64` helper、結構為 Snowflake 標準（41bit timestamp + 10bit machine_id + 12bit sequence）；連續呼叫 MUST 唯一 + time-ordered（newer > older）。
-- **FR-006**: machine_id MUST 從 container hostname hash mod 1024 自動取得（無 manual config）；若 hostname env 不可用 fallback deterministic 預設值（research.md R-Q1 implementation 採 `"rev1-default"`）保證 deterministic。
+- **FR-005**: 後端 MUST 提供 `next_display_id() -> i64` helper、結構為 Snowflake 變體（41bit timestamp + 5bit machine_id + 7bit sequence、總 53bit ≤ JS safe integer 2^53 - 1）；連續呼叫 MUST 唯一 + time-ordered（newer > older）。
+- **FR-006**: machine_id MUST 從 container hostname hash mod 32 自動取得（5bit 容量、無 manual config）；若 hostname env 不可用 fallback deterministic 預設值（research.md R-Q1 implementation 採 `"rev1-default"`）保證 deterministic。
 - **FR-007**: Snowflake 生成器 MUST 處理 clock 倒退情境（timestamp ms 比上次小 → wait 到下一個 ms 再生成，避免 id 重複）。
 
 **C. API 邊界 transform**
@@ -137,7 +137,7 @@ rust-api 內部所有業務邏輯（service-layer 操作、audit_log 寫入、JW
 ### Key Entities
 
 - **`sys_user` / `sys_role` / `sys_endpoint` / `sys_organization` / `sys_access_key`**：5 個業務 entity 各加 `display_id BIGINT UNIQUE NOT NULL` 副欄；ULID PK 完全保留；既有 row 透過 backfill 一次填充。FK 仍以 ULID 工作。
-- **Snowflake i64 display_id**：64bit numeric id（sign 1bit + timestamp 41bit ms + machine_id 10bit + sequence 12bit）；用於 API 邊界與 base-web 對應 typings number；UNIQUE 全域、time-ordered、< 2^53 JS safe integer 範圍。
+- **Snowflake i64 display_id**：53bit numeric id（timestamp 41bit ms + machine_id 5bit + sequence 7bit）；用於 API 邊界與 base-web 對應 typings number；UNIQUE 全域、time-ordered、max = 2^53 - 1 = Number.MAX_SAFE_INTEGER。
 - **既有 `casbin_rule` / `sys_user_role` / `sys_role_menu` / log/token 表**：本 feature **0 結構改動**；FK 與 audit / JWT / Casbin policy 邏輯全保留以 ULID 工作。
 
 ## Success Criteria *(mandatory)*
@@ -157,7 +157,7 @@ rust-api 內部所有業務邏輯（service-layer 操作、audit_log 寫入、JW
 
 - **A-001**: rev1 未上 prod、dev DB drop+reseed 接受（既有業務 entity row 透過 backfill 一次填 display_id，不必對映表保留 ULID→i64 lookup）。**已驗證**：dev stack 自 F4 起常態運行、無 prod 部署。
 - **A-002**: container hostname 在 docker-compose `up -d` 後通常一致（`rev1-admin-rust-api-1`）—— machine_id 自動穩定；container 重啟（同 compose）hostname 不變。**已驗證**：docker compose project name `rev1-admin` + 預設容器命名規則。
-- **A-003**: Snowflake i64 結構（41bit timestamp + 10bit machine_id + 12bit seq）保證生成值 < 2^53 JS safe integer 範圍（時間 epoch 在合理範圍內、總 bit 數 < 53）；base-web JS 端 `JSON.parse()` 正確 parse 為 number。**已驗證**：標準 Snowflake 41bit timestamp from epoch 2020 → ~2089 年仍 < 2^41 < 2^53。
+- **A-003**: Snowflake 變體結構（41bit timestamp + 5bit machine_id + 7bit seq、總 53bit）保證生成值 ≤ 2^53 - 1 = JS Number.MAX_SAFE_INTEGER；base-web JS 端 `JSON.parse()` 正確 parse 為 number 0 精度損失。**已驗證**：max id = (2^41-1)<<12 | (2^5-1)<<7 | (2^7-1) = 2^53 - 1 = 9007199254740991；41bit ts ms from epoch 2020 → ~2089 年到期；5bit machine = 32 replica 槽（rev1 dev 單 replica 充足）；7bit seq = 128 ids/ms/machine（admin-heavy 低 throughput 場景充足、超出時 wait-for-next-ms）。標準 Snowflake (41/10/12 = 63bit) 雖 fit i64 但超出 JS safe integer、不適用本 feature；本 feature 為**填滿 53bit 的變體**。
 - **A-004**: 既有 W-FW1~W-FW8 acceptance 跨 user / role / endpoint / menu CRUD 流程完全跑通 —— 本 feature 不破壞其 acceptance；ULID PK 保留 + service-layer 0 業務邏輯改動 + 邊界 transform 是足夠的「rust internal 不退化」保證。
 - **A-005**: Snowflake i64 generator 採 self-roll lightweight implementation（~50-80 行）或 `idgenerator` crate；皆 license 兼容（MIT / Apache 2.0）。**已驗證**（plan Phase 0 R-Q1 resolved，research.md 含完整 self-roll skeleton + Atomic CAS + clock 倒退 wait-for-next-ms 邏輯；implementer 可選 self-roll 首選 / `idgenerator` 替代）。
 - **A-006**: 既有 5 entity input/output DTO 改動範圍可控。**已驗證**（plan Phase 0 R-Q2 / R-Q3 resolved，research.md 詳列 input DTO 9 處 + output struct 6 處 + handler Path 7 處 + service lookup helper 4 處改動清單；data-model.md 列每個 file:line 對應改動 + From impl 範例）。

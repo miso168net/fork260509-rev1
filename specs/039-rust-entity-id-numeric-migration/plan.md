@@ -9,7 +9,7 @@
 
 **設計選擇**：X1 雙欄（ULID PK 保留 + display_id 副欄）—— 比 layer B「drop ULID PK 改 BIGINT」conservative，避免 JWT/audit/Casbin/FK 全 cascade，保留 ULID 特性（distributed + time-ordered）；比 X2「API hash transform」可靠，避免 collision + lookup cache 複雜度。
 
-**Snowflake 為 ULID 的 numeric 親戚**（41bit timestamp + 10bit machine_id + 12bit seq = 64bit）、time-ordered + distributed + < 2^53 JS safe integer。machine_id 從 container hostname hash mod 1024 自動取得、無 manual config、跟 W-F11 多 replica 預備對齊。
+**Snowflake 為 ULID 的 numeric 親戚**（41bit timestamp + 5bit machine_id + 7bit seq = 53bit、完全填滿 JS safe integer = 2^53 - 1）、time-ordered + distributed。machine_id 從 container hostname hash mod 32 自動取得（5bit 容量 = 32 replica 槽、rev1 dev 單 replica 充足、未來 staging < 32 replica 亦充足）、無 manual config、跟 W-F11 多 replica 預備對齊。
 
 base-web 改動 = **0 diff**、nestjs = 0、0 schema migration 對 `sys_menu` / `sys_domain` / log/token / `casbin_rule` / `sys_user_role` / `sys_role_menu`；rust-api ~10 input DTO + ~6 output struct + ~6 handler Path + 5 entity service create path + 1 Snowflake helper + 2 migration（schema + backfill）。比照 W-FW7 規模（中等 rust-only feature）。
 
@@ -32,7 +32,7 @@ base-web 改動 = **0 diff**、nestjs = 0、0 schema migration 對 `sys_menu` / 
 **Project Type**: web —— rust-api backend only（base-web frontend 0 改動）
 
 **Performance Goals**: 
-- Snowflake `next_display_id()` 生成 < 1ms（每次至少 1ms 等待保證 time-ordered + 12bit seq = 4096/ms 上限）
+- Snowflake `next_display_id()` 生成 < 1ms（每次至少 1ms 等待保證 time-ordered + 7bit seq = 128/ms/machine 上限；超出時 wait-for-next-ms）
 - display_id lookup 透過 UNIQUE INDEX、O(log n)、< 5ms（5 entity 合計 < 100 row dev 級）
 - 整體 endpoint 不顯著退化（既有 W-FW8 acceptance latency 對照）
 

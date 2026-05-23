@@ -10,7 +10,7 @@ spec.md Assumptions 列 3 個 plan-phase research question（A-005 / A-006 / 與
   - `snowflake-rs`：Apache 2.0、簡單 Twitter Snowflake、少 maintainer activity
   - `snowflaked`：MIT、async-friendly、簡單 API、適合 single-machine deterministic
   - self-roll: ~50-80 行（timestamp + machine_id + seq + AtomicU64 last_ms 邏輯 + clock 倒退 wait-for-next-ms）— license 0 顧慮、依賴 0、實作風險低
-- **Rationale**: rev1 是 admin-heavy 低 throughput 場景、Snowflake 需求簡單（單一 machine_id from hostname hash + 4096/ms seq + 41bit timestamp）— **self-roll 為首選**（依賴最小、code 在本 repo 內可審計、無 crate upgrade 維護負擔）；若 plan 階段 implementer 偏好 well-tested crate 可改 `idgenerator`、皆可。
+- **Rationale**: rev1 是 admin-heavy 低 throughput 場景、Snowflake 需求簡單（單一 machine_id from hostname hash + 128/ms seq + 41bit timestamp）— **self-roll 為首選**（依賴最小、code 在本 repo 內可審計、無 crate upgrade 維護負擔）；若 plan 階段 implementer 偏好 well-tested crate 可改 `idgenerator`、皆可。
 - **Implementation skeleton**（self-roll，~50 行）：
   ```rust
   // server/global/src/snowflake.rs
@@ -22,8 +22,8 @@ spec.md Assumptions 列 3 個 plan-phase research question（A-005 / A-006 / 與
   static LAST_STATE: AtomicU64 = AtomicU64::new(0);  // (timestamp_ms << 12) | seq
   
   const EPOCH_2020_MS: u64 = 1577836800000;  // 2020-01-01 UTC
-  const MACHINE_BITS: u64 = 10;
-  const SEQ_BITS: u64 = 12;
+  const MACHINE_BITS: u64 = 5;
+  const SEQ_BITS: u64 = 7;
   const SEQ_MASK: u64 = (1 << SEQ_BITS) - 1;
   
   fn machine_id() -> u64 {

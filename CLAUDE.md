@@ -315,10 +315,10 @@ git commit -m "bump base-web: rebase on upstream <短 SHA>"
 下方 `<!-- SPECKIT -->` marker 區為 Claude 在每個 feature 啟動 / 收尾時手動維護的當前 feature 快照 —— **只使用簡潔 4 行、不擴張內容**（歷史 merge SHA 在 `docs/INTEGRATION-CHECKLIST.md` 「已完成里程碑」單獨記、本檔不重複；marker 名稱保留供 spec-kit 將來自動同步、**勿刪**）：
 
 <!-- SPECKIT START -->
-**Active Spec**: [specs/039-rust-entity-id-numeric-migration/spec.md](specs/039-rust-entity-id-numeric-migration/spec.md)
-**Active Plan**: [specs/039-rust-entity-id-numeric-migration/plan.md](specs/039-rust-entity-id-numeric-migration/plan.md)
-**Phase**: 設計中 — brainstorm(`docs/superpowers/039-feature-rust-entity-id-numeric-migration.md`, Q1-Q6 拍板) + spec(16/16 quality 全 PASS, 0 NEEDS CLARIFICATION) + clarify(0 修改, 覆蓋 11 categories 全 Clear) + plan(Constitution Check 5/5 PASS, Phase 0 research R-Q1~R-Q6 resolved, Phase 1 design 完成 data-model + contracts + quickstart);待 `/speckit-tasks`
-**下一步**: `/speckit-tasks` → `/speckit-analyze` → `superpowers:executing-plans`
+**Active Spec**: 無
+**Active Plan**: 無
+**Phase**: 無 — 039 rust-entity-id-numeric-migration 已落地（merge 待回填於 `docs/INTEGRATION-CHECKLIST.md` 已完成里程碑）
+**下一步**: observability（W-F12/13/14、Phase W deploy 最後一個 phase）或 base-web cleanup sprint
 <!-- SPECKIT END -->
 
 ## 7. 整合設計文件索引
