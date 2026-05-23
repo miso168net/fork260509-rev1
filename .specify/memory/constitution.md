@@ -1,27 +1,37 @@
 <!--
 Sync Impact Report (2026-05-23)
 ================================================================
-Version change: 1.2.0 → 1.3.0 (MINOR — 受管例外列舉範圍延伸)
+Version change: 1.3.0 → 1.4.0 (MINOR — 受管例外授權模型從「具名列舉」改為「DESIGN 文件 = 軌道權威」)
 Modified principles:
-  - IV. base 不改動邊界 — 受管例外條款列舉更新:
-    (a) W-WEBUI 軌道列舉 W-FW1–W-FW7 → W-FW1–W-FW8
-        (涵蓋 W-FW6 brainstorm Q1 拆分新增的 W-FW8 button-auth-completion)
-    其餘條款（准動範圍、紀律規範、其餘 principle）皆**不變**
-Added sections: None（既有 Principle IV 內列舉延伸）
+  - IV. base 不改動邊界 — 受管例外條款授權模型轉換:
+    (a) 舊：列舉具名 feature W-FW1–W-FW8（每加新 W-FW 都需 bump constitution，
+        v1.1.0 / v1.2.0 / v1.3.0 三次 amendment 均為列舉延伸）
+    (b) 新：W-WEBUI 軌道**整體**為受管例外；軌道範圍以
+        `docs/INTEGRATION-DESIGN-W-WEBUI.md`（含其 §5 / §7 / 後續 amendment）
+        為單一真相；新 W-FW 子項只要在該 DESIGN 文件內登記即落入軌道、
+        不再需要 amend constitution
+    (c) 范圍邊界仍由 `INTEGRATION-DESIGN-W-WEBUI.md §4`（含其 amendment）
+        嚴格限定（v1.2.0 起的現況不變）
+    (d) 不准動清單（typings / column render / router / store / i18n / 版面）
+        與兩段式 commit 紀律**皆不變**
+    其餘 principle（I / II / III / V）皆**不變**
+Added sections: None
 Removed sections: None
 Templates requiring updates:
-  - ✅ .specify/templates/plan-template.md — Constitution Check
-    runtime 消費 principle、無需模板改動
+  - ✅ .specify/templates/plan-template.md — Constitution Check runtime
+    消費 principle、無需模板改動
   - ✅ .specify/templates/spec-template.md — 無直接 constitution ref
   - ✅ .specify/templates/tasks-template.md — 無直接 ref
   - ✅ .specify/templates/checklist-template.md — generic、無 change
-  - ✅ docs/INTEGRATION-DESIGN-W-WEBUI.md — W-FW8 已於 §7.2 列出（W-FW6
-    brainstorm Q1 拆分時記錄），W-FW8 spec 已明標 Constitution v1.3.0 前置
-  - ✅ docs/superpowers/038-feature-button-auth-completion.md — 已標明
-    需 v1.3.0 amendment 作為 plan 階段 Constitution Check 前置
-  - ✅ specs/038-button-auth-completion/spec.md — FR-017 列為 pre-gate
+  - ✅ docs/INTEGRATION-DESIGN-W-WEBUI.md — 自身內容不需改動；本 amendment
+    把它**升格為**軌道範圍權威（即「在此文件 §5 / §7 / 後續 amendment 登記
+    的 W-FW 子項都自動落入受管例外」）；未來新增 W-FW 子項只需在此 DESIGN
+    文件內登記、不需動 constitution
+  - ✅ docs/INTEGRATION-CHECKLIST.md — 無直接引用此條款、無需改動
+  - ✅ CLAUDE.md — 無直接引用此條款的具名列舉、無需改動
 Follow-up TODOs: None
 Prior reports:
+  - (2026-05-23) 1.2.0 → 1.3.0: 受管例外列舉延伸（W-FW1–W-FW7 → W-FW1–W-FW8）
   - (2026-05-22) 1.1.0 → 1.2.0: 受管例外條款範圍擴充
     (W-FW1–W-FW4 → W-FW1–W-FW7、准動範圍擴「最小 UI 新增」)
   - (2026-05-21) 1.0.0 → 1.1.0: 新增受管例外條款
@@ -84,7 +94,8 @@ base-web source code 為「對齊目標」；後端與 nginx 須適應 base 既�
 
 **受管例外 — W-WEBUI 軌道**：唯一得修改 base-web source 的例外為 **W-WEBUI 軌道**（[`docs/INTEGRATION-DESIGN-W-WEBUI.md`](../../docs/INTEGRATION-DESIGN-W-WEBUI.md)）：
 
-- W-WEBUI 軌道內的 feature（`W-FW1`–`W-FW8` —— `INTEGRATION-DESIGN-W-WEBUI.md` §5 的 W-FW1–W-FW4、§7 follow-up 切分的 W-FW5–W-FW7、與 W-FW6 brainstorm Q1 拆分新增的 W-FW8）**得修改 base-web source**，範圍受 `INTEGRATION-DESIGN-W-WEBUI.md §4`（含其後續 amendment）嚴格限定；§4 為 base-web 准動範圍的唯一細節權威
+- W-WEBUI 軌道**整體**為受管例外；**軌道範圍以 [`INTEGRATION-DESIGN-W-WEBUI.md`](../../docs/INTEGRATION-DESIGN-W-WEBUI.md) 整份文件為單一真相**——含 §5 主軌（目前 W-FW1–W-FW4）、§7 follow-up 切分（目前 W-FW5–W-FW7，含 W-FW6 brainstorm Q1 拆分新增的 W-FW8），以及未來在該文件 §5 / §7 / 後續 amendment 內登記的新 W-FW 子項。落入軌道的 feature **得修改 base-web source**，範圍受 `INTEGRATION-DESIGN-W-WEBUI.md §4`（含其後續 amendment）嚴格限定；§4 為 base-web 准動範圍的唯一細節權威
+- 新 W-FW 子項 MUST 先在 `INTEGRATION-DESIGN-W-WEBUI.md` 內登記（§5 主軌 / §7 follow-up / 或新增子節）；登記本身**不**觸發本憲法 amendment（避免「每加新 W-FW 都需 bump constitution」的歷史擴張）
 - 准動範圍以接線為主 —— 把既有 stub 表單的 `handleSubmit` / list 頁 delete handler 接到 service API、補 `src/service/api/*.ts` 寫入 function；並得在 §4 明文授權下，為接通既有後端能力做**必需的最小 UI 新增**（如表單欄位、既有占位頁補面板）
 - W-WEBUI 軌道**仍不得**改動 base-web 的型別定義（`src/typings/`）、表格 column render 邏輯、`src/router/` / `src/store/`、i18n key、版面重構 / 設計風格
 - 此例外**僅適用 W-WEBUI 軌道**；軌道外所有 feature 的 Constitution Check 對 base-web source 改動仍 MUST 為 0 diff
@@ -152,4 +163,4 @@ DESIGN-A（rust + nestjs）為過渡形態；DESIGN-B（rust-only）為終局目
 - **衝突解決**：Constitution 與 DESIGN 文件衝突時，以本憲法為最終權威；DESIGN 文件如有不一致需同步修正
 - **Runtime guidance**：日常開發決策參考 `CLAUDE.md`（workspace）+ `~/.claude/CLAUDE.md`（全域）；當 runtime guidance 與本憲法衝突，以本憲法為準
 
-**Version**: 1.3.0 | **Ratified**: 2026-05-14 | **Last Amended**: 2026-05-23
+**Version**: 1.4.0 | **Ratified**: 2026-05-14 | **Last Amended**: 2026-05-23
