@@ -108,7 +108,7 @@ rust-api 內部所有業務邏輯（service-layer 操作、audit_log 寫入、JW
 **B. Snowflake i64 generator helper**
 
 - **FR-005**: 後端 MUST 提供 `next_display_id() -> i64` helper、結構為 Snowflake 標準（41bit timestamp + 10bit machine_id + 12bit sequence）；連續呼叫 MUST 唯一 + time-ordered（newer > older）。
-- **FR-006**: machine_id MUST 從 container hostname hash mod 1024 自動取得（無 manual config）；若 hostname 不可用 fallback 預設值（如 `'rev1-admin-rust-api-1'` hash）保證 deterministic。
+- **FR-006**: machine_id MUST 從 container hostname hash mod 1024 自動取得（無 manual config）；若 hostname env 不可用 fallback deterministic 預設值（research.md R-Q1 implementation 採 `"rev1-default"`）保證 deterministic。
 - **FR-007**: Snowflake 生成器 MUST 處理 clock 倒退情境（timestamp ms 比上次小 → wait 到下一個 ms 再生成，避免 id 重複）。
 
 **C. API 邊界 transform**
@@ -159,8 +159,8 @@ rust-api 內部所有業務邏輯（service-layer 操作、audit_log 寫入、JW
 - **A-002**: container hostname 在 docker-compose `up -d` 後通常一致（`rev1-admin-rust-api-1`）—— machine_id 自動穩定；container 重啟（同 compose）hostname 不變。**已驗證**：docker compose project name `rev1-admin` + 預設容器命名規則。
 - **A-003**: Snowflake i64 結構（41bit timestamp + 10bit machine_id + 12bit seq）保證生成值 < 2^53 JS safe integer 範圍（時間 epoch 在合理範圍內、總 bit 數 < 53）；base-web JS 端 `JSON.parse()` 正確 parse 為 number。**已驗證**：標準 Snowflake 41bit timestamp from epoch 2020 → ~2089 年仍 < 2^41 < 2^53。
 - **A-004**: 既有 W-FW1~W-FW8 acceptance 跨 user / role / endpoint / menu CRUD 流程完全跑通 —— 本 feature 不破壞其 acceptance；ULID PK 保留 + service-layer 0 業務邏輯改動 + 邊界 transform 是足夠的「rust internal 不退化」保證。
-- **A-005**: Snowflake `idgenerator` crate（或同類）在 rust ecosystem 內成熟可用、license 兼容（MIT / Apache 2.0）；若否 self-roll lightweight implementation（~50 行）符合 brainstorm Q4 預備。**待 plan Phase 0 R-Q1 驗證**。
-- **A-006**: 既有 5 entity input/output DTO 改動範圍可控（~10 處 cascade）；plan Phase 0 R-Q2 / R-Q3 全面盤點 input DTO / output struct + handler 改動清單。**待 plan Phase 0 驗證**。
+- **A-005**: Snowflake i64 generator 採 self-roll lightweight implementation（~50-80 行）或 `idgenerator` crate；皆 license 兼容（MIT / Apache 2.0）。**已驗證**（plan Phase 0 R-Q1 resolved，research.md 含完整 self-roll skeleton + Atomic CAS + clock 倒退 wait-for-next-ms 邏輯；implementer 可選 self-roll 首選 / `idgenerator` 替代）。
+- **A-006**: 既有 5 entity input/output DTO 改動範圍可控。**已驗證**（plan Phase 0 R-Q2 / R-Q3 resolved，research.md 詳列 input DTO 9 處 + output struct 6 處 + handler Path 7 處 + service lookup helper 4 處改動清單；data-model.md 列每個 file:line 對應改動 + From impl 範例）。
 - **A-007**: 既有 base-web 端 `String(roleId)` / `String(props.roleId)` 等字串轉換在收到 number 後仍 work（`String(123)` → `"123"`，JS 動態型別自然處理）—— 本 feature 不破壞 base-web runtime；改寫成 number assertion 是另一個 cleanup feature 範圍。
 
 ## Dependencies
