@@ -24,14 +24,16 @@
 
 | ID | 發現來源 | 項目 | 規劃去向 |
 |---|---|---|---|
-| R2 | F14 DESIGN-B cutover review | F5.1 登入失敗無 audit —— `pwd_login` 只在成功路徑呼 `send_login_event`，密碼錯誤不寫 row（spec 005 FR-007 / SC-009 未實作） | follow-up（DESIGN-B 若要求 audit 完整性則須補） |
+| R2 | F14 DESIGN-B cutover review | F5.1 登入失敗無 audit —— `pwd_login` 只在成功路徑呼 `send_login_event`，密碼錯誤不寫 row（spec 005 FR-007 / SC-009 未實作） | follow-up（DESIGN-B 若要求 audit 完整性則須補）。**↔ R3**：R3 修完後 HTTP middleware 自動為所有 request（含 `pwd_login` 失敗）寫 HTTP-source audit row、本項剩餘 scope 視 R3 結果重新評估 |
 | F3-N1 | F3 implement | `sys_endpoint::insert_many` 繞 facade fully-qualified 呼叫（facade 只封 SELECT/DELETE） | 評估（audit path 若納 INSERT，facade 補 `insert_many` wrapper） |
 | F3-N2 | F3 implement | `sys_access_key` delete atomicity gap —— facade commit → `sign::remove_key` 兩步間 crash 留 orphan key | 評估（改 DB-as-truth + reload pattern） |
 | F3-N3 | F3 implement | `sys_endpoint::batch_remove_endpoints` partial-failure 失去 atomicity | 評估（outbox 模式可重整） |
 | F3-N4 | F3 G6 review | pre-existing `print!("user is {:#?}", user)` debug 痕 3 處（sys_user_api / sys_menu_api / sys_authorization_service） | 任一後續 feature 順手清 |
 | F3-N5 | F3 analyse | `specs/002` data-model §E4 範例 path 與實際 impl 位置 drift（impl 落 `server-model/soft_delete_impls.rs`） | spec hygiene（補 errata 一行） |
-| F3-N6 | F3 implement | F2 audit-log schema 升級後 F3 helper 對齊（F3 FR-022 預告 callsite 不需動） | F2.1 內處理 —— F2.1 已完成、本項應已結案、待查證後移除 |
 | 035-N1 | 035 final review | `add/update_user_for_systemmanage` 的 `create_user`/`update_user`（各自 txn）與 `assign_roles_to_user`（另一 txn）跨 service call 非單一 atomic —— 角色指派失敗時 user row + audit 已 commit。各寫入路徑自身 txn+audit 完整（Constitution II 逐 path 滿足）；真正單 txn 需把 `&txn` 穿過 service trait（較大重構） | 評估（service-layering 限制，比照既有 `assign_users` 體例；admin 低頻操作、失敗可重編輯） |
+| R3 | regression 2026-05-24 / F003 C-V8 | HTTP middleware audit gap —— `operation_log` middleware infra 存在於 `rust-api/server/core/src/web/operation_log.rs` + `event_channel_initialization.rs:19`、但 `router_initialization.rs::apply_layers` 未掛 layer；admin HTTP write 只產 service-level INTERNAL audit row、缺 HTTP-source row（spec 003 C8 期望 2 row/write）。Reproducer：POST /api/role 後 `SELECT COUNT(*) FROM sys_operation_log WHERE method != 'INTERNAL'` = 0。**↔ R2**：修完後 R2 失敗登入 audit 應自動有；**↔ F2.2**：本項為 F2.2 上游 prerequisite（不修則無 HTTP-source 事件可 outbox），順序上 R3 先做 | 評估（與 F2.2 audit-log outbox 一併處理可能最自然） |
+| R4 | regression 2026-05-24 / 6 處 spec rot | spec 命令與實作 drift（非 bug、但重跑 regression 會踩）：①030 C-V8/9 `username`→`userName`（W-FW5/039 後 camelCase rename）、②039 C-V31 `oldPassword`→`currentPassword`、③040 C-V10/12 `/api/role/list`→`/api/role`、`/api/user/list`→`/api/user`（paginated root）、④022 C-V3 `userGender`/`userRoles`/`status` 已由 F8/039 填實值（spec 仍寫 hardcode null/[]）、⑤021 C-V10 `/user/?page=...`→`/user?page=...`（trailing slash 404、無 slash HTTP 200；endpoint 健在）、⑥021 C-V2 casbin row 20→≥50（040 加 addMenu/addRole/deleteMenu 等） | spec hygiene（6 處 errata 一個 commit 修） |
+| R5 | regression 2026-05-24 / F005 | `/auth/logout` rust-api 未實作（HTTP 404）。spec 005 auth-endpoints.md 僅列 4 端點（login/getUserInfo/getUserRoutes/getConstantRoutes）、base-web 走 client-side logout（VITE_SERVICE_LOGOUT_CODES）。非 bug、但 contract 缺一行說明設計 | spec hygiene（補 doc note）或評估 server-side token blacklist 必要性 |
 
 > ⚠️ F3-N1~N5 為 F3 階段（2026-05-14）所留、迄今未正式 review 結案 —— 下次觸及 audit / endpoint facade / `sys_access_key` 區域時應逐項查證並結案。
 > 另有 minor 技術債（`docker-compose.yml` 檔頭 service 數註解 stale）—— 非 feature 級、任一相關 feature 順手清。
@@ -42,7 +44,7 @@
 | ID | 出處 | 項目 | 備註 |
 |---|---|---|---|
 | F1.2 | F1 拆分（F1.1 已交） | JWT algorithm 升級 + key versioning + refresh-token 預埋 | 原規劃 with F10；refresh token 已由 F10 / F13 另路完成，F1.2 剩餘範圍（algorithm / key versioning）待重新界定 |
-| F2.2 | F2 拆分（F2.1 已交） | audit-log outbox + Redis subscriber TTL fallback | F2.1 只交 schema + transaction 紀律 + 統一 audit path |
+| F2.2 | F2 拆分（F2.1 已交） | audit-log outbox + Redis subscriber TTL fallback | F2.1 只交 schema + transaction 紀律 + 統一 audit path。**前置 R3**（HTTP middleware audit gap）：R3 不修則無 HTTP-source 事件可 outbox、F2.2 範圍受限；建議 R3 先做、F2.2 隨後 |
 | W-F6b | W-F6 留下 | acme.sh 真實 cert acquisition / renew 流程 | 需公網 + 真實 domain + DNS provider creds |
 | W-F12/13/14 | DESIGN-W-DEPLOYMENT §11 | observability 三件套（Phase W deploy P5） | Phase W deploy 最後一個 phase、未排程 |
 
