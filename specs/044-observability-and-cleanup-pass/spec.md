@@ -100,31 +100,32 @@ audit forensic 維運者讀 `sys_operation_log` row 時、`module_name` 與 `des
 
 ### User Story 6 — Dev / log reader 不再看到 print! 殘留 debug 訊息（Priority: P2）
 
-開發者跑 rust-api（debug build 或 release build）時、stdout 不再有 pre-existing `print!("user is {:#?}", user)` 的 raw Debug 輸出污染（會 bypass tracing JSON formatter、破壞 Loki ingestion 結構）。本 user story 修 F3-N4：3 處 callsite 改 `tracing::debug!` 或拿掉。
+開發者跑 rust-api（debug build 或 release build）時、stdout 不再有 pre-existing `print!("user is {:#?}", user)` 的 raw Debug 輸出污染（會 bypass tracing JSON formatter、破壞 Loki ingestion 結構）。本 user story 修 F3-N4：**1 處** production `print!` callsite（`rust-api/server/api/src/admin/sys_user_api.rs:40`）改 `tracing::debug!` 或拿掉（per plan 階段 grep 確認 [research.md R-3](./research.md)，backlog F3-N4 寫「3 處」為 stale 估計、實際 only 1 處 `print!`；其他 `println!` 都在 `#[cfg(test)]` 或 startup CLI 範圍、不會 bypass JSON formatter、合理保留）。
 
 **Why this priority**：純 hygiene、不影響功能。但 W-F12 log JSON 落地後、`print!` 會在 docker stdout 產 non-JSON 行、被 promtail 攝入 Loki 後變 parse 失敗的 garbage row。W-F12 之前可忍、W-F12 之後必須清。
 
-**Independent Test**：dev stack 啟動 rust-api 後跑 `docker compose logs rust-api | grep "user is" | head`；改前命中 `print!` 殘留（multi-line Debug 印出）、改後 0 hit。
+**Independent Test**：dev stack 啟動 rust-api 後跑 `docker compose logs rust-api | grep "user is" | head`；改前命中該 1 處 `print!` 殘留（multi-line Debug 印出）、改後 0 hit。
 
 **Acceptance Scenarios**：
 
-1. **Given** dev stack；**When** 跑全 admin write 流程（POST /api/role / POST /api/user / POST /authorization/assign_routes）；**Then** `docker compose logs rust-api | grep "user is" -i` 0 hit。
+1. **Given** dev stack；**When** 跑會觸發 sys_user_api 該 callsite 的 admin write（如 POST /api/user 或 PUT /api/user/<id>）；**Then** `docker compose logs rust-api | grep "user is" -i` 0 hit。
 
 ---
 
-### User Story 7 — Wire data reader 不再被 status enum 混雜模式坑（Priority: P2、scope-conditional）
+### User Story 7 — Wire data reader 不再被 status enum 混雜模式坑（Priority: P2、out-of-scope errata）
 
-base-web 與 rust-api 間 wire data 對 status enum（user / role status）的表達一致：DB 端 `enabled`/`disabled` 字串、wire 端統一用 string 數字 `"1"`/`"2"`、transform 在 systemManage handler / service 邊界處理（per Clarifications Q3）。041 N1 backlog 條目登記、本 user story 視 grep 結果界定 scope。
+base-web 與 rust-api 間 wire data 對 status enum（user / role status）的表達策略：DB 端 `enabled`/`disabled` 字串、wire 端統一用 string 數字 `"1"`/`"2"`、transform 在 systemManage handler / service 邊界處理（per Clarifications Q3、與既有 W-FW5/W-FW6 體例對齊）。041 N1 backlog 條目登記、本 user story plan 階段 grep 後界定為 **out-of-scope errata**。
 
-**Why this priority**：041-N1 觸發前 DB vs wire 混雜模式仍可運作（base-web 動態型容忍）、但 W-FW5/F8 後某些 path status 為 string `"1"`/`"2"`、其他 path 仍 `"enabled"`/`"disabled"`，後續 feature 可能撞坑。044 順手 grep 釐清、scope 視真實 hit 數界定。
+**Why this priority**：plan 階段 grep（[research.md R-6](./research.md)）確認 main code paths **0 hit**（rust-api `"1"`/`"2"` literal 0、base-web `status === '1'/'2'` 0）—— W-FW5 / W-FW6 / W-FW8 / 040 等後續 features 已隱式清完 041-N1 backlog 條目「混雜模式」描述的 hits（如有藏在 transform layer 內、不影響 wire 對齊）。**本 feature 0 code 改動**、純登記 errata 留 045 spec-hygiene-pass-3 候選確認。
 
-**Independent Test**：plan 階段 grep `rust-api/server/` + `base-web/src/` 的 status 字串 / 列舉 / 比較 callsite，識別「未走 transform layer 直接把 DB 列舉漏到 wire 或 wire 數字寫進 DB」的 path（per Clarifications Q3）。若 in-scope hits ≤5 處 → in-spec 修；若 >5 處 → out-of-scope、登記 errata 留 045 spec-hygiene-pass-3 候選。
+**Independent Test**：本 user story acceptance 為「grep 重 verify 0 hit + INTEGRATION-CHECKLIST 041-N1 移到 errata 結案」。
 
 **Acceptance Scenarios**：
 
-1. **Given** plan 階段 grep 完成、scope 拍板；**When** 跑 grep verify；**Then** 對齊「拍板 scope 內 hits 全 fix、out-of-scope hits 已登記 errata」狀態。
+1. **Given** plan 階段 grep 結果（[research.md R-6](./research.md) 0 hit）；**When** implementer 重跑同樣 grep；**Then** 仍 0 hit、確認狀態未改變。
+2. **Given** 本 feature 完成；**When** 查 `docs/INTEGRATION-CHECKLIST.md` 衍生 follow-up table；**Then** 041-N1 row 已移除（per FR-017）、`docs/INTEGRATION-CHECKLIST.md` 045 候選 backlog 內登記「041-N1 grep 0 hit 結案、後續 features 若撞 status 混雜再列 spec」errata 字句。
 
-> **Status enum 對齊策略 (per Clarifications Q3)**：採 transform layer + 明文界定。wire 端統一用 string 數字 `"1"`/`"2"`（與 W-FW5 / W-FW6 systemManage transform 體例對齊）、DB 端保持 string 列舉 `enabled`/`disabled`、transform 在 systemManage handler 或 service 邊界處理。spec 內明文紀錄哪些 path 已採此體例（in-scope verify pass）、哪些 path 直接讀寫 DB 字串列舉（acceptable、wire 內部使用）。plan 階段 grep 後若有「未走 transform layer 直接把列舉值漏到 wire 或反過來」的 path、in-scope 改正（hits ≤5 處）；hits >5 處 → out-of-scope 登記 045 hygiene pass。
+> **Status enum 對齊策略 (per Clarifications Q3 + plan grep)**：採 transform layer + 明文界定。wire 端統一用 string 數字 `"1"`/`"2"`、DB 端保持 string 列舉 `enabled`/`disabled`、transform 在 systemManage handler / service 邊界處理。plan 階段 grep（research.md R-6）確認 main code paths **0 hit**；本 feature 0 改動、登記 errata 結案 → 045 spec-hygiene-pass-3 候選（若後續 features 撞混雜模式再列 spec）。
 
 ---
 
@@ -134,7 +135,7 @@ base-web 與 rust-api 間 wire data 對 status enum（user / role status）的�
 - **prometheus disk usage 漸增**：8 業務 metric × 30 day retention × label cardinality 可能 > 10GB。dev 設 7 day retention 緩解。
 - **grafana_admin_password 預設不安全**：dev 用簡單 secret file、prod 走 deploy/secrets/ pattern + acme.sh 後 TLS 包裝。
 - **observability stack 啟動 30-60s**：dev default on 接受該成本、減少 restart 頻率；prod 同步生效不影響業務 service 啟動順序（observability 為 sidecar pattern）。
-- **US7 status enum 真實 hits 數 > 5**：scope 退到 errata 登記、不進本 spec 改動、避免 044 scope creep（per Clarifications Q3 + FR-014 threshold 改為 5）。
+- **US7 status enum 真實 hits 數**：plan 階段 grep 結果 = 0 hit（research.md R-6）、本 feature 0 改動、純 errata 結案（per FR-014 + Q3）。
 
 ## Requirements *(mandatory)*
 
@@ -144,16 +145,18 @@ base-web 與 rust-api 間 wire data 對 status enum（user / role status）的�
 - **FR-002**：rust-api MUST 將 `tracing_subscriber::fmt::layer()` 改 `fmt::json()` 並對齊 DESIGN-W §8.1 schema（必要欄 `timestamp` / `level` / `service` / `request_id` / `msg`；可選欄 `actor_user_id` / `route` / `http_status` / `latency_ms` / `error_kind`）。
 - **FR-003**：rust-api MUST 在 router 加 `tower_http::trace::TraceLayer` + 自訂 `MakeSpan`、從 axum `RequestId` extension 抽 `request_id` 注入 tracing span attr、使所有 `tracing::*!` callsite 在 JSON 內 inherit `request_id`（callsite 0 改動）。
 - **FR-004**：rust-api 內所有 `tokio::spawn` 出去的 task MUST 用 `.instrument(parent_span)` propagate request_id；本 feature MUST 在 plan/tasks 階段 grep + enumerate 所有 spawn callsite、每個都加上 instrument。
-- **FR-005**：rust-api MUST 提供 `/metrics` endpoint（prometheus exposition format）、含 8 個業務 metric 全 instrument（per DESIGN-W §8.3）：`http_request_duration_seconds`、`audit_log_writes_total`、`casbin_enforcement_total`、`casbin_policy_cache_invalidate_total`、`outbox_pending_events`、`sys_tokens_active`、`cleanup_job_rows_deleted_total`、`backup_completed_total`。
+- **FR-005**：rust-api MUST 提供 `/metrics` endpoint（prometheus exposition format）、含 8 個業務 metric 全宣告（per DESIGN-W §8.3）、採 **pre-declare-and-defer-instrument** 模式（per plan [research.md R-2/R-11](./research.md)）：
+  - **6 metric 立即 instrument**（active counter/gauge 隨 traffic 變動）：`http_request_duration_seconds`（tower-http auto histogram）、`audit_log_writes_total`（audit_log::write_in_txn）、`casbin_enforcement_total`（axum casbin middleware enforce wrapper、callsite implementer 階段 grep 確認）、`casbin_policy_cache_invalidate_total`（notify_casbin_changed）、`outbox_pending_events`（042 drainer fetch_pending）、`cleanup_job_rows_deleted_total`（cleanup binary）
+  - **2 metric 宣告 0 series 待補**：`sys_tokens_active`（token store callsite 待 implementer 階段 grep 確認、可能 query `sys_tokens` table）、`backup_completed_total`（backup wrapper 在 W-F15/16 未排程 feature、044 留 dashboard panel placeholder）
 - **FR-006**：系統 MUST 提供 prometheus 服務、scrape rust-api 自身 `/metrics`、3 個 exporter（postgres / redis / nginx）以及 loki / promtail / prometheus 自身。
 - **FR-007**：系統 MUST 提供 postgres_exporter / redis_exporter / nginx-exporter 3 個 sidecar；front-nginx MUST 暴 internal-only `stub_status` 位置（不對 host 暴露）供 nginx-exporter scrape。
 - **FR-008**：系統 MUST 提供 grafana 服務、auto-provision Loki + Prometheus datasource、auto-provision 4-6 個 dashboard（per Clarifications Q2：1 master overview + 3-5 component drill-down）、auto-provision ≥6 個 alerting rule（per Clarifications Q1、走 grafana built-in unified alerting；不引入 Prometheus alertmanager）。
 - **FR-009**：alerting rules MUST 至少含：rust-api HTTP 5xx rate > 1%/min、audit_log_writes_total 停滯（5 分鐘無 increment）、outbox_pending_events > 1000、postgres connection saturation > 80%、redis memory > 80%、log volume drop > 50%。
 - **FR-010**：observability stack（7 service：loki / promtail / prometheus / grafana / postgres_exporter / redis_exporter / nginx-exporter）在 dev stack 預設啟動（dev default on、Q3 拍板）、prod 走 `--profile observability`。
-- **FR-011**：`extract_entity_id_from_url` MUST 對 `/systemManage/<verb>/<id>` path 取 `<id>` 而非 `<verb>`、同時保持 `/role/<id>` 等 native path 行為不變（hybrid rule：第 1 segment 為 `systemManage` 取 nth(2)；否則 nth(1)、依 filter empty segment 後計算）。
+- **FR-011**：`extract_entity_id_from_url` MUST 對 `/systemManage/<verb>/<id>` path 取 `<id>` 而非 `<verb>`、同時保持 `/role/<id>` 等 native path 行為不變。實際 fn 在 **`rust-api/server/model/src/admin/audit_log.rs:196`**（由 `audit_log::write_in_txn` 呼叫、per [research.md R-4](./research.md)）；hybrid rule：第 1 segment（split('/').get(1)）為 `systemManage` 取 get(3)；否則取 get(2)（對齊既有 split-based 樣式）。
 - **FR-012**：`OperationLogContext.module_name` 與 `description` 兩欄 MUST 不再寫 `"TODO"` placeholder、改實值推導（module_name 從 entity_type 取；description 走 `"HTTP {method} {url}"` 對齊 042 既有 fallback）。
-- **FR-013**：rust-api 3 處 pre-existing `print!("user is {:#?}", user)` callsite（sys_user_api / sys_menu_api / sys_authorization_service）MUST 改 `tracing::debug!` 或拿掉、避免 bypass tracing JSON formatter 產 non-JSON garbage line。
-- **FR-014**：US7 status enum 對齊策略 MUST 採 transform layer + 明文界定（per Clarifications Q3、與既有 W-FW5/W-FW6 體例對齊）；plan 階段 grep 識別「未走 transform layer 漏出列舉/數字」的 path、in-scope hits ≤5 處全 fix；hits >5 處 → out-of-scope 登記 errata 留 045 spec-hygiene-pass-3 候選。
+- **FR-013**：rust-api 1 處 pre-existing production `print!("user is {:#?}", user)` callsite（**`rust-api/server/api/src/admin/sys_user_api.rs:40`**、per [research.md R-3](./research.md)）MUST 改 `tracing::debug!` 或拿掉、避免 bypass tracing JSON formatter 產 non-JSON garbage line。其他 `println!` 在 `#[cfg(test)]` 或 startup CLI 範圍、不會在 production runtime 出 stdout、合理保留（backlog F3-N4 寫「3 處」為當時估計 stale）。
+- **FR-014**：US7 status enum 對齊策略 MUST 採 transform layer + 明文界定（per Clarifications Q3）；plan 階段 grep（[research.md R-6](./research.md)）確認 main code paths **0 hit**；本 feature 0 code 改動、登記 errata 結案、留 045 spec-hygiene-pass-3 候選（若後續 features 撞混雜模式再列 spec）。
 - **FR-015**：本 feature MUST 0 base-web 改動（與 W-WEBUI 軌道無關、不觸發 Constitution Principle IV 受管例外）。
 - **FR-016**：本 feature MUST 0 schema migration、0 新 entity（observability service 用既有 storage / 第三方 sidecar 自帶 storage）。
 - **FR-017**：本 feature 完成後 `docs/INTEGRATION-CHECKLIST.md` MUST 從衍生 follow-up table 移除 042-N2 / 042-N6 / F3-N4 / 041-N1 四 row（US7 視 scope 拍板可能保留 errata）、從規劃中 table 移除 W-F12/W-F13/W-F14 三 row（合進 044）、已完成里程碑加 044 entry、Current Focus 「下一步」指向 P3 F-facade-atomicity-pass 或下個排程。
@@ -169,13 +172,13 @@ base-web 與 rust-api 間 wire data 對 status enum（user / role status）的�
 - **SC-001**：dev stack healthy 啟動後、12 service（5 既有 + 7 observability）全部 healthy state、prometheus targets UI 顯示 ≥7 個 scrape job 全 UP。
 - **SC-002**：rust-api `docker compose logs rust-api` stdout 100% JSON format（每行 `jq -r .` 可解析、無 plain text 殘留 except panic / startup msg）；含必要欄 5/5 對齊 DESIGN-W §8.1。
 - **SC-003**：POST /api/role 後 grafana Loki query `{service="rust-api"} | json | request_id != ""` 在 1 分鐘內含該 request 的 ≥3 row、且該 request_id 與 sys_operation_log 雙視角 row 對得起來。
-- **SC-004**：curl rust-api `/metrics` 回 200 OK + prometheus exposition format、含 8 個業務 metric 名（即使 zero traffic 也暴 zero series）。
+- **SC-004**：curl rust-api `/metrics` 回 200 OK + prometheus exposition format、含 8 個業務 metric 名全暴（即使 zero traffic 也暴 series；6 active metric 隨 traffic 增、2 declared 0 series 待補 instrument）。
 - **SC-005**：POST /api/role + 2s wait 後 `audit_log_writes_total{operation="Create",entity_type="sys_role"}` counter 較 baseline +2（INTERNAL + HTTP 雙視角）。
 - **SC-006**：grafana UI 開啟後 Loki + Prometheus 兩個 datasource 自動載入、health check pass、4-6 dashboard 自動 provisioned（per Clarifications Q2）、≥6 alert rule 自動 load（per Clarifications Q1 grafana built-in）。
 - **SC-007**：POST `/api/systemManage/deleteMenu/<id>` 後 `SELECT entity_id FROM sys_operation_log` 命中 `<id>` 而非 `<verb>`（US4 / FR-011 PASS）；同時 POST `/api/role/<id>` 後 entity_id 仍 = `<id>`（不退化）。
 - **SC-008**：任一 admin write 後 `SELECT module_name, description FROM sys_operation_log` 兩欄無 `"TODO"` 值（US5 / FR-012 PASS）。
 - **SC-009**：`docker compose logs rust-api | grep "user is" -i` 0 hit（US6 / FR-013 PASS）。
-- **SC-010**：plan 階段 US7 grep 完成、scope 拍板紀錄入 plan.md「Implementer-stage Expansion」表；本 spec 內 hits 全 fix 後 0 retains（in-scope 處）+ errata 登記完整（out-of-scope 處）。
+- **SC-010**：plan 階段 US7 grep 完成（research.md R-6、0 hit）、scope 拍板為「out-of-scope errata 結案」；INTEGRATION-CHECKLIST 衍生 follow-up 移除 041-N1 row + errata 字句新增「041-N1 grep 0 hit 結案、後續 features 若撞 status 混雜再列 spec」。
 - **SC-011**：本 feature 完成後 0 base-web 改動（FR-015 verify）、0 schema migration、0 新 entity（FR-016 verify）。
 - **SC-012**：完成後 INTEGRATION-CHECKLIST 衍生 follow-up table 從現行 11 row 降至 7 row（移 042-N2 / 042-N6 / F3-N4 / 041-N1）；規劃中 table 從 3 row 降至 0 row（W-F12/W-F13/W-F14 合進 044 結案）；已完成里程碑加 044 entry。
 - **SC-013**：所有 `tokio::spawn` callsite 100% 含 `.instrument(span)` 包裹（grep verify），且 drainer 處理 audit event 的 log JSON 含 parent request_id。
@@ -186,6 +189,8 @@ base-web 與 rust-api 間 wire data 對 status enum（user / role status）的�
 - **prod 真實部署留 W-F6b 後** — observability stack 在 prod 啟動仍仰賴真實 domain + TLS cert；本 feature 不解 W-F6b acme.sh 問題、prod acceptance 待 W-F6b 後補。
 - **042-N5 dev compose port single-bind 不解** — 本 feature 不修 042-N5；prod 真實 multi-replica 仍待 dev compose 配置 feature 處理。
 - **rust-api log 既有 plain text 體例 0 backwards-compat 顧慮** — 044 之前 rust-api log 為 dev / 內部 debug 用、無 downstream consumer 依賴；JSON migration 改動 stdout 格式 100% 接受。
-- **8 業務 metric 既有 instrument 點假設既有** — `audit_log::write_in_txn` / casbin enforce wrapper / 042 drainer / token store / cleanup job / backup wrapper 等都已有可加 counter / gauge 的 code position；若某 metric 落點不存在（如 backup wrapper 從未實作）→ plan 階段重評是否 defer。
+- **8 業務 metric 落點 plan 階段 audit 結果**（per [research.md R-2/R-11](./research.md)）：
+  - 6 metric 即時 instrument 點存在（http_request_duration / audit_log_writes / casbin_enforcement / casbin_policy_cache_invalidate / outbox_pending_events / cleanup_job_rows_deleted）；casbin_enforcement_total 真實 axum middleware callsite 留 implementer 階段 grep 確認
+  - 2 metric pre-declare 0 series：`sys_tokens_active`（token store callsite implementer 階段 grep / 可能 query sys_tokens table）；`backup_completed_total`（backup wrapper 在 W-F15/16 未排程 feature、044 留 panel placeholder）
 - **Constitution v1.4.0 5/5 PASS** — observability 純觀察、不動 enforce / audit / endpoint / base-web；軌道外、預設原則涵蓋；無 amendment 需求。
 - **`/speckit-clarify` 已完成** — Session 2026-05-24 拍板 3 Q（alerting infra → grafana built-in / dashboard 設計風格 → 1 master + drill-down / US7 status enum → transform layer + 明文界定 + threshold 5）；spec 內 0 retains clarification 標記、Clarifications § 完整紀錄。
