@@ -31,7 +31,7 @@
 4. **Given** 同 baseline；**When** `curl -H "x-api-key:"` 送 empty value header 同端點；**Then** 行為同 case 3（HTTP 401 + WWW-Authenticate + code 5003）。
 5. **Given** dev stack 12 service healthy、`/sandbox/complex-api-key` 由 `protect_route` 註冊保護、Complex validator set 已含 `test-access-key` + secret；**When** `curl` 帶完整 query `?AccessKeyId=test-access-key&t=<ts>&n=<nonce>&sign=<valid-hmac>` 同端點；**Then** HTTP status 為 `200`（valid signature 通過、handler 執行）。
 6. **Given** 同 Complex baseline；**When** `curl` 帶 query 但 `sign=<invalid-hmac>` 同端點；**Then** HTTP status 為 `401`、response header 含 `WWW-Authenticate: ApiKey`、body `code` 為 `5004`、`success` 為 `false`。
-7. **Given** 同 Complex baseline；**When** `curl` 同端點但 query 缺 `AccessKeyId`（或 `t` / `n` / `sign` 任一必填）；**Then** HTTP status 為 `401`、response header 含 `WWW-Authenticate: ApiKey`、body `code` 為 `5003`、`success` 為 `false`、`msg` 含「Missing X」。
+7. **Given** 同 Complex baseline；**When** `curl` 同端點但 query 缺 `AccessKeyId`（代表性 missing-field case；`t` / `n` / `sign` 任一缺漏行為相同、屬 implementer-stage discretion）；**Then** HTTP status 為 `401`、response header 含 `WWW-Authenticate: ApiKey`、body `code` 為 `5003`、`success` 為 `false`、`msg` 含「Missing AccessKeyId」。
 8. **Given** 同 Complex baseline；**When** `curl` 同端點 query 含 `t=invalid-non-numeric`；**Then** HTTP status 為 `401`、response header 含 `WWW-Authenticate: ApiKey`、body `code` 為 `5003`、`success` 為 `false`、`msg` 為「Invalid timestamp」。
 
 ---
@@ -42,7 +42,7 @@
 
 **Why this priority**：unit test 是回歸防護的最低成本層、跟 production code 同檔便於修改、無需 DB / dev stack 即可跑；本 US 達成 045-N1 原文「補真實的『無效 key → 401』測試（單元 or integration）」的單元測試承諾、且雙 validator type 全覆蓋（Q1 clarification 拍板）。MVP-worthy 因為「測試證據」是 verifiable / reproducible quality gate。
 
-**Independent Test**：在 rust-api worktree 跑 `cargo test -p server-core sign::api_key_middleware -- --nocapture`、輸出含 8 個 test `... ok`、`test result: ok. 8 passed; 0 failed`、不需任何外部 dependency（dev stack 不需跑）。
+**Independent Test**：在 rust-api worktree 跑 `cargo test -p server-core sign::api_key_middleware -- --nocapture`、輸出 `test result: ok. 9 passed; 0 failed`（本 feature 新增 8 + 既有 `test_api_key_sign` 1）、不需任何外部 dependency（dev stack 不需跑）。
 
 **Acceptance Scenarios**：
 
@@ -63,7 +63,7 @@
 - **Body envelope 對 base-web 的影響**：base-web sandbox 端不調用、`/sandbox/*` 端點 0 base-web 衝擊；若未來 base-web 走某條走 api_key middleware 的 endpoint，base-web axios default `validateStatus < 500` 會把 401 視為 error 走 `onError` path（不走既有 `onBackendFail` envelope flow） → 屆時須 base-web 軌道內處理（W-WEBUI 受管例外）；本 feature 不觸發。
 - **WWW-Authenticate value 與 RFC 註冊 scheme**：`ApiKey` 非 IANA-註冊的 authentication scheme，但業界廣泛接受（AWS / Stripe / Cloudflare 等）；本 feature 採實務常用 form。若未來需 RFC strict 合規可改 `Custom realm="rust-api"` 或類似、此屬 047-N4 未來 follow-up scope。
 - **PROTECTED_PATHS 靜態跨 test 污染**：unit tests 共享 `PROTECTED_PATHS` 全域 RwLock；每 test 用 unique path（e.g. `/test-missing-XYZ` / `/test-invalid-XYZ`）避免互相 leak、不需 `serial_test` crate。
-- **tower::ServiceExt::oneshot reachability**：若 `axum::body` 或 `axum::Router` re-export 路徑無法達 `tower::ServiceExt`，加 `tower = { workspace = true, features = ["util"] }` 進 `server-core` dev-deps（per-crate change、非 workspace 新 dep、不違 FR-006）。
+- **tower::ServiceExt::oneshot reachability**：workspace tower 0.5.2 預設 features = `["log"]`、不含 `util`；`tower::ServiceExt::oneshot` 在 `tower::util` 模組、unit test 需 `util` feature。Phase 0 research R-1.4 已決：`server-core` `[dev-dependencies]` 加 `tower = { workspace = true, features = ["util"] }`（per-crate change、非 workspace 新 dep、不違 FR-006）。
 
 ## Requirements *(mandatory)*
 
@@ -76,7 +76,7 @@
 - **FR-005**：`Res<()>::IntoResponse` 既有實作 MUST 不變動；body envelope shape（`{code, data, msg, success}`）對 client MUST 不破壞（rev1 envelope contract 保留）。
 - **FR-006**：本 feature MUST 0 schema migration、0 新 application entity、0 新 workspace cargo dep（`rust-api/Cargo.toml` `[workspace.dependencies]` 段 0 line change）、0 新 redis channel、0 新 metric pre-declare、0 新 rust-api endpoint。
 - **FR-007**：本 feature MUST 0 base-web 改動（與 W-WEBUI 軌道無關、不觸發 Constitution Principle IV 受管例外、不需 amendment）。
-- **FR-008**：`rust-api/server/core/src/sign/api_key_middleware.rs::tests` MUST 新增 8 個 unit test（Q1 clarification：雙 validator type 全覆蓋）：Simple validator 4 個 — (a) `simple_missing_api_key_returns_401_with_www_authenticate`；(b) `simple_invalid_api_key_returns_401_with_www_authenticate`；(c) `simple_valid_api_key_passes_through`；(d) `simple_non_protected_path_passes_through`；Complex validator 4 個 — (e) `complex_missing_field_returns_401_with_www_authenticate`（缺 AccessKeyId / timestamp / nonce / signature 任一）；(f) `complex_invalid_signature_returns_401_with_www_authenticate`；(g) `complex_valid_signed_request_passes_through`（test setup 用 `ComplexApiKeyValidator.add_key_secret(...)` + HMAC signature build per `api_key_middleware.rs::tests::test_api_key_sign` 既有 pattern）；(h) `complex_invalid_timestamp_returns_401_with_www_authenticate`（query `t=non-numeric` 觸發 timestamp parse fail）。每 test 使用 `tower::ServiceExt::oneshot` 驅 minimal `axum::Router` + dummy handler、send mock `Request`、assert response status + headers + body envelope。
+- **FR-008**：`rust-api/server/core/src/sign/api_key_middleware.rs::tests` MUST 新增 8 個 unit test（Q1 clarification：雙 validator type 全覆蓋）：Simple validator 4 個 — (a) `simple_missing_api_key_returns_401_with_www_authenticate`；(b) `simple_invalid_api_key_returns_401_with_www_authenticate`；(c) `simple_valid_api_key_passes_through`；(d) `simple_non_protected_path_passes_through`；Complex validator 4 個 — (e) `complex_missing_field_returns_401_with_www_authenticate`（以缺 `AccessKeyId` 為代表 test case；其餘 3 missing-field 路徑 `t` / `n` / `sign` 為 implementer-stage discretion、若 implementer 偏好 4 sub-cases 屬 ≤3 expansion budget）；(f) `complex_invalid_signature_returns_401_with_www_authenticate`；(g) `complex_valid_signed_request_passes_through`（test setup 用 `ComplexApiKeyValidator.add_key_secret(...)` + HMAC signature build per `api_key_middleware.rs::tests::test_api_key_sign` 既有 pattern）；(h) `complex_invalid_timestamp_returns_401_with_www_authenticate`（query `t=non-numeric` 觸發 timestamp parse fail）。每 test 使用 `tower::ServiceExt::oneshot` 驅 minimal `axum::Router` + dummy handler、send mock `Request`、assert response status + headers + body envelope。
 - **FR-009**：本 feature 完成後 `docs/INTEGRATION-CHECKLIST.md` MUST 從衍生 follow-up backlog 移除 045-N1 row、已完成里程碑加 047 entry、Current Focus「下一步」改向 base-web TS `id` 型別債 cleanup sprint。
 - **FR-010**：jwt middleware（`rust-api/server/middleware/src/jwt.rs`）與 casbin envelope adapter（`rust-api/server/middleware/src/casbin_envelope_adapter.rs`） MUST 不被本 feature 改動（保持 HTTP 200 + body envelope flow、保留 base-web `onBackendFail` logout/refresh-token path）。
 - **FR-011**：implementer-stage expansion 拾取上限 MUST ≤ 3 處（per 041 / 043 / 046 體例）；若拾取超限 → 拒絕並登記 047+ follow-up。**Note**：此為 policy constraint、不對應 buildable task；plan / tasks 階段不主動列任何 expansion 候選為 task。
@@ -90,7 +90,7 @@
 ### Measurable Outcomes
 
 - **SC-001**：dev stack healthy 啟動後、12 service（5 既有 + 7 observability）全 healthy state；rust-api 啟動 + drainer 跑著（接 046 baseline、不退化）。
-- **SC-002**：`cargo test -p server-core sign::api_key_middleware -- --nocapture` 跑 8 個 unit test（4 Simple + 4 Complex）、輸出 `test result: ok. 8 passed; 0 failed`、無 `#[ignore]` 標註、跑時間 < 2 second（unit test 無外部 dependency；Complex valid case 需 HMAC compute 但 minimal overhead）。
+- **SC-002**：`cargo test -p server-core sign::api_key_middleware -- --nocapture` 跑本 feature **新增 8 個** unit test（4 Simple + 4 Complex）+ 既有 1 個 `test_api_key_sign`、輸出 `test result: ok. 9 passed; 0 failed`（8 new + 1 existing）、無 `#[ignore]` 標註、跑時間 < 2 second（unit test 無外部 dependency；Complex valid case 需 HMAC compute 但 minimal overhead）。
 - **SC-003**：dev stack 跑著、from host 對 `http://127.0.0.1:11080/api/sandbox/{simple,complex}-api-key` 雙端點各發 4 case curl（共 8 case）：(a) valid auth → HTTP 200 + body `code:0`；(b) invalid auth → HTTP 401 + response header `WWW-Authenticate: ApiKey` + body `code:5004`；(c) 無 auth header / query → HTTP 401 + 同 header + body `code:5003`；(d) empty / invalid format auth → HTTP 401 + 同 header + body `code:5003`。Complex 端 (a) 需 build HMAC-signed query 對齊 `test_api_key_sign` pattern。
 - **SC-004**：`rust-api/server/core/src/sign/api_key_middleware.rs` 內 `#[cfg(test)] mod tests` 包含 8 個 test function、命名對齊 FR-008 (a)~(h) 規定；grep `pub async fn api_key_middleware` 在 production code 區仍 1 hit（function signature 不變、僅內部 error response 構造改）。
 - **SC-005**：本 feature 完成後 0 base-web 改動（FR-007 verify：`git diff base-web/` 0 行）、0 schema migration（FR-006 verify：`find rust-api/migration/src -newer specs/047-sandbox-protect-route-fix/spec.md -name "*.rs"` 0 hit）、0 新 application entity（FR-006 verify：`find rust-api/server/model/src/admin/entities -newer ... -name "sys_*.rs"` 0 hit）、0 新 workspace cargo dep（`git diff rust-api/Cargo.toml` 0 line change in `[workspace.dependencies]` 段）。
