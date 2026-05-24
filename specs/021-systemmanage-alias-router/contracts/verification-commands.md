@@ -35,9 +35,11 @@ docker images rust-api:rev1-admin-rust-api --format "table {{.Repository}}:{{.Ta
 
 ---
 
-## C-V2: migration init container rerun + 20 row 落 casbin_rule
+## C-V2: migration init container rerun + ≥20 row（持續成長）落 casbin_rule
 
-**Goal**: 驗 F9 Casbin migration `m20260520_a_f9_system_manage_alias_seed.rs` 已執行、20 row 落 DB(per FR-008 + FR-009 + Q1 拍板)。
+> **errata 041**：原硬編 `20` 為 F9 落地時數；後續 feature 新增 systemManage alias 而成長（2026-05-24 regression 實測 50）。判定改為 `≥20`、避免硬編碼隨 feature 演進失準。
+
+**Goal**: 驗 F9 Casbin migration `m20260520_a_f9_system_manage_alias_seed.rs` 已執行、≥20 row 落 DB(per FR-008 + FR-009 + Q1 拍板)。
 
 **Command**:
 ```bash
@@ -441,19 +443,21 @@ rust-api      running   Up Y (healthy)    ← Y < X 因 F9 rebuild + recreate
 
 ## C-V10: 既有 `/user/*` `/role/*` `/route/*` 3 條 endpoint 不退化(per spec US3.3 + SC-009 + FR-014)
 
+> **errata 041**：主命令採無 trailing slash（避免 nested router `/`-rooted endpoint 在 axum 0.8 對 trailing slash 回 404 的歷史行為）。041 NormalizePathLayer 落地後、`/user/` `/role/` 帶 trailing slash 形式亦回 HTTP 200（兩種寫法皆對）。
+
 **Goal**: 驗 F9 新加 alias path 不影響既有 router(per Principle IV「base 不改動邊界」+ FR-014「不改既有 m20241024」)。
 
 **Command**:
 ```bash
-echo "=== C-V10a: 既有 GET /user/ ==="
+echo "=== C-V10a: 既有 GET /user (no-slash) ==="
 curl -s -w "\n---HTTP %{http_code}\n" \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
-  "http://127.0.0.1:11080/api/user/?page=1&size=10"
+  "http://127.0.0.1:11080/api/user?page=1&size=10"
 
-echo "=== C-V10b: 既有 GET /role/ ==="
+echo "=== C-V10b: 既有 GET /role (no-slash) ==="
 curl -s -w "\n---HTTP %{http_code}\n" \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
-  "http://127.0.0.1:11080/api/role/?page=1&size=10"
+  "http://127.0.0.1:11080/api/role?page=1&size=10"
 
 echo "=== C-V10c: 既有 GET /route/tree ==="
 curl -s -w "\n---HTTP %{http_code}\n" \
@@ -487,7 +491,7 @@ C-V10c: menu tree array envelope HTTP 200
 | ID | Goal | Pass criteria |
 |---|---|---|
 | C-V1 | rust-api image rebuild OK | exit 0 + 新 image SHA + ≤ 5 min warm |
-| C-V2 | migration rerun + 20 row | COUNT = 20 + (v0, v2, v3) 對齊、v4 全空字串(R-Q5) |
+| C-V2 | migration rerun + ≥20 row（成長中） | COUNT ≥ 20 + (v0, v2, v3) 對齊、v4 全空字串(R-Q5)（per errata 041、實測 50） |
 | C-V3 | Soybean 4 重用 mount endpoint | 4/4 HTTP 200 + envelope `{code:0, data, msg, success}` + paginated/tree shape 對齊 |
 | C-V4 | Soybean addUser + updateUser + deleteUser + batchDeleteUser | 4/4 HTTP 200 + batchDelete `{deletedCount: N}` partial counter |
 | C-V5 | Soybean getAllRoles + getAllPages | 2/2 HTTP 200 + Vec<Role> + Vec<String> 反映實際 sys_role / sys_menu 資料 |

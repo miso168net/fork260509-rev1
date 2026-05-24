@@ -34,7 +34,29 @@ C-V 驗證矩陣（curl + psql + CDP browser smoke）。dev stack 啟動見 [`..
 | C-V28 | grep Ulid::new 命中數 | `grep -rcE "Ulid::new" rust-api/server/` 命中 = brainstorm 前 + 0（既有 ULID 生成路徑全保留、本 feature 0 新增 ULID 點、0 移除既有）|
 | C-V29 | CDP browser smoke W-FW8 button-auth | CDP via Edge :9229 → `http://127.0.0.1:11080` 登入 Soybean → `/manage/role` → 對 ROLE_SUPER 開「编辑」→ 點「按钮权限」→ modal 開、tree 12 group render、勾 2 leaf → 「确认」→ 「修改成功」 toast；wire 內 endpoint id 改 number 後不退化、JS 端 0 runtime error |
 | C-V30 | CDP browser smoke W-FW1~W-FW4 既有 manage | CDP → `/manage/user`（user 列表 render） / `/manage/role`（role 列表 render） / `/manage/menu`（menu tree render）/ `/manage/user` 建立新 user → drawer 開、submit → toast 成功；既有 W-FW1~W-FW4 CRUD 流程不退化 |
-| C-V31 | regression W-FW5/W-FW6/W-FW7 | curl `/api/auth/changePassword` (W-FW5 自助改密碼)、curl `/api/systemManage/getRoleHome/<i64>` + updateRoleHome (W-FW6 N2)、curl getMenuList/v2 顯示 query/buttons/fixedIndexInTab (W-FW7) —— 全 envelope 0 |
+| C-V31 | regression W-FW5/W-FW6/W-FW7 | curl `/api/auth/changePassword` (W-FW5 自助改密碼、payload `currentPassword` 非 `oldPassword`、詳見下方 C-V31a 詳述)、curl `/api/systemManage/getRoleHome/<i64>` + updateRoleHome (W-FW6 N2)、curl getMenuList/v2 顯示 query/buttons/fixedIndexInTab (W-FW7) —— 全 envelope 0 |
+
+---
+
+### C-V31a 詳述 — `changePassword` payload 例（errata 041 augment）
+
+> **errata 041**：原 C-V31 row（line 37）為 summary table only、未列 `changePassword` payload 例；regression operator 憑慣例容易誤拼 `oldPassword`、被 rust DTO 422 拒。實際 DTO 為 `currentPassword`（per W-FW5 035 `change_password` service）。本子節 augment 補完整 curl block、供未來 regression 直接複用。
+
+```bash
+# 以某 user token（非 Soybean、避免互擾）發 changePassword
+USER_TOKEN=$(curl -fsS -X POST "http://127.0.0.1:11080/api/auth/login" \
+  -H 'Content-Type: application/json' \
+  -d '{"identifier":"<test-user>","password":"<old>"}' \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['token'])")
+
+curl -fsS -X POST "http://127.0.0.1:11080/api/auth/changePassword" \
+  -H "Authorization: Bearer $USER_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"currentPassword":"<old>","newPassword":"<new>"}'
+```
+
+**Expected**：envelope `code:0`；該 user 可用 `<new>` 重 login、`<old>` 失效。
+
+---
 
 > **針對性 C-V**：**C-V1 / C-V2 / C-V3 / C-V4**（Snowflake helper + schema + backfill 4 核心驗）、**C-V6 / C-V7 / C-V8**（output wire 型 number 對齊）、**C-V9 / C-V10 / C-V11 / C-V12**（input DTO i64 cascade 4 endpoint）、**C-V14 / C-V15 / C-V16**（Path<i64> lookup 3 endpoint）、**C-V19 / C-V20 / C-V21**（rust internal SoT 不退化、audit/JWT/Casbin）、**C-V29 / C-V30**（CDP smoke 端到端）為 039-specific 重點、必跑。
 
