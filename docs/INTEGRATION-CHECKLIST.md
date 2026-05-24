@@ -32,7 +32,7 @@
 | 045-N2 | 045 implementer 階段 | 045 spec docs 多處 spec rot 需 erratum：（a）`data-model.md §E1.2` line 56 `before_row == endpoint` 整 Model `==` 因 caller `router_initialization.rs:419,426` 每次啟動 regen `display_id` + `created_at` 而**永遠 false**、需改為 6 業務欄位 semantic compare（`path/method/action/resource/controller/summary`）+ UPDATE 路徑 preserve `before_row.created_at` + `display_id`；（b）`data-model.md §E1.2` line 114 `tracing::warn!(target: target, …)` 對 runtime var 為 invalid（`target:` 需 `&'static str` const、E0435）、需改 `target = target` structured field；（c）`contracts/verification-commands.md` C-V2 用不存在的 `entity_type` column（實際用 `module_name`）+ operation case `Insert/Update`（實際 `INSERT/UPDATE`）；（d）C-V4-V6 用錯 endpoint base path `/accessKey`（實際 `/access-key`）+ 缺 `domain` 欄；（e）C-V8/V9/V10 用錯 status enum（spec `"enabled"` / 實際 `"1"`）+ 錯 field name（`username` / 實際 `userName`）+ 錯 HTTP verb（PUT / 實際 POST）+ 錯 URL path（`/updateUser/{id}` / 實際 body-id `/updateUser`）+ 錯 userRoles 型（i64 display_id / 實際 Vec<String> role code）| 後續 spec-hygiene-pass（與 041 / 043 體例對齊）順手清；非 implementation defect、純 spec docs 對齊實 code |
 > 另有 minor 技術債（`docker-compose.yml` 檔頭 service 數註解 stale）—— 非 feature 級、任一相關 feature 順手清。
 > **base-web TS `id` 型別債**（030–034 回顧 review 三處命中）：`src/typings` 的 `CommonRecord.id` 宣告 `number`、`Menu.parentId` 宣告 `number`，但 rust-api runtime 實際回字串（user / role id 為 ULID、menu `parentId` 為字串；另 `MenuRoute.id` rust `i32` ↔ base-web TS `string` 同類）。runtime 靠 JS 動態型別恰好可運作，TS 編譯器無法捕捉未來 regression。**032 的 `parentId` 字串/數字 deserializer fix（`149dc52`）本質即此型別債的後果**。W-WEBUI 軌道因 FR-015 禁碰 `src/typings` 無法修。建議 base-web cleanup sprint 統一：`CommonRecord.id` / `parentId` 改 `string`、複查相依比較邏輯（如 `parentId === 0`）。
-> **041-N1 status enum errata 結案**（044 落地後）：rust-api `status="1"/"2"` literal + base-web `status === '1'/'2'` 雙 grep 100% 0 hit、main code paths 既有 transform layer + 明文界定（per 044 Clarifications Q3）；後續 features 若撞 status enum 混雜模式再列 045+ spec hygiene-pass。
+> **041-N1 status enum errata 結案**（044 落地後）：rust-api `status="1"/"2"` literal + base-web `status === '1'/'2'` 雙 grep 100% 0 hit、main code paths 既有 transform layer + 明文界定（per 044 Clarifications Q3）；後續 features 若撞 status enum 混雜模式再列 046+ spec hygiene-pass。
 
 ### 規劃中、未排程（design 規劃、待排 feature）
 
@@ -127,7 +127,7 @@ Phase 推進規則（P1 全完成才動 P2 等）見 design 文件 `DESIGN-A §6
 - [ ] **F3 acceptance tests**（`cargo test --test soft_delete_basics -- --ignored`，3 檔共 9 個 `#[ignore]` test）—— 需 `TEST_DATABASE_URL` + migration up；迄今未正式跑
 - [ ] **CI lint workflow 實際觸發**（`.github/workflows/ci-soft-delete-lint.yml`）—— rev1 走 worktree + merge 流程、無 PR，此驗證項須另定觸發方式或評估廢止
 
-**F14 DESIGN-B cutover 前完整性盤點**（specs 001–028、2026-05-21）：28 feature 全 COMPLETE / COMPLETE-WITH-NOTES、0 GAPS；R1 / R3 / R4 已於 F14 處理（詳見 `specs/029-design-a-to-b-cutover/` 與 git history）。**R2（F5.1 登入失敗無 audit）未結 → 見 Follow-up Backlog。**
+**F14 DESIGN-B cutover 前完整性盤點**（specs 001–028、2026-05-21）：28 feature 全 COMPLETE / COMPLETE-WITH-NOTES、0 GAPS；R1 / R3 / R4 已於 F14 處理（詳見 `specs/029-design-a-to-b-cutover/` 與 git history）。R2（F5.1 登入失敗無 audit）已於 042 audit-outbox-and-http-mount HTTP middleware audit pipeline 結案（見已完成里程碑 042 entry）。
 
 ---
 
