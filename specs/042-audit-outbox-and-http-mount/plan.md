@@ -173,7 +173,7 @@ worktree + submodule SHA pin 兩段式 commit（per [`CLAUDE.md §4.1`](../../CL
 ## Phase 1 outcomes（reference）
 
 - [`data-model.md`](./data-model.md)：`sys_audit_outbox` schema 完整 + state transition + interaction with sys_operation_log + URL→entity_type 完整 table
-- [`contracts/verification-commands.md`](./contracts/verification-commands.md)：11 個 C-V（C-V1 build / C-V2 migration / C-V3 雙視角 row / C-V4 mount 涵蓋 / C-V5 drainer 啟動 / C-V6 Redis stream / C-V7 multi-replica SKIP LOCKED / C-V8 Redis 暫停 / C-V9 URL→entity_type / C-V10 scope / C-V11 R2 結案）
+- [`contracts/verification-commands.md`](./contracts/verification-commands.md)：12 個 C-V（C-V1 build / C-V2 migration / C-V3 雙視角 row / C-V4 mount 涵蓋 / C-V5 drainer 啟動 / C-V6 Redis stream / C-V7 multi-replica SKIP LOCKED / C-V8 Redis 暫停 / C-V9 URL→entity_type / C-V10 scope / C-V11 R2 結案 / C-V12 latency benchmark Part A+B）
 - [`quickstart.md`](./quickstart.md)：8-step implementer 手冊（migration / helper refactor / mount / drainer / publisher / acceptance / two-stage commit / backlog cleanup）
 - CLAUDE.md SPECKIT marker 區更新（指向本 plan）
 

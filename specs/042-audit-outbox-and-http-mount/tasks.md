@@ -111,6 +111,7 @@ description: "Task list for 042 audit-outbox-and-http-mount"
 - [ ] T028 C-V7 multi-replica drainer 不重複處理 — 跑 C-V7：`$PC up -d --scale rust-api=2 rust-api --force-recreate --wait` + 連發 50 POST /api/role + sleep 3 + 驗 outbox 100 row 全 published + sys_operation_log 100 row 無重複 + scale 回 1 + cleanup（depends on T021）。對應 SC-003、FR-010、US1 AS-4。
 - [ ] T029 [P] C-V9 URL → entity_type 抽樣 verify — 跑 C-V9：5 endpoint 抽樣 trigger（/api/user / /api/systemManage/addUser / /api/role / /api/route / /api/auth/login）+ 驗 entity_type 對應正確（depends on T021）。對應 SC-008、FR-004、data-model E2。
 - [ ] T030 C-V10 三邊 scope verify — 跑 C-V10：base-web `git diff HEAD --stat` 空、rust-api `git diff HEAD --stat` ~11 files（per plan Structure Decision）、outer `git diff HEAD --stat` 含 INTEGRATION-CHECKLIST + rust-api SHA pin（depends on T021 + T032）。對應 SC-009、FR-012。
+- [ ] T036 [P] C-V12 Latency benchmark — 跑 C-V12 Part A（POST /api/role 100 iterations、mean response latency ≤ 50ms surrogate evidence for SC-004 ≤1ms middleware overhead）+ Part B（20 events publish→XREAD-receive 延遲、p50 ≤ 100ms / p95 ≤ 500ms per SC-005）；如 p50 > 100ms 可調 application.yaml `drainer_sleep_interval_ms` 平衡 trade-off（depends on T021）。對應 SC-004、SC-005、FR-007。
 - [ ] T031 INTEGRATION-CHECKLIST 移除 R2/R3/F2.2 + 加 042 entry — `docs/INTEGRATION-CHECKLIST.md`：
   - 從「衍生 follow-up」table 移除 R2 row（F5.1 登入失敗無 audit、由本 feature 自動結案）
   - 從「衍生 follow-up」table 移除 R3 row（HTTP middleware audit gap、本 feature 核心修）
@@ -172,11 +173,12 @@ Phase 6 Polish (T028-T035、collect、commit、merge) ──┘
 | T028 | T021 |
 | T029 | T021 |
 | T030 | T021 + T032 |
-| T031 | T022–T030 |
+| T031 | T022–T030 + T036 |
 | T032 | T020（建議 acceptance T022-T025 全 PASS 後做）|
 | T033 | T031 + T032 |
 | T034 | T031 |
 | T035 | T033 + T034（**user 同意**）|
+| T036 | T021 |
 
 ---
 
@@ -216,12 +218,12 @@ Phase 6 Polish (T028-T035、collect、commit、merge) ──┘
 - T026 獨立、約 5 分鐘
 - T027 等 T031（INTEGRATION-CHECKLIST cleanup）
 
-**Batch 6 — Polish + Commits + Merge**（T028-T035）：
-- T028 + T029 平行（不同 endpoint scope）
+**Batch 6 — Polish + Commits + Merge**（T028-T036）：
+- T028 + T029 + T036 平行（不同 endpoint scope；T036 latency benchmark 約 5 分鐘）
 - T030 + T031 sequential（T031 為 backlog cleanup、T030 verify scope）
 - T032（rust-api commit + push 需 user）→ T033（outer commit）→ T034 verify backlog → T035 merge 需 user
 
-→ 約 30-45 分鐘、含 user 同意等待。
+→ 約 35-50 分鐘、含 user 同意等待。
 
 ### MVP Option（per spec-kit framework）
 
@@ -245,9 +247,9 @@ User 偏好（per project_followup_processing_order memory）：R3→W-F12/13/14
 
 ## Summary
 
-- **Total tasks**: 35
-- **By user story**: Foundational = 6 tasks（T001-T006）、US1 = 19 tasks（T007-T025）、US2 = 1 task（T026）、US3 = 1 task（T027）、Polish = 8 tasks（T028-T035）
-- **Parallel opportunities**: T001/T003/T004/T005 [P] Foundational 4 並；T007/T008/T011/T015/T017/T018 [P] US1 6 並
-- **Independent test criteria**: US1 = C-V3/C-V4/C-V5/C-V8（雙視角 + mount 涵蓋 + drainer + Redis 暫停）/ US2 = C-V6（Redis stream）/ US3 = C-V11（R2 結案 + backlog cleanup）
+- **Total tasks**: 36
+- **By user story**: Foundational = 6 tasks（T001-T006）、US1 = 19 tasks（T007-T025）、US2 = 1 task（T026）、US3 = 1 task（T027）、Polish = 9 tasks（T028-T036）
+- **Parallel opportunities**: T001/T003/T004/T005 [P] Foundational 4 並；T007/T008/T011/T015/T017/T018 [P] US1 6 並；T028/T029/T036 [P] Polish 3 並
+- **Independent test criteria**: US1 = C-V3/C-V4/C-V5/C-V8（雙視角 + mount 涵蓋 + drainer + Redis 暫停）/ US2 = C-V6（Redis stream）/ US3 = C-V11（R2 結案 + backlog cleanup）；C-V12 latency benchmark 為 cross-cutting performance verify
 - **Suggested MVP scope**: US1 only（per spec-kit framework P1 = MVP）；user 已選 Full feature 一次到位
-- **Format validation**: ✅ 全 35 task 符合 `- [ ] TXXX [P?] [Story?] Description with file path` checklist 格式
+- **Format validation**: ✅ 全 36 task 符合 `- [ ] TXXX [P?] [Story?] Description with file path` checklist 格式

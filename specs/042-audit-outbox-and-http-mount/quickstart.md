@@ -509,9 +509,9 @@ $PC ps --format "table {{.Service}}\t{{.State}}\t{{.Status}}" | grep -E "rust-ap
 
 ---
 
-## Step 6 — 跑 acceptance（contracts/verification-commands.md C-V1~C-V11）
+## Step 6 — 跑 acceptance（contracts/verification-commands.md C-V1~C-V12）
 
-依 [`contracts/verification-commands.md`](./contracts/verification-commands.md) 跑 C-V1 ~ C-V11。
+依 [`contracts/verification-commands.md`](./contracts/verification-commands.md) 跑 C-V1 ~ C-V12。
 
 順序建議：
 - C-V1 / C-V2（build + migration）
@@ -520,8 +520,9 @@ $PC ps --format "table {{.Service}}\t{{.State}}\t{{.Status}}" | grep -E "rust-ap
 - C-V7 / C-V8（multi-replica + Redis 暫停）
 - C-V9 / C-V11（URL prefix + R2 結案）
 - C-V10（scope）
+- C-V12（latency benchmark Part A HTTP middleware overhead + Part B Redis stream publish→consume；對應 SC-004 / SC-005、為 performance acceptance）
 
-每 C-V 結果記錄；FAIL 則 debug、修、重跑該 C-V 直到全 PASS。
+每 C-V 結果記錄；FAIL 則 debug、修、重跑該 C-V 直到全 PASS。C-V12 若 Part B p50 > 100ms 可調 `application.yaml drainer_sleep_interval_ms`（per C-V12 failure handling）。
 
 ---
 
@@ -651,7 +652,7 @@ git push origin rev1-admin-root  # 須 user OK
 - [ ] Step 3 OperationLogLayer mount + URL prefix 規則
 - [ ] Step 4 drainer + publisher + spawn
 - [ ] Step 5 build + dev stack restart 5 service healthy
-- [ ] Step 6 C-V1~C-V11 全 PASS
+- [ ] Step 6 C-V1~C-V12 全 PASS（含 latency benchmark）
 - [ ] Step 7.1 第一段 rust-api commit + push（user 同意）
 - [ ] Step 7.2 第二段 outer commit
 - [ ] Step 7.3 merge 回 default（user 同意才 push）

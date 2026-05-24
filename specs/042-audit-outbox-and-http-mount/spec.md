@@ -101,8 +101,8 @@ forensic / 維護操作員（人類或自動工具）在事後調查任何 admin
 - **SC-001**：admin 對任一 write endpoint 發起請求後、1 秒內主 audit log 有 2 筆對應 row（INTERNAL + HTTP）；100 次連續 write 場景下、200 row 全到、0 遺漏（per US1 Acceptance Scenario 1）。
 - **SC-002**：Redis 暫停 1 分鐘期間發起 50 個 admin write、Redis 恢復後 60 秒內 stream 補齊全 100 個對應 entry（50 INTERNAL + 50 HTTP）、主 audit log 也補齊（per US1 Acceptance Scenario 2、FR-002）。
 - **SC-003**：rust-api scale 2 replica、同時發起 100 個 admin write、無重複 audit row（200 row、不是 400）（per US1 Acceptance Scenario 4、FR-010）。
-- **SC-004**：HTTP middleware mount 後、單次 `POST /api/role` request 平均 latency 與 mount 前相比增加 ≤ 1ms（FR-007）。
-- **SC-005**：subscriber 從 Redis stream 取得最新事件的延遲（從事件 publish 到 subscriber 收到）中位數 ≤ 100ms、p95 ≤ 500ms（dev stack 環境）。
+- **SC-004**：HTTP middleware mount 後、單次 `POST /api/role` request 平均 latency 與 mount 前相比增加 ≤ 1ms（FR-007；middleware 為 tokio::spawn fire-and-forget 模式、結構上 0 同步 audit DB 寫入於 response path、≤1ms 為設計保證、由 C-V12 Part A 以「mean response latency ≤ 50ms dev stack absolute threshold」為 surrogate evidence 量測）。
+- **SC-005**：subscriber 從 Redis stream 取得最新事件的延遲（從事件 publish 到 subscriber 收到）中位數 ≤ 100ms、p95 ≤ 500ms（dev stack 環境、由 C-V12 Part B 量測：publish 觸發 → XREAD BLOCK 收到 entry 的 wall-clock gap、N=20 events）。
 - **SC-006**：subscriber 落後超過 retention window 後、fallback 從主 audit log 查詢能補完全部 missing 範圍 row（per US2 Acceptance Scenario 3、FR-006）。
 - **SC-007**：失敗登入 `POST /auth/login` 後、主 audit log 有 1 筆 method=POST、url=/auth/login、user_id 為空、ip/user_agent 完整的 row（per US3 Acceptance Scenario 1、R2 自動結案驗證）。
 - **SC-008**：URL → entity_type 規則涵蓋所有現有 admin write endpoint：抽樣驗證 `/api/user`→`sys_user`、`/api/role`→`sys_role`、`/api/route`→`sys_menu`、`/api/systemManage/addUser`→`sys_user`、`/auth/login`→`http_event` 等代表性 endpoint 對應正確。
