@@ -121,7 +121,7 @@ description: "Task list for 042 audit-outbox-and-http-mount"
 - [x] T032 第一段 commit — rust-api worktree — `cd rust-api && git status`（確認 branch `rev1-admin-rust-api`）+ `git add` 全 11 改/新檔（per quickstart §7.1 完整清單）+ `git commit -m` per quickstart §7.1 messageBody + **push 須 user 同意**（per ~/.claude/CLAUDE.md §5）：`git push origin rev1-admin-rust-api`（depends on T020）。
 - [x] T033 第二段 commit — outer feature branch — 回 outer root、確認 branch `042-audit-outbox-and-http-mount` + `git add rust-api docs/INTEGRATION-CHECKLIST.md` + `git commit -m` per quickstart §7.2 messageBody（含 SHA、TBD 後補）（depends on T031 + T032）。
 - [x] T034 C-V11 backlog cleanup verify — `grep -nE "^\| R2 |^\| R3 |^\| F2.2 " docs/INTEGRATION-CHECKLIST.md` 期望 0 hit；`grep -cn "042 audit-outbox-and-http-mount" docs/INTEGRATION-CHECKLIST.md` 期望 ≥1 hit（depends on T031）。對應 SC-010。
-- [ ] T035 git merge 042 → rev1-admin-root — **user 同意才執行**：`git checkout rev1-admin-root && git merge --no-ff 042-audit-outbox-and-http-mount -m "Merge feature 042-audit-outbox-and-http-mount"`；merge 後 backfill outer/merge SHA 進 INTEGRATION-CHECKLIST 042 entry（small chore commit、per 041 體例）+ push 須 user 再次同意（depends on T033 + T034）。
+- [x] T035 git merge 042 → rev1-admin-root — **user 同意才執行**：`git checkout rev1-admin-root && git merge --no-ff 042-audit-outbox-and-http-mount -m "Merge feature 042-audit-outbox-and-http-mount"`；merge 後 backfill outer/merge SHA 進 INTEGRATION-CHECKLIST 042 entry（small chore commit、per 041 體例）+ push 須 user 再次同意（depends on T033 + T034）。
 
 **Checkpoint**：042 整 feature 落地、acceptance 全綠、backlog 已 cleanup、merge 回 default。
 
