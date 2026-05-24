@@ -1,0 +1,222 @@
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: rev1-admin
+    folder: rev1-admin
+    interval: 1m
+    rules:
+      - uid: rev1-rust-api-5xx
+        title: RustApi5xxRate
+        condition: B
+        data:
+          - refId: A
+            queryType: ''
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: 'sum(rate(http_request_duration_seconds_count{service="rust-api",status=~"5.."}[5m])) / sum(rate(http_request_duration_seconds_count{service="rust-api"}[5m]))'
+              refId: A
+          - refId: B
+            queryType: ''
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    params:
+                      - 0.01
+                    type: gt
+              refId: B
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: 'rust-api 5xx rate > 1% over 5m'
+        labels:
+          severity: critical
+
+      - uid: rev1-audit-pipeline-stalled
+        title: AuditPipelineStalled
+        condition: B
+        data:
+          - refId: A
+            queryType: ''
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: 'increase(audit_log_writes_total[5m])'
+              refId: A
+          - refId: B
+            queryType: ''
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    params:
+                      - 0.5
+                    type: lt
+              refId: B
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: 'audit_log_writes_total stalled (no increase in 5m)'
+        labels:
+          severity: critical
+
+      - uid: rev1-outbox-queue-backlog
+        title: OutboxQueueBacklog
+        condition: B
+        data:
+          - refId: A
+            queryType: ''
+            relativeTimeRange:
+              from: 60
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: 'outbox_pending_events'
+              refId: A
+          - refId: B
+            queryType: ''
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    params:
+                      - 1000
+                    type: gt
+              refId: B
+        noDataState: OK
+        execErrState: Error
+        for: 2m
+        annotations:
+          summary: 'outbox_pending_events > 1000'
+        labels:
+          severity: warning
+
+      - uid: rev1-postgres-connection-saturation
+        title: PostgresConnectionSaturation
+        condition: B
+        data:
+          - refId: A
+            queryType: ''
+            relativeTimeRange:
+              from: 60
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: '100 * pg_stat_database_numbackends{datname="soybean_admin_rust"} / pg_settings_max_connections'
+              refId: A
+          - refId: B
+            queryType: ''
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    params:
+                      - 80
+                    type: gt
+              refId: B
+        noDataState: OK
+        execErrState: Error
+        for: 3m
+        annotations:
+          summary: 'postgres connection saturation > 80%'
+        labels:
+          severity: warning
+
+      - uid: rev1-redis-memory-high
+        title: RedisMemoryHigh
+        condition: B
+        data:
+          - refId: A
+            queryType: ''
+            relativeTimeRange:
+              from: 60
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: '100 * redis_memory_used_bytes / redis_memory_max_bytes'
+              refId: A
+          - refId: B
+            queryType: ''
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    params:
+                      - 80
+                    type: gt
+              refId: B
+        noDataState: OK
+        execErrState: Error
+        for: 3m
+        annotations:
+          summary: 'redis memory usage > 80%'
+        labels:
+          severity: warning
+
+      - uid: rev1-log-volume-drop
+        title: LogVolumeDrop
+        condition: B
+        data:
+          - refId: A
+            queryType: ''
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: 'rate(loki_distributor_lines_received_total[5m]) / scalar(avg_over_time(loki_distributor_lines_received_total[1h]))'
+              refId: A
+          - refId: B
+            queryType: ''
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    params:
+                      - 0.5
+                    type: lt
+              refId: B
+        noDataState: NoData
+        execErrState: Error
+        for: 10m
+        annotations:
+          summary: 'log volume dropped below 50% of 1h baseline'
+        labels:
+          severity: warning

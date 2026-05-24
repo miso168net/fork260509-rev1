@@ -2,6 +2,24 @@
 # upstream `resolve` 需要 resolver;valid=10s 控制 re-resolve 週期、ipv6=off 略過 AAAA
 resolver 127.0.0.11 valid=10s ipv6=off;
 
+# 044 W-F12 (FR-002, DESIGN-W §8.1): JSON access_log → loki ingestion
+log_format json_combined escape=json '{'
+  '"timestamp":"$time_iso8601",'
+  '"level":"info",'
+  '"service":"front-nginx",'
+  '"request_id":"$request_id",'
+  '"msg":"$request",'
+  '"http_method":"$request_method",'
+  '"route":"$uri",'
+  '"http_status":$status,'
+  '"latency_ms":"$request_time",'
+  '"remote_addr":"$remote_addr",'
+  '"upstream":"$upstream_addr",'
+  '"upstream_response_time":"$upstream_response_time",'
+  '"bytes_sent":$bytes_sent,'
+  '"http_user_agent":"$http_user_agent"'
+'}';
+
 upstream base_web {
     server base-web:8080;
 }
@@ -17,6 +35,8 @@ server {
     listen 80;
     server_name _;
 
+    access_log /var/log/nginx/access.log json_combined;
+
     location ^~ /.well-known/acme-challenge/ {
         root /var/www/acme-challenge;
     }
@@ -31,6 +51,8 @@ server {
     listen 443 ssl;
     http2 on;
     server_name _;
+
+    access_log /var/log/nginx/access.log json_combined;
 
     ssl_certificate     /etc/nginx/certs/fullchain.pem;
     ssl_certificate_key /etc/nginx/certs/privkey.pem;

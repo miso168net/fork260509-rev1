@@ -1,0 +1,55 @@
+# 044 W-F13: Prometheus scrape config
+# 7 scrape jobs covering: rust-api self-metrics + 3 exporters + 3 self-stack (promtail/loki/prometheus)
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: rev1-admin
+
+scrape_configs:
+  - job_name: rust-api
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['rust-api:11081']
+        labels:
+          service: rust-api
+
+  - job_name: postgres-exporter
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['postgres_exporter:9187']
+        labels:
+          service: postgres
+
+  - job_name: redis-exporter
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['redis_exporter:9121']
+        labels:
+          service: redis
+
+  - job_name: nginx-exporter
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['nginx-exporter:9113']
+        labels:
+          service: front-nginx
+
+  - job_name: promtail
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['promtail:9080']
+
+  - job_name: loki
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['loki:3100']
+
+  - job_name: prometheus
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['localhost:9090']
+
+# Phase 5 (US3) wires alert rule files via separate rule_files: directive — leave empty here for now.
+# rule_files: []

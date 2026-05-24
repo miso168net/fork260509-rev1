@@ -1,0 +1,55 @@
+# 044 W-F12: Promtail config — scrape docker daemon logs → push to loki
+# Uses docker_sd_configs to auto-discover containers + relabels
+# `__meta_docker_container_label_com_docker_compose_service` → label `service`
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+  log_level: info
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+    tenant_id: rev1
+
+scrape_configs:
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 10s
+    relabel_configs:
+      # compose service name → label `service`
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
+        target_label: service
+      # container name (stripped of leading /) → label `container`
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: container
+      # compose project name → label `compose_project`
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_project']
+        target_label: compose_project
+    pipeline_stages:
+      # Parse rust-api JSON logs into structured fields (for query/filter on level / request_id)
+      - match:
+          selector: '{service="rust-api"}'
+          stages:
+            - json:
+                expressions:
+                  level: level
+                  ts: timestamp
+                  request_id: span.request_id
+                  msg: fields.message
+            - labels:
+                level:
+      # Parse front-nginx access_log JSON
+      - match:
+          selector: '{service="front-nginx"}'
+          stages:
+            - json:
+                expressions:
+                  level: level
+                  request_id: request_id
+            - labels:
+                level:

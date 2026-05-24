@@ -79,3 +79,23 @@ W-F4 不提供「`.env` 直接 envvar mode」切換機制(per `/speckit-analyze`
 - `base-web`:不 mount 任何 secret(frontend 不需要)
 
 container 內 mount 為 read-only tmpfs、mode 0444、owner root(host filesystem mode 不傳染)。
+
+## 044 observability secrets(W-F13/F14)
+
+per [`specs/044-observability-and-cleanup-pass/`](../../specs/044-observability-and-cleanup-pass/) 設計、新增 2 個 secret 供 grafana / postgres_exporter 用:
+
+### `grafana_admin_password.txt`
+
+純密碼值,grafana container `GF_SECURITY_ADMIN_PASSWORD__FILE` 讀此 file、做為 grafana admin 帳號(`admin`)登入密碼。
+
+- prod:`openssl rand -base64 24` 或同級強度
+- dev:任意 dev-friendly 字串(repo 內 `.txt` 範例值僅供本機開發)
+
+### `postgres_exporter_dsn.txt`
+
+postgres_exporter `DATA_SOURCE_NAME` DSN、整 URL 含 user / password / host / port / dbname / sslmode。範例:
+```
+postgresql://soybean:<password>@postgres:5432/soybean_admin_rust?sslmode=disable
+```
+
+⚠️ **雙寫紀律**:DSN 內 password 段 **MUST** = `postgres_password.txt` 內純值。不一致時 postgres_exporter 連 DB 失敗、prometheus scrape 為 down。
