@@ -81,7 +81,7 @@ grep -n "Logout" specs/005-auth-login-and-dynamic-menu/contracts/auth-endpoints.
 
 echo ""
 echo "=== 2. 4 aspect coverage check ==="
-for keyword in "Current Design" "Token Revocation Research\|Pattern A\|Redis token blacklist" "trigger scenarios\|Anomaly-driven\|Admin-driven" "W-F12\|Observability Hook"; do
+for keyword in "Current Design" "Token Revocation Research|Pattern A|Redis token blacklist" "trigger scenarios|Anomaly-driven|Admin-driven" "W-F12|Observability Hook"; do
   count=$(grep -cE "$keyword" specs/005-auth-login-and-dynamic-menu/contracts/auth-endpoints.md)
   echo "  '$keyword' hits: $count"
 done

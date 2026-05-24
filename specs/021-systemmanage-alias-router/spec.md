@@ -112,7 +112,7 @@ operator 用 `Soybean` user(ROLE_SUPER)login 拿 access_token → 用該 token �
    - `GET /api/systemManage/getAllPages` → 預期 HTTP 200 + body envelope + data: array of string(menu name list、SELECT DISTINCT name)
    ,**Then** 2/2 endpoint HTTP 200 + envelope wrap + data 反映 sys_role / sys_menu 既有資料。
 
-5. **Given** US1.3 batchDeleteUser 已跑,**When** `docker compose exec -T postgres psql ... -c "SELECT COUNT(*) FROM sys_operation_log WHERE created_at > NOW() - INTERVAL '5 minutes' AND operation LIKE '%delete%'"`,**Then** COUNT ≥ 1(per-row delete 既有 service 自帶 audit hook 寫入,F9 stub call 既有 service 不另寫 audit、繼承 §1.5)。
+5. **Given** US1.3 batchDeleteUser 已跑,**When** `docker compose exec -T postgres psql ... -c "SELECT COUNT(*) FROM sys_operation_log WHERE created_at > (NOW() AT TIME ZONE 'UTC')::timestamp - INTERVAL '5 minutes' AND operation LIKE '%delete%'"`,**Then** COUNT ≥ 1(per-row delete 既有 service 自帶 audit hook 寫入,F9 stub call 既有 service 不另寫 audit、繼承 §1.5)。
 
 ---
 

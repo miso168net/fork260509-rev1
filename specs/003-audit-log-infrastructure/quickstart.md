@@ -246,7 +246,7 @@ psql -h 127.0.0.1 -p 5432 -U postgres -d new_admin \
 psql -h 127.0.0.1 -p 5432 -U postgres -d new_admin \
   -c "DELETE FROM sys_user WHERE username IN ('auditTestUser', 'rollbackTest');"
 psql -h 127.0.0.1 -p 5432 -U postgres -d new_admin \
-  -c "DELETE FROM sys_operation_log WHERE entity_id IS NOT NULL AND created_at > NOW() - INTERVAL '1 hour';"
+  -c "DELETE FROM sys_operation_log WHERE entity_id IS NOT NULL AND created_at > (NOW() AT TIME ZONE 'UTC')::timestamp - INTERVAL '1 hour';"
 ```
 
 **Pass 條件 (SC-008)**：失敗的業務變動不留 audit row。

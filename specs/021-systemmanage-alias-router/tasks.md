@@ -177,9 +177,9 @@ description: "Task list for F9 — systemManage-alias-router implementation"
 - [ ] T043 [US1] **C-V7 audit log 寫入驗**(per spec US1.5 + FR-016):
   ```bash
   docker compose exec -T postgres psql -h 127.0.0.1 -p 5432 -U soybean -d soybean_admin_rust \
-    -c "SELECT user_id, operation, created_at FROM sys_operation_log WHERE created_at > NOW() - INTERVAL '5 minutes' AND operation LIKE '%delete%user%' ORDER BY created_at DESC LIMIT 10"
+    -c "SELECT user_id, operation, created_at FROM sys_operation_log WHERE created_at > (NOW() AT TIME ZONE 'UTC')::timestamp - INTERVAL '5 minutes' AND operation LIKE '%delete%user%' ORDER BY created_at DESC LIMIT 10"
   docker compose exec -T postgres psql -h 127.0.0.1 -p 5432 -U soybean -d soybean_admin_rust \
-    -c "SELECT COUNT(*) FROM sys_operation_log WHERE created_at > NOW() - INTERVAL '5 minutes' AND operation LIKE '%delete%user%'"
+    -c "SELECT COUNT(*) FROM sys_operation_log WHERE created_at > (NOW() AT TIME ZONE 'UTC')::timestamp - INTERVAL '5 minutes' AND operation LIKE '%delete%user%'"
   ```
   預期 COUNT ≥ 1(batchDelete per-row 觸發既有 service audit hook、繼承 §1.5);若 COUNT = 0 但 batchDelete 顯示 `{deletedCount: > 0}` → 既有 service.delete_user 可能無 audit hook 在 service 層、留 follow-up 觀察
   接 T042
