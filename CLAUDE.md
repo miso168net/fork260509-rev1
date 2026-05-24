@@ -322,10 +322,10 @@ git commit -m "bump base-web: rebase on upstream <短 SHA>"
 下方 `<!-- SPECKIT -->` marker 區為 Claude 在每個 feature 啟動 / 收尾時手動維護的當前 feature 快照 —— **只使用簡潔 4 行、不擴張內容**（歷史 merge SHA 在 `docs/INTEGRATION-CHECKLIST.md` 「已完成里程碑」單獨記、本檔不重複；marker 名稱保留供 spec-kit 將來自動同步、**勿刪**）：
 
 <!-- SPECKIT START -->
-**Active Spec**: —（045 facade-atomicity-pass 已 merge、見 `docs/INTEGRATION-CHECKLIST.md` 已完成里程碑）
-**Active Plan**: —
-**Phase**: idle
-**下一步**: base-web TS `id` 型別債 cleanup sprint 或其他 follow-up backlog（042-N1 / 044-N1 / 045-N1 / 045-N2 / W-F15/16）
+**Active Spec**: [`specs/046-spec-hygiene-pass-3/spec.md`](specs/046-spec-hygiene-pass-3/spec.md)
+**Active Plan**: [`specs/046-spec-hygiene-pass-3/plan.md`](specs/046-spec-hygiene-pass-3/plan.md)
+**Phase**: plan complete — ready for `/speckit-tasks`
+**下一步**: 046 收尾後接 047 sandbox-protect-route-fix (045-N1) 或 base-web TS id 型別債 cleanup sprint
 <!-- SPECKIT END -->
 
 ## 7. 整合設計文件索引
