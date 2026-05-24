@@ -90,8 +90,9 @@ description: "Task list for 043 spec-hygiene-pass-2"
   - 「已完成里程碑」加 1 行 043 entry（per quickstart §5.2 體例：日期 + outer/merge SHA + spec link + 一句話描述）
   - Current Focus 下一步從「043 進行中」→「W-F12/13/14 observability」（depends on T005 + T007 + T009 全 PASS）。對應 FR-009、SC-004。
 - [ ] T011 C-V5 backlog cleanup verify — `grep -nE "^\| 042-N3 |^\| R5 |^\| 041-N2 " docs/INTEGRATION-CHECKLIST.md`（期望 0 hit）+ `grep -cn "043 spec-hygiene-pass-2" docs/INTEGRATION-CHECKLIST.md`（期望 ≥1 hit）（depends on T010）。對應 SC-004、FR-009。
-- [ ] T012 outer feature branch 單段 commit — 確認在 `043-spec-hygiene-pass-2` branch + `git add` 全 8 改檔（per quickstart §6.1 完整清單：spec 002 / 003 / 005 / 021 x 3 / 042 + docs/INTEGRATION-CHECKLIST.md）+ `git commit -m` per quickstart §6.1 messageBody + **push 須 user 同意**（per ~/.claude/CLAUDE.md §5）：`git push origin 043-spec-hygiene-pass-2`（depends on T011）。
-- [ ] T013 git merge 043 → rev1-admin-root — **user 同意才執行**：`git checkout rev1-admin-root && git merge --no-ff 043-spec-hygiene-pass-2 -m "Merge feature 043-spec-hygiene-pass-2"`；merge 後 backfill outer/merge SHA 進 INTEGRATION-CHECKLIST 043 entry（small chore commit、per 041 / 042 體例）+ push 須 user 再次同意（depends on T012）。
+- [ ] T012 outer feature branch 單段 commit — 確認在 `043-spec-hygiene-pass-2` branch + `git add` 全 8 改檔（per quickstart §6.1 完整清單：spec 002 / 003 / 005 / 021 x 3 / 042 + docs/INTEGRATION-CHECKLIST.md）+ 跑 `git diff --staged --name-only` 驗證 staged paths **無 rust-api/ 或 base-web/ 前綴**（SC-005 explicit verify、per analyze C1）+ `git commit -m` per quickstart §6.1 messageBody + **push 須 user 同意**（per ~/.claude/CLAUDE.md §5）：`git push origin 043-spec-hygiene-pass-2`（depends on T011）。對應 SC-005。
+- [ ] T013 git merge 043 → rev1-admin-root — **user 同意才執行**：`git checkout rev1-admin-root && git merge --no-ff 043-spec-hygiene-pass-2 -m "Merge feature 043-spec-hygiene-pass-2"`；merge 後 push 須 user 再次同意（depends on T012）。
+- [ ] T014 backfill outer/merge SHA + push — merge 後拿 `git rev-parse HEAD` (merge SHA) + 043 entry SHA、回填進 INTEGRATION-CHECKLIST 043 entry 的 `outer <SHA> + merge <SHA>` 處（small chore commit、per 041 / 042 體例）+ push 須 user 同意（depends on T013）。
 
 **Checkpoint**：043 整 feature 落地、acceptance 全綠、backlog 已 cleanup、merge 回 default。
 
@@ -130,6 +131,7 @@ Phase 6 Polish (T010-T013、collect、commit、merge) ──┘
 | T011 | T010 |
 | T012 | T011 |
 | T013 | T012（**user 同意**）|
+| T014 | T013（**user 同意**）|
 
 ---
 
@@ -158,10 +160,10 @@ Phase 6 Polish (T010-T013、collect、commit、merge) ──┘
 
 → 約 3 分鐘。
 
-**Batch 4 — Cleanup + Commit + Merge**（T010-T013）：
-- T010 INTEGRATION-CHECKLIST cleanup → T011 verify → T012 commit → T013 merge
+**Batch 4 — Cleanup + Commit + Merge + Backfill**（T010-T014）：
+- T010 INTEGRATION-CHECKLIST cleanup → T011 verify → T012 commit（含 SC-005 staged path verify）→ T013 merge → T014 backfill SHA
 
-→ 約 10-15 分鐘、含 user 同意等待。
+→ 約 10-15 分鐘、含 user 同意等待（push + merge + push 三次 OK）。
 
 ### MVP Option（per spec-kit framework）
 
@@ -185,9 +187,10 @@ User 偏好（per project memory）：Full feature 一次到位（bundle 三項 
 
 ## Summary
 
-- **Total tasks**: 13
-- **By user story**: US1 = 5 tasks（T001-T005）、US2 = 2 tasks（T006-T007）、US3 = 2 tasks（T008-T009）、Polish = 4 tasks（T010-T013）
+- **Total tasks**: 14
+- **By user story**: US1 = 5 tasks（T001-T005）、US2 = 2 tasks（T006-T007）、US3 = 2 tasks（T008-T009）、Polish = 5 tasks（T010-T014）
 - **Parallel opportunities**: T001/T002/T003 [P] 同時跑 sed；T001-T003 + T006 + T008 五個 batch 1 完全並行；T004/T007/T009 verify 3 並行
 - **Independent test criteria**: US1 = C-V1 grep + C-V2 dev stack SQL / US2 = C-V3 logout § coverage / US3 = C-V4 use 行 grep；C-V5 為 polish phase backlog cleanup verify
 - **Suggested MVP scope**: US1 only（per spec-kit framework P1 = MVP）；user 已選 Full feature 一次到位（bundle 三項 P1 backlog）
-- **Format validation**: ✅ 全 13 task 符合 `- [ ] TXXX [P?] [Story?] Description with file path` checklist 格式
+- **Format validation**: ✅ 全 14 task 符合 `- [ ] TXXX [P?] [Story?] Description with file path` checklist 格式
+- **Analyze pass remediation applied**：I1（T013 拆 T013 merge + T014 backfill）+ C1（T012 加 `git diff --staged --name-only` staged path verify、SC-005 explicit）
