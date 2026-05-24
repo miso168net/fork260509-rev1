@@ -55,7 +55,7 @@ echo "  (expect 0)"
 echo ""
 echo "=== sync_endpoints 跑後 endpoint audit row 數 ≥ rust-api 註冊 endpoint 數 ==="
 $PC exec -T postgres psql -U soybean -d soybean_admin_rust -tAc \
-  "SELECT COUNT(*) FROM sys_operation_log WHERE entity_type='sys_endpoint' AND operation IN ('Insert','Update');"
+  "SELECT COUNT(*) FROM sys_operation_log WHERE module_name='sys_endpoint' AND operation IN ('INSERT','UPDATE');"
 $PC exec -T postgres psql -U soybean -d soybean_admin_rust -tAc \
   "SELECT COUNT(*) FROM sys_endpoint WHERE deleted_at IS NULL;"
 echo "  (audit count >= endpoint count)"
@@ -105,7 +105,7 @@ echo "=== 觸發 1 個 DELETE access_key ==="
 TOKEN=$(curl -fsS -X POST "http://127.0.0.1:11080/api/auth/login" -H 'Content-Type: application/json' -d '{"identifier":"Soybean","password":"123456"}' | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['token'])")
 # 拿一個現存 access_key display_id
 AK_DISPLAY_ID=$($PC exec -T postgres psql -U soybean -d soybean_admin_rust -tAc "SELECT display_id FROM sys_access_key WHERE deleted_at IS NULL LIMIT 1;" | tr -d '[:space:]')
-curl -fsS -X DELETE "http://127.0.0.1:11080/api/accessKey/$AK_DISPLAY_ID" -H "Authorization: Bearer $TOKEN" > /dev/null
+curl -fsS -X DELETE "http://127.0.0.1:11080/api/access-key/$AK_DISPLAY_ID" -H "Authorization: Bearer $TOKEN" > /dev/null
 
 wait $SUBSCRIBE_PID
 echo "  (expect: 看到 'message api_key:invalidate 1' 在 output)"
@@ -123,7 +123,7 @@ echo "  (expect: 看到 'message api_key:invalidate 1' 在 output)"
 TOKEN=$(curl -fsS -X POST "http://127.0.0.1:11080/api/auth/login" -H 'Content-Type: application/json' -d '{"identifier":"Soybean","password":"123456"}' | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['token'])")
 
 # 1. create a fresh access_key (避免影響其他 test)
-RESP=$(curl -fsS -X POST "http://127.0.0.1:11080/api/accessKey" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"description":"045-cv5-test","status":"enabled"}')
+RESP=$(curl -fsS -X POST "http://127.0.0.1:11080/api/access-key" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"domain":"dev","description":"045-cv5-test","status":"1"}')
 AK_ID=$(echo "$RESP" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['id'])")
 AK_KEY=$(echo "$RESP" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['accessKeyId'])")
 
@@ -133,7 +133,7 @@ echo "before delete: HTTP $PRE (expect 200)"
 
 # 3. DELETE access_key
 START=$(date +%s%3N)
-curl -fsS -X DELETE "http://127.0.0.1:11080/api/accessKey/$AK_ID" -H "Authorization: Bearer $TOKEN" > /dev/null
+curl -fsS -X DELETE "http://127.0.0.1:11080/api/access-key/$AK_ID" -H "Authorization: Bearer $TOKEN" > /dev/null
 END=$(date +%s%3N)
 DELETE_LATENCY=$((END - START))
 echo "DELETE latency: ${DELETE_LATENCY}ms"
@@ -169,9 +169,9 @@ echo "baseline: invalidate=${BASELINE_INV:-0} reload=${BASELINE_REL:-0}"
 echo ""
 echo "=== trigger 1 DELETE access_key ==="
 TOKEN=$(curl -fsS -X POST "http://127.0.0.1:11080/api/auth/login" -H 'Content-Type: application/json' -d '{"identifier":"Soybean","password":"123456"}' | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['token'])")
-RESP=$(curl -fsS -X POST "http://127.0.0.1:11080/api/accessKey" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"description":"045-cv6-test","status":"enabled"}')
+RESP=$(curl -fsS -X POST "http://127.0.0.1:11080/api/access-key" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"domain":"dev","description":"045-cv6-test","status":"1"}')
 AK_ID=$(echo "$RESP" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['id'])")
-curl -fsS -X DELETE "http://127.0.0.1:11080/api/accessKey/$AK_ID" -H "Authorization: Bearer $TOKEN" > /dev/null
+curl -fsS -X DELETE "http://127.0.0.1:11080/api/access-key/$AK_ID" -H "Authorization: Bearer $TOKEN" > /dev/null
 sleep 2
 
 echo ""
@@ -222,7 +222,7 @@ ROLE_DID=$($PC exec -T postgres psql -U soybean -d soybean_admin_rust -tAc "SELE
 
 # 2. POST systemManage addUser with valid user_roles
 START=$(date +%s%3N)
-curl -fsS -X POST "http://127.0.0.1:11080/api/systemManage/addUser" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d "{\"username\":\"cv8user\",\"nickName\":\"cv8\",\"password\":\"test1234\",\"status\":\"enabled\",\"userRoles\":[$ROLE_DID]}"
+curl -fsS -X POST "http://127.0.0.1:11080/api/systemManage/addUser" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d "{\"userName\":\"cv8user\",\"nickName\":\"cv8\",\"password\":\"test1234\",\"status\":\"1\",\"userRoles\":[\"ROLE_SUPER\"]}"
 sleep 2
 
 # 3. 查 user + sys_user_role + INTERNAL audit
@@ -234,12 +234,12 @@ USER_ROLE_COUNT=$($PC exec -T postgres psql -U soybean -d soybean_admin_rust -tA
 echo "sys_user_role count: $USER_ROLE_COUNT (expect ≥1)"
 
 AUDIT_COUNT=$($PC exec -T postgres psql -U soybean -d soybean_admin_rust -tAc \
-  "SELECT COUNT(*) FROM sys_operation_log WHERE entity_type IN ('sys_user','sys_user_role') AND method='INTERNAL' AND created_at > (NOW() AT TIME ZONE 'UTC')::timestamp - INTERVAL '30 seconds';")
+  "SELECT COUNT(*) FROM sys_operation_log WHERE module_name IN ('sys_user','sys_user_role') AND method='INTERNAL' AND created_at > (NOW() AT TIME ZONE 'UTC')::timestamp - INTERVAL '30 seconds';")
 echo "INTERNAL audit count (sys_user + sys_user_role, last 30s): $AUDIT_COUNT (expect ≥2)"
 
 # 4. 查 audit 兩 row created_at 差 < 50ms（同 outer txn 同 commit）
 AUDIT_SPAN_MS=$($PC exec -T postgres psql -U soybean -d soybean_admin_rust -tAc \
-  "SELECT EXTRACT(EPOCH FROM (MAX(created_at) - MIN(created_at))) * 1000 FROM sys_operation_log WHERE entity_type IN ('sys_user','sys_user_role') AND method='INTERNAL' AND created_at > (NOW() AT TIME ZONE 'UTC')::timestamp - INTERVAL '30 seconds';")
+  "SELECT EXTRACT(EPOCH FROM (MAX(created_at) - MIN(created_at))) * 1000 FROM sys_operation_log WHERE module_name IN ('sys_user','sys_user_role') AND method='INTERNAL' AND created_at > (NOW() AT TIME ZONE 'UTC')::timestamp - INTERVAL '30 seconds';")
 echo "audit span ms: $AUDIT_SPAN_MS (expect < 50)"
 
 # cleanup
@@ -258,7 +258,7 @@ $PC exec -T postgres psql -U soybean -d soybean_admin_rust -c "DELETE FROM sys_u
 TOKEN=$(curl -fsS -X POST "http://127.0.0.1:11080/api/auth/login" -H 'Content-Type: application/json' -d '{"identifier":"Soybean","password":"123456"}' | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['token'])")
 
 # 1. POST with invalid user_roles (display_id 不存在、e.g. 999999999)
-RESP=$(curl -fsS -X POST "http://127.0.0.1:11080/api/systemManage/addUser" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"username":"cv9user","nickName":"cv9","password":"test1234","status":"enabled","userRoles":[999999999]}' 2>&1 || echo "(expected error)")
+RESP=$(curl -fsS -X POST "http://127.0.0.1:11080/api/systemManage/addUser" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"userName":"cv9user","nickName":"cv9","password":"test1234","status":"1","userRoles":["BOGUS_ROLE_NO_EXIST"]}' 2>&1 || echo "(expected error)")
 echo "response: $(echo $RESP | head -c 200)"
 sleep 2
 
@@ -268,7 +268,7 @@ echo "sys_user count: $USER_COUNT (expect 0)"
 
 # 3. 驗 INTERNAL audit 0 row（HTTP audit row 1 by 042 不算）
 INTERNAL_AUDIT=$($PC exec -T postgres psql -U soybean -d soybean_admin_rust -tAc \
-  "SELECT COUNT(*) FROM sys_operation_log WHERE method='INTERNAL' AND entity_type='sys_user' AND created_at > (NOW() AT TIME ZONE 'UTC')::timestamp - INTERVAL '10 seconds';")
+  "SELECT COUNT(*) FROM sys_operation_log WHERE method='INTERNAL' AND module_name='sys_user' AND created_at > (NOW() AT TIME ZONE 'UTC')::timestamp - INTERVAL '10 seconds';")
 echo "INTERNAL audit for sys_user (last 10s): $INTERNAL_AUDIT (expect 0)"
 
 # 4. 驗 HTTP audit row 1（per 042 design、outcome-agnostic）
@@ -292,13 +292,13 @@ TOKEN=$(curl -fsS -X POST "http://127.0.0.1:11080/api/auth/login" -H 'Content-Ty
 USER_DID=$($PC exec -T postgres psql -U soybean -d soybean_admin_rust -tAc "SELECT display_id FROM sys_user WHERE username='GeneralUser' LIMIT 1;" | tr -d '[:space:]')
 ROLE_DID=$($PC exec -T postgres psql -U soybean -d soybean_admin_rust -tAc "SELECT display_id FROM sys_role WHERE code='ROLE_SUPER' LIMIT 1;" | tr -d '[:space:]')
 
-curl -fsS -X PUT "http://127.0.0.1:11080/api/systemManage/updateUser/$USER_DID" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d "{\"nickName\":\"cv10-update\",\"status\":\"enabled\",\"userRoles\":[$ROLE_DID]}" > /dev/null
+curl -fsS -X POST "http://127.0.0.1:11080/api/systemManage/updateUser" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d "{\"id\":$USER_DID,\"nickName\":\"cv10-update\",\"status\":\"1\",\"userRoles\":[\"ROLE_SUPER\"]}" > /dev/null
 sleep 1
 HAPPY_USER=$($PC exec -T postgres psql -U soybean -d soybean_admin_rust -tAc "SELECT nick_name FROM sys_user WHERE display_id=$USER_DID;")
 echo "happy update: nick_name = $HAPPY_USER (expect 'cv10-update')"
 
 # 2. negative: PUT with invalid role
-RESP=$(curl -fsS -X PUT "http://127.0.0.1:11080/api/systemManage/updateUser/$USER_DID" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"nickName":"cv10-negative","status":"enabled","userRoles":[999999999]}' 2>&1 || echo "(expected error)")
+RESP=$(curl -fsS -X POST "http://127.0.0.1:11080/api/systemManage/updateUser" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d "{\"id\":$USER_DID,\"nickName\":\"cv10-negative\",\"status\":\"1\",\"userRoles\":[\"BOGUS_ROLE_NO_EXIST\"]}" 2>&1 || echo "(expected error)")
 sleep 1
 NEGATIVE_USER=$($PC exec -T postgres psql -U soybean -d soybean_admin_rust -tAc "SELECT nick_name FROM sys_user WHERE display_id=$USER_DID;")
 echo "after negative: nick_name = $NEGATIVE_USER (expect remain 'cv10-update'、未被改、negative rollback)"

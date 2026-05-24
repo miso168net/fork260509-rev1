@@ -53,19 +53,37 @@ where
             (AuditOperation::Insert, None, Some(audit_snapshot(&endpoint)))
         }
         Some(before_row) => {
-            if before_row == endpoint {
+            // 045-N2 erratum：早期字面 spec 用整 Model PartialEq 判 noop（whole-Model
+            // 比較），但 caller `router_initialization.rs:419,426` 每啟動 regen
+            // `display_id`（snowflake）+ `created_at`（Local::now），整 Model PartialEq
+            // 永遠 false → 每重啟 audit 噴洗 N 筆。改用 6 業務欄位 semantic compare 判 noop。
+            let same_business = before_row.path == endpoint.path
+                && before_row.method == endpoint.method
+                && before_row.action == endpoint.action
+                && before_row.resource == endpoint.resource
+                && before_row.controller == endpoint.controller
+                && before_row.summary == endpoint.summary;
+            if same_business {
                 // no diff → noop（不 audit）
                 txn.commit().await?;
                 return Ok(());
             }
-            // UPDATE
-            let mut active: _entity::ActiveModel = endpoint.clone().into();
-            active.id = sea_orm::ActiveValue::Unchanged(endpoint.id.clone());
-            active.update(&txn).await?;
+            // UPDATE 路徑：preserve `before_row.created_at` + `before_row.display_id`、
+            // 只 Set 6 業務 column + `updated_at = now`（避免隨機 display_id / 啟動時間
+            // 假 diff 寫回 DB）。
+            let mut active: _entity::ActiveModel = before_row.clone().into();
+            active.path = Set(endpoint.path);
+            active.method = Set(endpoint.method);
+            active.action = Set(endpoint.action);
+            active.resource = Set(endpoint.resource);
+            active.controller = Set(endpoint.controller);
+            active.summary = Set(endpoint.summary);
+            active.updated_at = Set(Some(Local::now().naive_local()));
+            let updated = active.update(&txn).await?;
             (
                 AuditOperation::Update,
                 Some(audit_snapshot(&before_row)),
-                Some(audit_snapshot(&endpoint)),
+                Some(audit_snapshot(&updated)),
             )
         }
     };
@@ -110,8 +128,12 @@ where
             Err(e) => match policy {
                 BatchDeletePolicy::FailFast => return Err(e),
                 BatchDeletePolicy::LogAndContinue { target } => {
+                    // 045-N2 erratum：早期字面 spec 用 `target:` macro 屬性語法接 runtime
+                    // var，但 `target:` 形式要求 `&'static str` const（runtime var 編譯報
+                    // E0435）。改用 structured field 形式（key = value）、序列化結果
+                    // 仍含 `target=…` 對齊 Loki 索引慣例。
                     tracing::warn!(
-                        target: target,
+                        target = target,
                         id = %id,
                         error = ?e,
                         "batch_soft_delete: per-row soft_delete failed"
