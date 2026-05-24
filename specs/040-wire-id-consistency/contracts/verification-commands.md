@@ -13,9 +13,9 @@ C-V 驗證矩陣（curl + CDP browser smoke + 039 regression）。dev stack 啟�
 | C-V7 | C addMenu number parentId（drop 後仍正確收）| curl `POST /api/systemManage/addMenu` body `{"parentId": 0, "menuName": "test_v7", "routeName": "test", ...}` → envelope 0 + menu 建立成功；用後 cleanup（DELETE） |
 | C-V8 | C addMenu string parentId（drop 後 reject）| curl `POST /api/systemManage/addMenu` body `{"parentId": "0", ...}` → envelope 4xx（serde 接 "expected i32, got string"）|
 | C-V9 | D1+D4 sys_role raw endpoint wire DTO wrap | curl `GET /api/role/<i64>`（Soybean token、display_id from getRoleList）→ envelope 0、`data.id` 為 JSON number、**無** `displayId` 重複欄位、其他欄位（name/code/...）完整 |
-| C-V10 | D1+D4 sys_role 分頁 list | curl `GET /api/role/list?current=1&size=10` → envelope 0、`data.records[].id` 全為 JSON number、無 displayId 重複；page meta 完整 |
+| C-V10 | D1+D4 sys_role 分頁 list | curl `GET /api/role?current=1&size=10` → envelope 0、`data.records[].id` 全為 JSON number、無 displayId 重複;page meta 完整<br>**errata 041**：rust-api paginated list endpoint 慣例 = root path GET、無 `/list` suffix（原 spec 寫 `/api/role/list` 為 brainstorm 期推測、實際 router 為 `/api/role`）。 |
 | C-V11 | D1+D4 sys_role get_all_roles | curl `GET /api/systemManage/getAllRoles` 仍對齊 systemManage alias（既 039 落地）；同時 curl `GET /api/role` 或 sys_role_api 的 get_all 端點 → `data[].id` 全 number、無 displayId |
-| C-V12 | D2+D5 sys_user raw endpoint | curl `GET /api/user/<i64>` → 同 C-V9 pattern；curl `GET /api/user/list` → 同 C-V10 pattern |
+| C-V12 | D2+D5 sys_user raw endpoint | curl `GET /api/user/<i64>` → 同 C-V9 pattern;curl `GET /api/user?current=1&size=10` → 同 C-V10 pattern<br>**errata 041**：list endpoint 同 C-V10 慣例（root path、無 `/list` suffix）。 |
 | C-V13 | D3+D6 sys_access_key raw endpoint | curl `GET /api/access-key/list`（或 sys_access_key_api 對應 list endpoint）→ `data.records[].id` 全 number、無 displayId |
 | C-V14 | D4 sys_role create/update wrap | curl `POST /api/role` body `{...create role payload}` → envelope 0、return `data.id` 為 number（從新 row display_id）；curl `PUT /api/role` body update payload → return `data.id` 同 |
 | C-V15 | regression 039 C-V6 systemManage alias getUserList | curl `GET /api/systemManage/getUserList` → 同 039 C-V6、records[].id 仍為 number、無退化 |

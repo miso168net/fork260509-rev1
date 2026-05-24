@@ -71,7 +71,9 @@ docker compose exec -T postgres psql -h 127.0.0.1 -p 5432 -U soybean -d soybean_
 
 ## C-V3: Soybean 5 條 read alias shape 對齊(per spec US1.2 + data-model E9)
 
-**Goal**:驗 F7 5 條 read alias 新 wrapper handler 註冊成功 + Casbin policy allow ROLE_SUPER 生效 + response data 含 base TS type 預期 field name + 缺欄位 hardcode null/[]。
+> **errata 041**：F8/039 後 `userGender`/`userRoles`/`status` 已實值化、不再 hardcode `null` / `[]` / `'enabled'`。下方 C-V3c expected 與 Pass criteria 已對應更新；少數欄位（如 menu `buttons`/`children`、見 C-V3d）仍 hardcode `null`、與本 errata 無關。
+
+**Goal**:驗 F7 5 條 read alias 新 wrapper handler 註冊成功 + Casbin policy allow ROLE_SUPER 生效 + response data 含 base TS type 預期 field name + 實作裝載 user/role 等實值（少數欄位仍 hardcode null/[]、如 menu `buttons`/`children`、見 C-V3d）。
 
 **Command**:
 ```bash
@@ -129,9 +131,9 @@ C-V3b getAllRoles:
 
 C-V3c getUserList:
 - `userName` 為 "Soybean"(seed)、`nickName` 非 empty
-- `userGender` 為 `null`(hardcode None per Q2)
+- `userGender` 為 string `"1"`(male) / `"2"`(female) / `null`（未設值；F8/039 後實值化）
 - `userPhone` / `userEmail` 為 string 或 null
-- `userRoles` 為 `[]`(hardcode vec![] per Q2)
+- `userRoles` 為 `string[]`（role code list、如 `["ROLE_SUPER"]` / `["ROLE_ADMIN","ROLE_USER"]` / `[]`；F8/039 後實值化）
 
 C-V3d getMenuList/v2:
 - `parentId` 為 String("0" for root)
@@ -147,7 +149,7 @@ C-V3e getMenuTree:
 **Pass criteria**:
 - 5/5 sub-case 各 field 非 undefined
 - C-V3a roleDesc:rust description 為 None 時、F7 unwrap_or_default 為 ""
-- C-V3c userGender:hardcode None
+- C-V3c userGender:實值 string `"1"`/`"2"` 或 null;userRoles 為 array of role code（F8/039 後實值化、per errata 041）
 - C-V3d menuType:string "1"/"2" 不是 "menu"/"directory"
 - C-V3e keys exactly 4 field
 

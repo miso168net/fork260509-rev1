@@ -89,11 +89,13 @@ curl -fsS "http://127.0.0.1:11080/api/systemManage/getUserList?current=1&size=20
 
 ## C-V8 [US3]: create user 帶 gender
 
+> **errata 041**：payload 欄位於 W-FW5/039 後改 camelCase（`userName`/`userGender`/`userEmail`/`userPhone`）；`gender` value enum 用字串 `"1"`(male) / `"2"`(female) 對應 base TS（per F8/039）。`status` 欄位 enum 後續可能再演進、本 errata 不預測（spec-hygiene-pass-2 範疇）。
+
 ```bash
 # 經 systemManage addUser(F9 端點)建立帶 gender 的 user
 curl -fsS -X POST "http://127.0.0.1:11080/api/systemManage/addUser" \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
-  -d '{"domain":"built-in","username":"GenderTest030","password":"123456","nickName":"GenderTest","status":"enabled","gender":"male"}' | head -c 200
+  -d '{"domain":"built-in","userName":"GenderTest030","password":"123456","nickName":"GenderTest","status":"enabled","userGender":"1"}' | head -c 200
 # 驗證落 DB
 docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T postgres psql -U soybean \
   -d soybean_admin_rust -tAc "SELECT gender FROM sys_user WHERE username='GenderTest030';"
@@ -106,14 +108,16 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T postgres 
 
 ## C-V9 [US3]: update user gender
 
+> **errata 041 (擴展第7項)**：F8/039 後 updateUser DTO 的 `id` 為 i64（=`sys_user.display_id`、非 ULID `id`）。原 spec 取 `SELECT id` + 傳 `"id":"$GTID"` 字串會被 rust DTO 422 拒（`invalid type: string ...; expected i64`）。改為取 `display_id` + 不加引號傳數字。
+
 ```bash
-# 取 GenderTest030 的 id,update gender male→female
+# 取 GenderTest030 的 display_id (i64、F8/039 後 wire id 格式),update gender male→female
 GTID=$(docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T postgres psql -U soybean \
-  -d soybean_admin_rust -tAc "SELECT id FROM sys_user WHERE username='GenderTest030';" | tr -d ' ')
+  -d soybean_admin_rust -tAc "SELECT display_id FROM sys_user WHERE username='GenderTest030';" | tr -d ' ')
 # 注意:systemManage/updateUser alias 的 HTTP method 為 POST(對齊 F9 alias casbin seed),非 REST 慣例的 PUT
 curl -fsS -X POST "http://127.0.0.1:11080/api/systemManage/updateUser" \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
-  -d "{\"id\":\"$GTID\",\"domain\":\"built-in\",\"username\":\"GenderTest030\",\"password\":\"123456\",\"nickName\":\"GenderTest\",\"status\":\"enabled\",\"gender\":\"female\"}" | head -c 200
+  -d "{\"id\":$GTID,\"domain\":\"built-in\",\"userName\":\"GenderTest030\",\"password\":\"123456\",\"nickName\":\"GenderTest\",\"status\":\"enabled\",\"userGender\":\"2\"}" | head -c 200
 docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T postgres psql -U soybean \
   -d soybean_admin_rust -tAc "SELECT gender FROM sys_user WHERE username='GenderTest030';"
 ```

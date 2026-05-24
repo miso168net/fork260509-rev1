@@ -40,14 +40,14 @@
 
 **Why this priority**：當前 base-web 是 no-slash 寫法、未撞坑；但 axum nested router 行為違反 REST 慣例（多數框架兩種寫法等價）、屬於潛在地雷。修掉可降低未來 onboarding 與整合摩擦。
 
-**Independent Test**：rust-api 加 `NormalizePathLayer::trim_trailing_slash()` 後，curl 帶與不帶 trailing slash 對至少 5 個 nested 端點（`/api/user/`、`/api/role/`、`/api/menu/`、`/api/api-endpoint/`、`/api/domain/`）皆回 HTTP 200。可獨立於 spec md 改動驗證。
+**Independent Test**：rust-api 加 `NormalizePathLayer::trim_trailing_slash()` 後，curl 帶與不帶 trailing slash 對至少 5 個 nested 端點（`/api/user/`、`/api/role/`、`/api/route/`（menu router mount path、grep `init_protected_menu_router`）、`/api/api-endpoint/`、`/api/domain/`）皆回 HTTP 200。可獨立於 spec md 改動驗證。
 
 **Acceptance Scenarios**：
 
 1. **Given** Soybean token、rust-api 已 deploy NormalizePathLayer；**When** `GET /api/user/?page=1&size=10`；**Then** HTTP 200 + envelope 0 + paginated records（過去 404）。
 2. **Given** 同上；**When** `GET /api/role/?page=1&size=10`；**Then** HTTP 200 + envelope 0（過去 404）。
 3. **Given** GeneralUser token（無 admin 權限）；**When** `GET /api/role/?page=1`（trailing slash）；**Then** envelope `code:5001 success:false`（Casbin enforce 在 normalized path 上仍生效、無權限繞過）。
-4. **Given** Soybean token；**When** 對抽樣端點跨 router 類別跑 trailing slash request——admin 類 `/api/menu/`、`/api/domain/`、auth 類 `/api/auth/getUserInfo/`、authorization 類 `/api/authorization/assign-users/`（POST）等；**Then** 皆對 trailing slash 與否回應一致（HTTP 200 或對應業務 envelope、皆不為 404）、確認 fix 套於全 router compose 最外層、跨 admin/auth/authorization 一致生效。
+4. **Given** Soybean token；**When** 對抽樣端點跨 router 類別跑 trailing slash request——admin 類 `/api/route/`（menu router mount path、per grep `init_protected_menu_router`）、`/api/domain/`、`/api/api-endpoint/`、auth 類 `/api/auth/getUserInfo/`、authorization 類 `/api/authorization/assign-users/`（POST）等；**Then** 皆對 trailing slash 與否回應一致（HTTP 200 或對應業務 envelope、皆不為 404）、確認 fix 套於全 router compose 最外層、跨 admin/auth/authorization 一致生效。
 
 ---
 
@@ -100,7 +100,7 @@
 
 - **SC-001**：7 處 spec md edit 完成後、重跑本次 regression 受影響 C-V（030 C-V8/9、039 C-V31、040 C-V10/12、022 C-V3、021 C-V2/C-V10）全 PASS（之前 6 處撞坑 → 全綠）。
 - **SC-002**：rust-api deploy NormalizePathLayer 後、`GET /api/user/?page=1` 與 `GET /api/role/?page=1` 從 HTTP 404 → HTTP 200 + 正確 paginated envelope（trailing-slash fix 對受影響端點生效）。
-- **SC-003**：抽樣端點跨 router 類別測 trailing-slash 一致行為——admin 類（如 `/api/menu/`、`/api/domain/`）、auth 類（如 `/api/auth/getUserInfo/`）、authorization 類（如 `/api/authorization/assign-users/` POST）—— request 行為與不帶 trailing slash 一致（皆非 404、視 endpoint 業務回 HTTP 200 或正常業務 envelope），證明 fix 套於 router compose 最外層、跨 router 一致生效（per Clarifications 2026-05-24）。
+- **SC-003**：抽樣端點跨 router 類別測 trailing-slash 一致行為——admin 類（如 `/api/route/`（menu router 實 mount path、見 US2 AS-4 grep）、`/api/domain/`、`/api/api-endpoint/`）、auth 類（如 `/api/auth/getUserInfo/`）、authorization 類（如 `/api/authorization/assign-users/` POST）—— request 行為與不帶 trailing slash 一致（皆非 404、視 endpoint 業務回 HTTP 200 或正常業務 envelope），證明 fix 套於 router compose 最外層、跨 router 一致生效（per Clarifications 2026-05-24）。
 - **SC-004**：GeneralUser token 對 admin nested 端點 trailing-slash request 仍 envelope `code:5001 success:false`（Casbin enforce 在 normalized path 上正常、無權限繞過）。
 - **SC-005**：rust-api cargo build clean、無 unused import warning、無 new clippy 違規。
 - **SC-006**：grep 確認 7 處 spec md edit：（a）030/040 等 string-replace 區的舊字串（`username`、`/api/role/list`、`/api/user/list`）回 0 hit；（b）039 C-V31 augmented 區出現 `currentPassword` 並含完整 curl block；（c）002 §E4 path 指向 `rust-api/server/model/src/admin/soft_delete_impls.rs`。

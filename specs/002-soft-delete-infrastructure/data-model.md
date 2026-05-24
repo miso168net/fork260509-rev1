@@ -120,6 +120,8 @@ pub struct AuditLogCtx<'a> {
 
 ## E4. `SoftDeletable` trait（簡化版、per R4 decision）
 
+> **errata 041 (F3-N5)**：原 brainstorm 期推測 7 個 `impl SoftDeletable` block 落於 `server/core/src/db/soft_delete.rs`（trait def 處）；implementer 移到 `server/model/src/admin/soft_delete_impls.rs`（model crate、避循環依賴 per F3 R6）後未回 update 範例 comment、此 errata 補正下方第二段 code block 內 path comment。
+
 **Source**: spec.md §Key Entities `SoftDeletable` + R4 simplification
 
 ```rust
@@ -152,7 +154,7 @@ pub trait SoftDeletable: EntityTrait {
 7 entity 各自 impl：
 
 ```rust
-// server/core/src/db/soft_delete.rs（同檔內）
+// server/model/src/admin/soft_delete_impls.rs（model crate、避循環依賴 per F3 R6）
 use server_model::admin::entities::{
     sys_user, sys_role, sys_menu, sys_domain, sys_organization, sys_endpoint, sys_access_key
 };

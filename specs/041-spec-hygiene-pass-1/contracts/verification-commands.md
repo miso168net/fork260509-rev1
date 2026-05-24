@@ -69,8 +69,8 @@ curl -fsS -H "Authorization: Bearer $TOKEN" \
 ## C-V5: 跨 router scope verify — admin / auth / authorization 全涵蓋（per Clarifications 2026-05-24）
 
 ```bash
-echo "=== admin 類 ==="
-for path in "/api/menu/" "/api/domain/" "/api/api-endpoint/"; do
+echo "=== admin 類（注：menu router 實 mount 在 /route、非 /menu、per grep init_protected_menu_router）==="
+for path in "/api/route/" "/api/domain/" "/api/api-endpoint/"; do
   printf "%-30s " "$path"
   curl -sS -o /dev/null -w "HTTP %{http_code}\n" \
     -H "Authorization: Bearer $TOKEN" "http://127.0.0.1:11080$path"
@@ -156,22 +156,35 @@ ${PC:-docker compose -f docker-compose.yml -f docker-compose.dev.yml} exec -T po
   "SELECT username, gender FROM sys_user WHERE username='CV041Test';"
 
 echo "=== 030 C-V9: updateUser gender male→female ==="
+# updateUser DTO `id` 為 i64 (=sys_user.display_id、F8/039 後 wire id 格式)、非 ULID。
+# 取 display_id 並不加引號傳數字（per 030 C-V9 errata 041 擴展第7項）。
 GTID=$(${PC:-docker compose -f docker-compose.yml -f docker-compose.dev.yml} exec -T postgres psql -U soybean -d soybean_admin_rust -tAc \
-  "SELECT id FROM sys_user WHERE username='CV041Test';" | tr -d ' \r\n')
+  "SELECT display_id FROM sys_user WHERE username='CV041Test';" | tr -d ' \r\n')
 curl -fsS -X POST "http://127.0.0.1:11080/api/systemManage/updateUser" \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
-  -d "{\"id\":\"$GTID\",\"userName\":\"CV041Test\",\"userGender\":\"2\",\"nickName\":\"041Test\",\"status\":\"1\"}" \
+  -d "{\"id\":$GTID,\"userName\":\"CV041Test\",\"userGender\":\"2\",\"nickName\":\"041Test\",\"status\":\"1\"}" \
   | python3 -c "import sys,json; r=json.load(sys.stdin); print(f'updateUser code={r[\"code\"]}')"
 
-echo "=== 039 C-V31: changePassword currentPassword ==="
-USER_TOKEN=$(curl -fsS -X POST "http://127.0.0.1:11080/api/auth/login" \
+echo "=== 039 C-V31: changePassword currentPassword（用 Administrator、需 role 不能用 CV041Test）==="
+# 注：addUser 建的 CV041Test 預設無 role 賦予、被 casbin `/auth/changePassword` rule（ROLE_SUPER/ADMIN/USER）拒 401。
+# 用 Administrator（既有 admin user、有 ROLE_ADMIN role）測 + 立即 revert 避免污染。
+ADMIN_TOKEN=$(curl -fsS -X POST "http://127.0.0.1:11080/api/auth/login" \
   -H 'Content-Type: application/json' \
-  -d '{"identifier":"CV041Test","password":"123456"}' \
+  -d '{"identifier":"Administrator","password":"123456"}' \
   | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['token'])")
 curl -fsS -X POST "http://127.0.0.1:11080/api/auth/changePassword" \
-  -H "Authorization: Bearer $USER_TOKEN" -H 'Content-Type: application/json' \
-  -d '{"currentPassword":"123456","newPassword":"new_pwd_041"}' \
+  -H "Authorization: Bearer $ADMIN_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"currentPassword":"123456","newPassword":"new_pwd_041_temp"}' \
   | python3 -c "import sys,json; r=json.load(sys.stdin); print(f'changePassword code={r[\"code\"]}')"
+# revert：用新密碼登入、改回 123456
+ADMIN_TOKEN_NEW=$(curl -fsS -X POST "http://127.0.0.1:11080/api/auth/login" \
+  -H 'Content-Type: application/json' \
+  -d '{"identifier":"Administrator","password":"new_pwd_041_temp"}' \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['token'])")
+curl -fsS -X POST "http://127.0.0.1:11080/api/auth/changePassword" \
+  -H "Authorization: Bearer $ADMIN_TOKEN_NEW" -H 'Content-Type: application/json' \
+  -d '{"currentPassword":"new_pwd_041_temp","newPassword":"123456"}' \
+  | python3 -c "import sys,json; r=json.load(sys.stdin); print(f'revert code={r[\"code\"]}')"
 
 echo "=== 040 C-V10: /api/role paginated ==="
 curl -fsS -H "Authorization: Bearer $TOKEN" "http://127.0.0.1:11080/api/role?current=1&size=10" \
