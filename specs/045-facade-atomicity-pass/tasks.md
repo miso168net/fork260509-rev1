@@ -170,7 +170,7 @@ Phase 7 Polish (T030-T040、collect + verify + commit + merge + backfill) ──
 | T006 (US2 subscriber) | — (parallel) |
 | T007 (US2 initialize lib mod) | T006 |
 | T008 (US2 metric pre-declare) | — (parallel)（044 metric_init.rs 已存在） |
-| T009 (US2 delete refactor) | T003 + T004（用 clear_all_keys + notify） |
+| T009 (US2 delete refactor) | T004 + T005（用 notify_api_key_changed publisher、clear_all_keys 由 subscriber 用、不在 delete path） |
 | T010 (US2 main.rs spawn) | T006 + T007 |
 | T011-T013 (US2 acceptance) | T001-T010 + 整 rust-api rebuild（Phase 7 T034） |
 | T014 (US4 trait declarations) | — (parallel) |

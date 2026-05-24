@@ -38,9 +38,9 @@ Bundle 4 follow-up backlog 項目（F3-N1 / F3-N2 / F3-N3 / 035-N1）一次處�
 - 0 新 workspace cargo dep（用既有 stack）
 - async_trait 0.1 不直接支援 trait fn generic `<C>` — 改用固定 `&DatabaseTransaction` 簽名
 **Scale/Scope**:
-- rust-api 改動 ~12-18 處（facade + service refactor + handler outer-txn + 2 new init module + metric pre-declare）
+- rust-api 改動 ~12-18 處（facade + service refactor + handler outer-txn + 2 new init module + metric pre-declare）—— 注意這計「changed places in code」、tasks.md 拆成 ~29 user-story task 個（task ≠ changed place、每 place 可拆 1-2 task steps）
 - outer ~0-1 個新 deploy/ config 檔（無需新 secret / 無新 docker service）
-- 估 40-55 tasks（中型 pass、規模與 041 / 043 spec-hygiene-pass 對齊）
+- 估 40-55 tasks（中型 pass、規模與 041 / 043 spec-hygiene-pass 對齊；實際 tasks.md 落為 40 task）
 
 ## Constitution Check
 
