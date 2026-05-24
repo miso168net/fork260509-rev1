@@ -29,12 +29,12 @@ description: "Task list for 042 audit-outbox-and-http-mount"
 
 **Purpose**：sys_audit_outbox 表 + Sea-ORM entity + config struct 為所有 user story 共用前置；建完才能進 US1 P1 主體實作。
 
-- [ ] T001 [P] Create migration file `rust-api/migration/src/schemas/m20260524_e_audit_outbox_table.rs`（up + down）— per quickstart §1.1 template、執行 `CREATE TABLE sys_audit_outbox` (BIGSERIAL + JSONB + partial index)、down 為 `DROP TABLE IF EXISTS`、用 `execute_unprepared` multi-statement（per research R-7 039 落地教訓）。
-- [ ] T002 Register migration in `rust-api/migration/src/schemas/mod.rs` (+1 line `pub mod m20260524_e_audit_outbox_table;`) + `rust-api/migration/src/lib.rs` Migrator::migrations() vec (+1 line `Box::new(schemas::m20260524_e_audit_outbox_table::Migration),`)（depends on T001）。
-- [ ] T003 [P] Create Sea-ORM entity `rust-api/server/model/src/admin/entities/sys_audit_outbox.rs` + register in `entities/mod.rs` (+1 line) + `entities/prelude.rs` (+1 line re-export `Entity as SysAuditOutbox`)— per quickstart §1.4 + data-model E1 6-column schema。
-- [ ] T004 [P] Create config struct `rust-api/server/config/src/model/audit_outbox_config.rs` (AuditOutboxConfig + Default impl: batch_size=100, sleep_ms=100, max_retry=5, redis_stream_maxlen=10000) + register in `config/src/model/mod.rs` + `config/src/model/config.rs::Config` (+1 field) — per research R-8。
-- [ ] T005 [P] Add `audit_outbox:` section to `rust-api/server/resources/application.yaml` + `application-test.yaml`（drainer_batch_size: 100, drainer_sleep_interval_ms: 100, drainer_max_retry: 5, redis_stream_maxlen_approx: 10000）— per research R-8。
-- [ ] T006 Run migration via dev stack: `$PC up -d migration --force-recreate --wait` + verify `\d sys_audit_outbox` shows 6 column + partial index `idx_sys_audit_outbox_pending`（depends on T002）。對應 C-V2。
+- [x] T001 [P] Create migration file `rust-api/migration/src/schemas/m20260524_e_audit_outbox_table.rs`（up + down）— per quickstart §1.1 template、執行 `CREATE TABLE sys_audit_outbox` (BIGSERIAL + JSONB + partial index)、down 為 `DROP TABLE IF EXISTS`、用 `execute_unprepared` multi-statement（per research R-7 039 落地教訓）。
+- [x] T002 Register migration in `rust-api/migration/src/schemas/mod.rs` (+1 line `pub mod m20260524_e_audit_outbox_table;`) + `rust-api/migration/src/lib.rs` Migrator::migrations() vec (+1 line `Box::new(schemas::m20260524_e_audit_outbox_table::Migration),`)（depends on T001）。
+- [x] T003 [P] Create Sea-ORM entity `rust-api/server/model/src/admin/entities/sys_audit_outbox.rs` + register in `entities/mod.rs` (+1 line) + `entities/prelude.rs` (+1 line re-export `Entity as SysAuditOutbox`)— per quickstart §1.4 + data-model E1 6-column schema。
+- [x] T004 [P] Create config struct `rust-api/server/config/src/model/audit_outbox_config.rs` (AuditOutboxConfig + Default impl: batch_size=100, sleep_ms=100, max_retry=5, redis_stream_maxlen=10000) + register in `config/src/model/mod.rs` + `config/src/model/config.rs::Config` (+1 field) — per research R-8。
+- [x] T005 [P] Add `audit_outbox:` section to `rust-api/server/resources/application.yaml` + `application-test.yaml`（drainer_batch_size: 100, drainer_sleep_interval_ms: 100, drainer_max_retry: 5, redis_stream_maxlen_approx: 10000）— per research R-8。
+- [x] T006 Run migration via dev stack: `$PC up -d migration --force-recreate --wait` + verify `\d sys_audit_outbox` shows 6 column + partial index `idx_sys_audit_outbox_pending`（depends on T002）。對應 C-V2。
 
 **Checkpoint**：sys_audit_outbox 表存在、entity 可用、config 可讀；可進 US1 主體。
 
@@ -48,29 +48,29 @@ description: "Task list for 042 audit-outbox-and-http-mount"
 
 ### Implementation for User Story 1
 
-- [ ] T007 [P] [US1] Pure fn `url_to_entity_type(url: &str) -> &'static str` + unit-test — 新增於 `rust-api/server/model/src/admin/audit_log.rs`（或新 `rust-api/server/core/src/web/url_entity_type.rs`、implementer 判斷）；unit-test 覆蓋 data-model E2 完整 table、檔案 `rust-api/server/model/tests/url_entity_type.rs`（per CLAUDE.md §3「有可獨立測純函式邏輯 → test-first」紀律）。
-- [ ] T008 [P] [US1] `AuditEventFull` + `HttpExtras` Rust struct — 加到 `rust-api/server/model/src/admin/audit_log.rs`（Serialize + Deserialize、含 `#[serde(flatten)]` event + skip_serializing_if Option http_extras）。
-- [ ] T009 [US1] Refactor `audit_log::write_in_txn` 內部目標改 outbox（caller API 不變）— `rust-api/server/model/src/admin/audit_log.rs`：移除直接 INSERT sys_operation_log 邏輯、改 serde_json::to_value(AuditEventFull) → INSERT sys_audit_outbox via SysAuditOutboxActiveModel；caller signature `(txn, event)` + Result 不變（depends on T003 + T008）。對應 FR-009。
-- [ ] T010 [US1] New helper `audit_log::write_outbox_for_http(ctx: OperationLogContext) -> Result<(), AppError>` — 同檔案；操作：依 ctx.method match `AuditOperation`（GET/HEAD/OPTIONS/TRACE skip）→ build `AuditEvent` + `AuditSource::Http`、URL→entity_type 用 T007 pure fn、self-managed txn INSERT outbox、failure log warn（depends on T007 + T008 + T009）。對應 FR-007 / FR-008。
-- [ ] T011 [P] [US1] New `rust-api/server/global/src/audit_publisher.rs` — Redis Stream XADD audit:events MAXLEN ~ 10000 + cluster mode graceful skip + Redis 未初始化/連線失敗 graceful skip（沿 `casbin_notify.rs` 體例、per research R-5 template）；新增 `pub const AUDIT_STREAM_KEY: &str = "audit:events"` + `pub async fn publish_audit_event(audit_event_json, maxlen)`；register in `rust-api/server/global/src/lib.rs` (+1 line `pub mod audit_publisher;`)。對應 FR-005 / Edge Case Redis Cluster。
-- [ ] T012 [US1] New `rust-api/server/service/src/admin/sys_audit_outbox_drainer.rs` — `pub async fn run_drainer_loop(config: AuditOutboxConfig)` + `async fn drainer_one_batch(config) -> Result<usize>` + `async fn process_one_row(txn, row, config)` + `fn build_operation_log_active_model(full) -> OperationLogActiveModel`：
+- [x] T007 [P] [US1] Pure fn `url_to_entity_type(url: &str) -> &'static str` + unit-test — 新增於 `rust-api/server/model/src/admin/audit_log.rs`（或新 `rust-api/server/core/src/web/url_entity_type.rs`、implementer 判斷）；unit-test 覆蓋 data-model E2 完整 table、檔案 `rust-api/server/model/tests/url_entity_type.rs`（per CLAUDE.md §3「有可獨立測純函式邏輯 → test-first」紀律）。
+- [x] T008 [P] [US1] `AuditEventFull` + `HttpExtras` Rust struct — 加到 `rust-api/server/model/src/admin/audit_log.rs`（Serialize + Deserialize、含 `#[serde(flatten)]` event + skip_serializing_if Option http_extras）。
+- [x] T009 [US1] Refactor `audit_log::write_in_txn` 內部目標改 outbox（caller API 不變）— `rust-api/server/model/src/admin/audit_log.rs`：移除直接 INSERT sys_operation_log 邏輯、改 serde_json::to_value(AuditEventFull) → INSERT sys_audit_outbox via SysAuditOutboxActiveModel；caller signature `(txn, event)` + Result 不變（depends on T003 + T008）。對應 FR-009。
+- [x] T010 [US1] New helper `audit_log::write_outbox_for_http(ctx: OperationLogContext) -> Result<(), AppError>` — 同檔案；操作：依 ctx.method match `AuditOperation`（GET/HEAD/OPTIONS/TRACE skip）→ build `AuditEvent` + `AuditSource::Http`、URL→entity_type 用 T007 pure fn、self-managed txn INSERT outbox、failure log warn（depends on T007 + T008 + T009）。對應 FR-007 / FR-008。
+- [x] T011 [P] [US1] New `rust-api/server/global/src/audit_publisher.rs` — Redis Stream XADD audit:events MAXLEN ~ 10000 + cluster mode graceful skip + Redis 未初始化/連線失敗 graceful skip（沿 `casbin_notify.rs` 體例、per research R-5 template）；新增 `pub const AUDIT_STREAM_KEY: &str = "audit:events"` + `pub async fn publish_audit_event(audit_event_json, maxlen)`；register in `rust-api/server/global/src/lib.rs` (+1 line `pub mod audit_publisher;`)。對應 FR-005 / Edge Case Redis Cluster。
+- [x] T012 [US1] New `rust-api/server/service/src/admin/sys_audit_outbox_drainer.rs` — `pub async fn run_drainer_loop(config: AuditOutboxConfig)` + `async fn drainer_one_batch(config) -> Result<usize>` + `async fn process_one_row(txn, row, config)` + `fn build_operation_log_active_model(full) -> OperationLogActiveModel`：
   - SELECT outbox WHERE published_at IS NULL AND retry_count < max_retry ORDER BY id ASC LIMIT batch_size FOR UPDATE SKIP LOCKED
   - for each row: publish_audit_event(json, maxlen) + INSERT sys_operation_log（從 audit_event_json deserialize AuditEventFull、map to SysOperationLogActiveModel per data-model R-4 mapping table）+ UPDATE published_at = NOW()
   - on error: UPDATE retry_count++、last_error=error message
   - register in `rust-api/server/service/src/admin/mod.rs`（depends on T003 + T008 + T011）。對應 FR-002 / FR-010 / FR-011。
-- [ ] T013 [US1] New `rust-api/server/initialize/src/audit_outbox_initialization.rs` — `pub async fn initialize_audit_outbox_drainer()` 從 config 拿 AuditOutboxConfig + tokio::spawn(run_drainer_loop(config))；register in `rust-api/server/initialize/src/lib.rs` (+ pub mod + pub use)（depends on T012）。
-- [ ] T014 [US1] Hook into main.rs — `rust-api/server/bin/src/main.rs` 在 `init_redis_pools().await;`（line 25）之後加 `server_initialize::initialize_audit_outbox_drainer().await;`（depends on T013）。
-- [ ] T015 [US1] OperationLogLayer mount in apply_layers — `rust-api/server/initialize/src/router_initialization.rs::apply_layers` 函式末段加 `router = router.layer(OperationLogLayer::new(true));` + use line；5 處 apply_layers caller 自動涵蓋（per research R-3）。對應 FR-003。
-- [ ] T016 [US1] Middleware refactor: fire event → spawn outbox write — `rust-api/server/core/src/web/operation_log.rs:145` 改 `global::send_dyn_event(...)` 為 `tokio::spawn(async move { if let Err(e) = server_model::admin::audit_log::write_outbox_for_http(context).await { tracing::warn!(...) } })`；移除 use line `use server_global::global::send_dyn_event` 或 `SystemEvent::AuditOperationLoggedEvent`（depends on T010）。
-- [ ] T017 [US1] Remove HTTP audit listener event 註冊 — `rust-api/server/initialize/src/event_channel_initialization.rs:19` 移除 `(SystemEvent::AuditOperationLoggedEvent.to_string(), Box::new(|rx| Box::pin(sys_operation_log_listener(rx))))` tuple；保留 auth_login_listener / jwt_created_listener / api_key_validate_listener；`sys_operation_log_listener` 函式本身（`sys_operation_log_service.rs:193`）保留為 standby（加 `#[allow(dead_code)]` 或 `#[deprecated]`）。
-- [ ] T018 [P] [US1] Remove redundant per-route OperationLogLayer mount — `rust-api/server/router/src/admin/sys_menu_route.rs:16` 移除 `.layer(OperationLogLayer::new(true))` + 移除 use line；統一掛在 apply_layers 後此處冗餘（per research R-3）。
-- [ ] T019 [US1] cargo check + clippy clean — `cd rust-api && cargo check --workspace 2>&1 | tail -10` 預期 0 error；`cargo clippy --workspace -- -D warnings 2>&1 | tail -10` 預期無新 warning（depends on T007-T018）。對應 SC-009 sanity。如 host 無 cargo、跳過走 T020 docker build 為實質 build gate。
-- [ ] T020 [US1] Docker build rust-api image — `DOCKER_BUILDKIT=1 docker build -t rust-api:rev1-admin-rust-api -f rust-api/Dockerfile rust-api/ 2>&1 | tail -10`（depends on T019）。對應 C-V1。
-- [ ] T021 [US1] Dev stack restart rust-api — `$PC up -d rust-api --force-recreate --wait`；`$PC ps` 確認 5 service healthy（depends on T020）。
-- [ ] T022 [US1] C-V3 雙視角 row verify — 跑 contracts/verification-commands.md C-V3：POST /api/role → 1 秒內 sys_operation_log 2 row（INTERNAL + POST）、request_id 串聯（depends on T021）。對應 SC-001、FR-001、US1 AS-1。
-- [ ] T023 [US1] C-V4 跨 router mount 全涵蓋 — 跑 C-V4：8 endpoint 抽樣（admin POST / systemManage POST / auth POST / authorization POST）皆產 HTTP-source row（depends on T021）。對應 SC-008、FR-003。
-- [ ] T024 [US1] C-V5 Drainer 啟動消化 backlog — 跑 C-V5：手塞 3 row outbox → 2 秒後全 published、sys_operation_log 對應 3 row（depends on T021）。對應 SC-001、FR-002、drainer 啟動驗。
-- [ ] T025 [US1] C-V8 Redis 暫停 retry + 恢復消化 — 跑 C-V8：停 Redis 5 秒、發 5 admin write、查 outbox pending + retry_count > 0；啟 Redis 10 秒消化、查 outbox pending 回 baseline + sys_operation_log 補齊（depends on T021）。對應 SC-002、FR-002 / FR-011、US1 AS-2/3。
+- [x] T013 [US1] New `rust-api/server/initialize/src/audit_outbox_initialization.rs` — `pub async fn initialize_audit_outbox_drainer()` 從 config 拿 AuditOutboxConfig + tokio::spawn(run_drainer_loop(config))；register in `rust-api/server/initialize/src/lib.rs` (+ pub mod + pub use)（depends on T012）。
+- [x] T014 [US1] Hook into main.rs — `rust-api/server/bin/src/main.rs` 在 `init_redis_pools().await;`（line 25）之後加 `server_initialize::initialize_audit_outbox_drainer().await;`（depends on T013）。
+- [x] T015 [US1] OperationLogLayer mount in apply_layers — `rust-api/server/initialize/src/router_initialization.rs::apply_layers` 函式末段加 `router = router.layer(OperationLogLayer::new(true));` + use line；5 處 apply_layers caller 自動涵蓋（per research R-3）。對應 FR-003。
+- [x] T016 [US1] Middleware refactor: fire event → spawn outbox write — `rust-api/server/core/src/web/operation_log.rs:145` 改 `global::send_dyn_event(...)` 為 `tokio::spawn(async move { if let Err(e) = server_model::admin::audit_log::write_outbox_for_http(context).await { tracing::warn!(...) } })`；移除 use line `use server_global::global::send_dyn_event` 或 `SystemEvent::AuditOperationLoggedEvent`（depends on T010）。
+- [x] T017 [US1] Remove HTTP audit listener event 註冊 — `rust-api/server/initialize/src/event_channel_initialization.rs:19` 移除 `(SystemEvent::AuditOperationLoggedEvent.to_string(), Box::new(|rx| Box::pin(sys_operation_log_listener(rx))))` tuple；保留 auth_login_listener / jwt_created_listener / api_key_validate_listener；`sys_operation_log_listener` 函式本身（`sys_operation_log_service.rs:193`）保留為 standby（加 `#[allow(dead_code)]` 或 `#[deprecated]`）。
+- [x] T018 [P] [US1] Remove redundant per-route OperationLogLayer mount — `rust-api/server/router/src/admin/sys_menu_route.rs:16` 移除 `.layer(OperationLogLayer::new(true))` + 移除 use line；統一掛在 apply_layers 後此處冗餘（per research R-3）。
+- [x] T019 [US1] cargo check + clippy clean — `cd rust-api && cargo check --workspace 2>&1 | tail -10` 預期 0 error；`cargo clippy --workspace -- -D warnings 2>&1 | tail -10` 預期無新 warning（depends on T007-T018）。對應 SC-009 sanity。如 host 無 cargo、跳過走 T020 docker build 為實質 build gate。
+- [x] T020 [US1] Docker build rust-api image — `DOCKER_BUILDKIT=1 docker build -t rust-api:rev1-admin-rust-api -f rust-api/Dockerfile rust-api/ 2>&1 | tail -10`（depends on T019）。對應 C-V1。
+- [x] T021 [US1] Dev stack restart rust-api — `$PC up -d rust-api --force-recreate --wait`；`$PC ps` 確認 5 service healthy（depends on T020）。
+- [x] T022 [US1] C-V3 雙視角 row verify — 跑 contracts/verification-commands.md C-V3：POST /api/role → 1 秒內 sys_operation_log 2 row（INTERNAL + POST）、request_id 串聯（depends on T021）。對應 SC-001、FR-001、US1 AS-1。
+- [x] T023 [US1] C-V4 跨 router mount 全涵蓋 — 跑 C-V4：8 endpoint 抽樣（admin POST / systemManage POST / auth POST / authorization POST）皆產 HTTP-source row（depends on T021）。對應 SC-008、FR-003。
+- [x] T024 [US1] C-V5 Drainer 啟動消化 backlog — 跑 C-V5：手塞 3 row outbox → 2 秒後全 published、sys_operation_log 對應 3 row（depends on T021）。對應 SC-001、FR-002、drainer 啟動驗。
+- [x] T025 [US1] C-V8 Redis 暫停 retry + 恢復消化 — 跑 C-V8：停 Redis 5 秒、發 5 admin write、查 outbox pending + retry_count > 0；啟 Redis 10 秒消化、查 outbox pending 回 baseline + sys_operation_log 補齊（depends on T021）。對應 SC-002、FR-002 / FR-011、US1 AS-2/3。
 
 **Checkpoint**：US1 完成 — admin write 自動產 2 row、outbox 0-loss、drainer 工作正常。可獨立 deliver（MVP-worthy、US2 / US3 未做也 OK）。
 
@@ -84,7 +84,7 @@ description: "Task list for 042 audit-outbox-and-http-mount"
 
 ### Implementation for User Story 2
 
-- [ ] T026 [US2] C-V6 Redis Stream verify — 跑 C-V6：POST /api/role → 1 秒後 XLEN 增加 + XREVRANGE 最後 5 entry 含 audit JSON、可解 actor / operation / entity_type / source（depends on T021）。對應 SC-005、FR-005、US2 AS-1。
+- [x] T026 [US2] C-V6 Redis Stream verify — 跑 C-V6：POST /api/role → 1 秒後 XLEN 增加 + XREVRANGE 最後 5 entry 含 audit JSON、可解 actor / operation / entity_type / source（depends on T021）。對應 SC-005、FR-005、US2 AS-1。
 
 **Checkpoint**：US2 完成 — Redis stream interface 工作；subscriber 端對接由下游 feature（W-F12/13/14）實作。
 
@@ -98,7 +98,7 @@ description: "Task list for 042 audit-outbox-and-http-mount"
 
 ### Implementation for User Story 3
 
-- [ ] T027 [US3] C-V11 失敗登入 audit + cleanup verify — 跑 C-V11：POST /auth/login 用錯密碼 → 1 秒後查 sys_operation_log url=/api/auth/login method=POST user_id 空 ip/user_agent 完整；同步驗 INTEGRATION-CHECKLIST cleanup（R2/R3/F2.2 row 移除 + 042 entry 加）（depends on T021 + T032）。對應 SC-007、SC-010、FR-013、US3 AS-1。
+- [x] T027 [US3] C-V11 失敗登入 audit + cleanup verify — 跑 C-V11：POST /auth/login 用錯密碼 → 1 秒後查 sys_operation_log url=/api/auth/login method=POST user_id 空 ip/user_agent 完整；同步驗 INTEGRATION-CHECKLIST cleanup（R2/R3/F2.2 row 移除 + 042 entry 加）（depends on T021 + T032）。對應 SC-007、SC-010、FR-013、US3 AS-1。
 
 **Checkpoint**：US3 完成 — R2 失敗登入 audit 自動有；spec 003 §1.5 audit 完整性對齊。
 
@@ -108,11 +108,11 @@ description: "Task list for 042 audit-outbox-and-http-mount"
 
 **Purpose**：W-F11 多 replica 驗 + URL prefix 規則 verify + scope verify + INTEGRATION-CHECKLIST cleanup + commit + merge。
 
-- [ ] T028 C-V7 multi-replica drainer 不重複處理 — 跑 C-V7：`$PC up -d --scale rust-api=2 rust-api --force-recreate --wait` + 連發 50 POST /api/role + sleep 3 + 驗 outbox 100 row 全 published + sys_operation_log 100 row 無重複 + scale 回 1 + cleanup（depends on T021）。對應 SC-003、FR-010、US1 AS-4。
-- [ ] T029 [P] C-V9 URL → entity_type 抽樣 verify — 跑 C-V9：5 endpoint 抽樣 trigger（/api/user / /api/systemManage/addUser / /api/role / /api/route / /api/auth/login）+ 驗 entity_type 對應正確（depends on T021）。對應 SC-008、FR-004、data-model E2。
-- [ ] T030 C-V10 三邊 scope verify — 跑 C-V10：base-web `git diff HEAD --stat` 空、rust-api `git diff HEAD --stat` ~11 files（per plan Structure Decision）、outer `git diff HEAD --stat` 含 INTEGRATION-CHECKLIST + rust-api SHA pin（depends on T021 + T032）。對應 SC-009、FR-012。
-- [ ] T036 [P] C-V12 Latency benchmark — 跑 C-V12 Part A（POST /api/role 100 iterations、mean response latency ≤ 50ms surrogate evidence for SC-004 ≤1ms middleware overhead）+ Part B（20 events publish→XREAD-receive 延遲、p50 ≤ 100ms / p95 ≤ 500ms per SC-005）；如 p50 > 100ms 可調 application.yaml `drainer_sleep_interval_ms` 平衡 trade-off（depends on T021）。對應 SC-004、SC-005、FR-007。
-- [ ] T031 INTEGRATION-CHECKLIST 移除 R2/R3/F2.2 + 加 042 entry — `docs/INTEGRATION-CHECKLIST.md`：
+- [x] T028 C-V7 multi-replica drainer 不重複處理 — 跑 C-V7：`$PC up -d --scale rust-api=2 rust-api --force-recreate --wait` + 連發 50 POST /api/role + sleep 3 + 驗 outbox 100 row 全 published + sys_operation_log 100 row 無重複 + scale 回 1 + cleanup（depends on T021）。對應 SC-003、FR-010、US1 AS-4。
+- [x] T029 [P] C-V9 URL → entity_type 抽樣 verify — 跑 C-V9：5 endpoint 抽樣 trigger（/api/user / /api/systemManage/addUser / /api/role / /api/route / /api/auth/login）+ 驗 entity_type 對應正確（depends on T021）。對應 SC-008、FR-004、data-model E2。
+- [x] T030 C-V10 三邊 scope verify — 跑 C-V10：base-web `git diff HEAD --stat` 空、rust-api `git diff HEAD --stat` ~11 files（per plan Structure Decision）、outer `git diff HEAD --stat` 含 INTEGRATION-CHECKLIST + rust-api SHA pin（depends on T021 + T032）。對應 SC-009、FR-012。
+- [x] T036 [P] C-V12 Latency benchmark — 跑 C-V12 Part A（POST /api/role 100 iterations、mean response latency ≤ 50ms surrogate evidence for SC-004 ≤1ms middleware overhead）+ Part B（20 events publish→XREAD-receive 延遲、p50 ≤ 100ms / p95 ≤ 500ms per SC-005）；如 p50 > 100ms 可調 application.yaml `drainer_sleep_interval_ms` 平衡 trade-off（depends on T021）。對應 SC-004、SC-005、FR-007。
+- [x] T031 INTEGRATION-CHECKLIST 移除 R2/R3/F2.2 + 加 042 entry — `docs/INTEGRATION-CHECKLIST.md`：
   - 從「衍生 follow-up」table 移除 R2 row（F5.1 登入失敗無 audit、由本 feature 自動結案）
   - 從「衍生 follow-up」table 移除 R3 row（HTTP middleware audit gap、本 feature 核心修）
   - 從「規劃中、未排程」table 移除 F2.2 row（audit-log outbox + Redis subscriber TTL fallback、本 feature 落地）
@@ -120,7 +120,7 @@ description: "Task list for 042 audit-outbox-and-http-mount"
   - Current Focus 下一步從「042 進行中」→「W-F12/13/14 observability」（depends on T022-T030）。對應 FR-013、SC-010、SC-011。
 - [ ] T032 第一段 commit — rust-api worktree — `cd rust-api && git status`（確認 branch `rev1-admin-rust-api`）+ `git add` 全 11 改/新檔（per quickstart §7.1 完整清單）+ `git commit -m` per quickstart §7.1 messageBody + **push 須 user 同意**（per ~/.claude/CLAUDE.md §5）：`git push origin rev1-admin-rust-api`（depends on T020）。
 - [ ] T033 第二段 commit — outer feature branch — 回 outer root、確認 branch `042-audit-outbox-and-http-mount` + `git add rust-api docs/INTEGRATION-CHECKLIST.md` + `git commit -m` per quickstart §7.2 messageBody（含 SHA、TBD 後補）（depends on T031 + T032）。
-- [ ] T034 C-V11 backlog cleanup verify — `grep -nE "^\| R2 |^\| R3 |^\| F2.2 " docs/INTEGRATION-CHECKLIST.md` 期望 0 hit；`grep -cn "042 audit-outbox-and-http-mount" docs/INTEGRATION-CHECKLIST.md` 期望 ≥1 hit（depends on T031）。對應 SC-010。
+- [x] T034 C-V11 backlog cleanup verify — `grep -nE "^\| R2 |^\| R3 |^\| F2.2 " docs/INTEGRATION-CHECKLIST.md` 期望 0 hit；`grep -cn "042 audit-outbox-and-http-mount" docs/INTEGRATION-CHECKLIST.md` 期望 ≥1 hit（depends on T031）。對應 SC-010。
 - [ ] T035 git merge 042 → rev1-admin-root — **user 同意才執行**：`git checkout rev1-admin-root && git merge --no-ff 042-audit-outbox-and-http-mount -m "Merge feature 042-audit-outbox-and-http-mount"`；merge 後 backfill outer/merge SHA 進 INTEGRATION-CHECKLIST 042 entry（small chore commit、per 041 體例）+ push 須 user 再次同意（depends on T033 + T034）。
 
 **Checkpoint**：042 整 feature 落地、acceptance 全綠、backlog 已 cleanup、merge 回 default。

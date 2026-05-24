@@ -141,30 +141,32 @@ drainer 將此 JSONB deserialize 為以下結構、然後 INSERT sys_operation_l
 
 ### 完整對應 table
 
+**⚠️ 重要**：rust-api 收到的 URL 已被 front-nginx `proxy_pass http://rust_api/` 剝離 `/api/` 前綴。表中 prefix 為 rust-api 實際收到的 path（**不含** `/api/`）。
+
 | URL prefix（按順序匹配） | entity_type | 來源 |
 |---|---|---|
-| `/api/systemManage/addUser` | `sys_user` | systemManage alias、F8/035 |
-| `/api/systemManage/updateUser` | `sys_user` | 同上 |
-| `/api/systemManage/addMenu` | `sys_menu` | systemManage alias、F9/036 |
-| `/api/systemManage/updateMenu` | `sys_menu` | 同上 |
-| `/api/systemManage/deleteMenu` | `sys_menu` | 同上（含 `/api/systemManage/deleteMenu/:id`）|
-| `/api/systemManage/batchDeleteMenu` | `sys_menu` | 同上 |
-| `/api/systemManage/addRole` | `sys_role` | systemManage alias、F9/037 |
-| `/api/systemManage/updateRole` | `sys_role` | 同上 |
-| `/api/systemManage/deleteRole` | `sys_role` | 同上（含 `/:id`）|
-| `/api/systemManage/batchDeleteRole` | `sys_role` | 同上 |
-| `/api/systemManage/assignRoleMenus` | `sys_role` | systemManage alias、034/037（role-centric assignment）|
-| `/api/systemManage/updateRoleHome` | `sys_role` | systemManage alias、037（W-FW6）|
-| `/api/systemManage/assignRoleEndpoints` | `sys_role` | systemManage alias、038（W-FW8）|
-| `/api/user` | `sys_user` | native admin router（含 `/api/user/:id` 等）|
-| `/api/role` | `sys_role` | native admin router |
-| `/api/route` | `sys_menu` | native menu router（per 041 發現 mount 在 `/route`、非 `/menu`）|
-| `/api/domain` | `sys_domain` | native admin router |
-| `/api/organization` | `sys_organization` | native admin router |
-| `/api/api-endpoint` | `sys_endpoint` | native admin router |
-| `/api/access-key` | `sys_access_key` | native admin router |
-| `/api/authorization` | `sys_role` | role-centric assignment routes（assign-users / assign-routes / assign-permission）|
-| `/api/auth` | `http_event` | login / changePassword / getUserInfo / etc.、非 entity-write |
+| `/systemManage/addUser` | `sys_user` | systemManage alias、F8/035 |
+| `/systemManage/updateUser` | `sys_user` | 同上 |
+| `/systemManage/addMenu` | `sys_menu` | systemManage alias、F9/036 |
+| `/systemManage/updateMenu` | `sys_menu` | 同上 |
+| `/systemManage/deleteMenu` | `sys_menu` | 同上（含 `/systemManage/deleteMenu/:id`）|
+| `/systemManage/batchDeleteMenu` | `sys_menu` | 同上 |
+| `/systemManage/addRole` | `sys_role` | systemManage alias、F9/037 |
+| `/systemManage/updateRole` | `sys_role` | 同上 |
+| `/systemManage/deleteRole` | `sys_role` | 同上（含 `/:id`）|
+| `/systemManage/batchDeleteRole` | `sys_role` | 同上 |
+| `/systemManage/assignRoleMenus` | `sys_role` | systemManage alias、034/037（role-centric assignment）|
+| `/systemManage/updateRoleHome` | `sys_role` | systemManage alias、037（W-FW6）|
+| `/systemManage/assignRoleEndpoints` | `sys_role` | systemManage alias、038（W-FW8）|
+| `/user` | `sys_user` | native admin router（含 `/user/:id` 等）|
+| `/role` | `sys_role` | native admin router |
+| `/route` | `sys_menu` | native menu router（per 041 發現 mount 在 `/route`、非 `/menu`）|
+| `/domain` | `sys_domain` | native admin router |
+| `/organization` | `sys_organization` | native admin router |
+| `/api-endpoint` | `sys_endpoint` | native admin router |
+| `/access-key` | `sys_access_key` | native admin router |
+| `/authorization` | `sys_role` | role-centric assignment routes（assign-users / assign-routes / assign-permission）|
+| `/auth` | `http_event` | login / changePassword / getUserInfo / etc.、非 entity-write |
 | 其他 | `http_event` | fallback sentinel（per spec 003 Clarifications Q2）|
 
 ### Pure fn signature

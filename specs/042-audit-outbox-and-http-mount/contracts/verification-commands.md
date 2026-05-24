@@ -79,7 +79,7 @@ echo ""
 echo "=== 1. POST /api/role 建新 role ==="
 curl -fsS -X POST "http://127.0.0.1:11080/api/role" \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
-  -d '{"code":"ROLE_CV042","name":"CV042Test","description":"042 acceptance","status":"enabled"}' \
+  -d '{"code":"ROLE_CV042","name":"CV042Test","description":"042 acceptance","status":"enabled","pid":""}' \
   | python3 -c "import sys,json; r=json.load(sys.stdin); print(f'create code={r[\"code\"]}')"
 
 echo ""
@@ -89,9 +89,9 @@ sleep 1
 echo ""
 echo "=== 3. sys_operation_log 多 2 row（INTERNAL + HTTP）==="
 $PC exec -T postgres psql -U soybean -d soybean_admin_rust -c "
-SELECT method, operation, entity_type, entity_id, request_id
+SELECT method, operation, module_name AS entity_type, entity_id, request_id
 FROM sys_operation_log
-WHERE entity_type = 'sys_role'
+WHERE module_name = 'sys_role'
 ORDER BY created_at DESC
 LIMIT 4;
 "
@@ -101,7 +101,7 @@ echo "=== 4. request_id 串聯 ==="
 $PC exec -T postgres psql -U soybean -d soybean_admin_rust -c "
 SELECT request_id, COUNT(*) AS row_count, ARRAY_AGG(method ORDER BY method) AS methods
 FROM sys_operation_log
-WHERE entity_type = 'sys_role'
+WHERE module_name = 'sys_role'
 GROUP BY request_id
 HAVING COUNT(*) >= 2
 ORDER BY MAX(created_at) DESC
@@ -130,11 +130,11 @@ echo "=== 8 endpoint trigger（POST 為主、其他 write）==="
 # admin POST
 curl -fsS -X POST "http://127.0.0.1:11080/api/role" \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
-  -d '{"code":"ROLE_CV042_4a","name":"4a","description":"","status":"enabled"}' > /dev/null
+  -d '{"code":"ROLE_CV042_4a","name":"4a","description":"","status":"enabled","pid":""}' > /dev/null
 # admin systemManage alias
 curl -fsS -X POST "http://127.0.0.1:11080/api/systemManage/addRole" \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
-  -d '{"roleCode":"ROLE_CV042_4b","roleName":"4b","roleDesc":"","status":"enabled"}' > /dev/null
+  -d '{"roleCode":"ROLE_CV042_4b","roleName":"4b","roleDesc":"","status":"enabled","pid":""}' > /dev/null
 # auth (no token needed)
 curl -sS -o /dev/null -X POST "http://127.0.0.1:11080/api/auth/login" \
   -H 'Content-Type: application/json' \
@@ -148,9 +148,9 @@ sleep 1
 echo ""
 echo "=== 各 endpoint HTTP-source row 驗證 ==="
 $PC exec -T postgres psql -U soybean -d soybean_admin_rust -c "
-SELECT method, url, entity_type
+SELECT method, url, module_name AS entity_type
 FROM sys_operation_log
-WHERE created_at > NOW() - INTERVAL '5 seconds'
+WHERE created_at > (NOW()::timestamp - INTERVAL '30 seconds')
   AND method != 'INTERNAL'
 ORDER BY created_at DESC
 LIMIT 10;
@@ -163,11 +163,11 @@ DELETE FROM sys_role WHERE code IN ('ROLE_CV042_4a', 'ROLE_CV042_4b');
 "
 ```
 
-**Expected**：list 含至少 4 row、其中：
-- url=/api/role、entity_type=sys_role
-- url=/api/systemManage/addRole、entity_type=sys_role
-- url=/api/auth/login、entity_type=http_event
-- url=/api/authorization/assign-users、entity_type=sys_role
+**Expected**：list 含至少 4 row、其中（rust-api 內 URL 為 front-nginx strip `/api/` 後）：
+- url=/role、entity_type=sys_role
+- url=/systemManage/addRole、entity_type=sys_role
+- url=/auth/login、entity_type=http_event
+- url=/authorization/assign-users、entity_type=sys_role
 
 對應 SC-008、FR-003、US1 Acceptance Scenario 1。
 
@@ -241,7 +241,7 @@ echo ""
 echo "=== 2. POST /api/role 觸發 audit ==="
 curl -fsS -X POST "http://127.0.0.1:11080/api/role" \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
-  -d '{"code":"ROLE_CV042_6","name":"6","description":"","status":"enabled"}' > /dev/null
+  -d '{"code":"ROLE_CV042_6","name":"6","description":"","status":"enabled","pid":""}' > /dev/null
 
 sleep 1
 
@@ -279,7 +279,7 @@ echo "=== 2. 連發 50 個 POST /api/role ==="
 for i in {1..50}; do
   curl -fsS -X POST "http://127.0.0.1:11080/api/role" \
     -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
-    -d "{\"code\":\"ROLE_CV042_7_$i\",\"name\":\"7_$i\",\"description\":\"\",\"status\":\"enabled\"}" > /dev/null
+    -d "{\"code\":\"ROLE_CV042_7_$i\",\"name\":\"7_$i\",\"description\":\"\",\"status\":\"enabled\",\"pid\":\"\"}" > /dev/null
 done
 
 sleep 3
@@ -345,7 +345,7 @@ echo "=== 3. 連發 5 個 POST /api/role（Redis 不可用）==="
 for i in {1..5}; do
   curl -fsS -X POST "http://127.0.0.1:11080/api/role" \
     -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
-    -d "{\"code\":\"ROLE_CV042_8_$i\",\"name\":\"8_$i\",\"description\":\"\",\"status\":\"enabled\"}" > /dev/null 2>&1 || true
+    -d "{\"code\":\"ROLE_CV042_8_$i\",\"name\":\"8_$i\",\"description\":\"\",\"status\":\"enabled\",\"pid\":\"\"}" > /dev/null 2>&1 || true
 done
 
 sleep 5
@@ -413,7 +413,7 @@ curl -fsS -X POST "http://127.0.0.1:11080/api/systemManage/addUser" \
 # /api/role
 curl -fsS -X POST "http://127.0.0.1:11080/api/role" \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
-  -d '{"code":"ROLE_CV9","name":"cv9","description":"","status":"enabled"}' > /dev/null 2>&1 || true
+  -d '{"code":"ROLE_CV9","name":"cv9","description":"","status":"enabled","pid":""}' > /dev/null 2>&1 || true
 # /api/route（GET 不算、改用 POST 不存在 endpoint 也能進 middleware）
 curl -sS -X POST "http://127.0.0.1:11080/api/route" \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
@@ -540,7 +540,7 @@ ITERATIONS=100
 for i in $(seq 1 $ITERATIONS); do
   T=$(curl -sS -o /dev/null -w "%{time_total}" -X POST "http://127.0.0.1:11080/api/role" \
     -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
-    -d "{\"code\":\"ROLE_CV12_A_$i\",\"name\":\"12A_$i\",\"description\":\"\",\"status\":\"enabled\"}")
+    -d "{\"code\":\"ROLE_CV12_A_$i\",\"name\":\"12A_$i\",\"description\":\"\",\"status\":\"enabled\",\"pid\":\"\"}")
   TOTAL=$(echo "$TOTAL + $T" | bc -l)
 done
 MEAN_MS=$(echo "scale=4; $TOTAL / $ITERATIONS * 1000" | bc -l)
@@ -577,7 +577,7 @@ for i in $(seq 1 20); do
   # trigger 1 個 admin write（產 outbox row、drainer 應在 ~100ms 內消化 + XADD）
   curl -fsS -X POST "http://127.0.0.1:11080/api/role" \
     -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
-    -d "{\"code\":\"ROLE_CV12_B_$i\",\"name\":\"12B_$i\",\"description\":\"\",\"status\":\"enabled\"}" > /dev/null
+    -d "{\"code\":\"ROLE_CV12_B_$i\",\"name\":\"12B_$i\",\"description\":\"\",\"status\":\"enabled\",\"pid\":\"\"}" > /dev/null
 
   # XREAD BLOCK 5s wait for next entry
   $PC exec -T redis redis-cli -a "$REDIS_PW" --no-auth-warning XREAD BLOCK 5000 COUNT 1 STREAMS audit:events "$LAST_ID" > /dev/null 2>&1
