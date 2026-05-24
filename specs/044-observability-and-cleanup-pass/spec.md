@@ -7,6 +7,14 @@
 
 **前置文件**：[`docs/superpowers/044-feature-observability-and-cleanup-pass.md`](../../docs/superpowers/044-feature-observability-and-cleanup-pass.md)（brainstorm 設計、Q1-Q4 拍板已敲定）
 
+## Clarifications
+
+### Session 2026-05-24
+
+- Q: Alerting infrastructure → A: Grafana 9+ built-in unified alerting（無新 service、與 datasource 整合、UI 一站式）
+- Q: Grafana dashboard 設計風格 → A: 1 master overview + drill-down per component（4-6 dashboard 總量、admin-heavy 場景新手友善）
+- Q: US7 status enum 對齊策略 → A: 定義明確 transform layer、wire 用 string 數字 `"1"/"2"` + DB 保持 string 列舉、spec 內明文界定哪些 path 用哪個格式（與既有 W-FW5 / W-FW6 systemManage transform 體例對齊；FR-015 + FR-016 自然滿足）
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 — Operator 對任一服務問題從單一 log 入口可查（Priority: P1）🎯 MVP
@@ -52,12 +60,12 @@
 **Acceptance Scenarios**：
 
 1. **Given** dev stack healthy；**When** 開 grafana UI、登入、看 datasource 列表；**Then** Loki + Prometheus 兩個 datasource 自動載入（無需手動加）且 health check pass。
-2. **Given** dev stack；**When** 查 grafana `Dashboards` 列表；**Then** 至少 1 個 dashboard 自動 provisioned（具體個數依 [NEEDS CLARIFICATION] 拍板）。
+2. **Given** dev stack；**When** 查 grafana `Dashboards` 列表；**Then** 看到 4-6 個 dashboard 自動 provisioned（1 master overview + 3-5 component drill-down、per Clarifications Q2）。
 3. **Given** dev stack；**When** 查 grafana `Alerting > Alert rules`；**Then** ≥6 個 alert rule load（rust-api 5xx rate / audit pipeline 停滯 / outbox queue > 1000 / postgres connection saturation / redis memory / log volume drop）。
 
-> [NEEDS CLARIFICATION: alerting infra 走 Prometheus alertmanager（新第 8 個 observability service、route alert 到 webhook/email）還是 Grafana 9+ built-in unified alerting（無新 service、UI 直觀）？]
+> **Alerting infra (per Clarifications Q1)**：採 Grafana 9+ built-in unified alerting（不引入 Prometheus alertmanager service、observability stack 維持 7 service）。alert rule 走 grafana provisioning yaml（`deploy/grafana-provisioning/alerting/`）、notification policy 走 grafana built-in（dev 預設 UI 紅標、prod 走 webhook/email contact point 待 W-F6b 後配置）。
 >
-> [NEEDS CLARIFICATION: grafana dashboard 設計風格走「1 master overview + drill-down per component」（少 dashboard 但多 panel、新手友善）還是「per-component standalone」（多 dashboard 但每個專注、SRE 友善）？]
+> **Dashboard 設計風格 (per Clarifications Q2)**：採 1 master overview + drill-down per component（1 主 dashboard 涵蓋 12 service health + 8 業務 KPI overview、各 component drill-down dashboard 看細項）。估 4-6 dashboard 總量、deploy/grafana-provisioning/dashboards/ 內 JSON 自動 provisioned。
 
 ---
 
@@ -106,17 +114,17 @@ audit forensic 維運者讀 `sys_operation_log` row 時、`module_name` 與 `des
 
 ### User Story 7 — Wire data reader 不再被 status enum 混雜模式坑（Priority: P2、scope-conditional）
 
-base-web 與 rust-api 間 wire data 對 status enum（user / role status）的表達一致：DB 端 `enabled`/`disabled` 字串、wire 端統一表達策略（per [NEEDS CLARIFICATION]）。041 N1 backlog 條目登記、本 user story 視 grep 結果界定 scope。
+base-web 與 rust-api 間 wire data 對 status enum（user / role status）的表達一致：DB 端 `enabled`/`disabled` 字串、wire 端統一用 string 數字 `"1"`/`"2"`、transform 在 systemManage handler / service 邊界處理（per Clarifications Q3）。041 N1 backlog 條目登記、本 user story 視 grep 結果界定 scope。
 
 **Why this priority**：041-N1 觸發前 DB vs wire 混雜模式仍可運作（base-web 動態型容忍）、但 W-FW5/F8 後某些 path status 為 string `"1"`/`"2"`、其他 path 仍 `"enabled"`/`"disabled"`，後續 feature 可能撞坑。044 順手 grep 釐清、scope 視真實 hit 數界定。
 
-**Independent Test**：plan 階段 grep `rust-api/server/` + `base-web/src/` 的 status 字串 / 列舉 / 比較 callsite；若 hits ≤5 處 → in-scope 修；若 hits >10 處 → out-of-scope、登記 errata 留 045 spec-hygiene-pass-3 候選；hits 6-10 處依 plan 階段拍板。
+**Independent Test**：plan 階段 grep `rust-api/server/` + `base-web/src/` 的 status 字串 / 列舉 / 比較 callsite，識別「未走 transform layer 直接把 DB 列舉漏到 wire 或 wire 數字寫進 DB」的 path（per Clarifications Q3）。若 in-scope hits ≤5 處 → in-spec 修；若 >5 處 → out-of-scope、登記 errata 留 045 spec-hygiene-pass-3 候選。
 
 **Acceptance Scenarios**：
 
 1. **Given** plan 階段 grep 完成、scope 拍板；**When** 跑 grep verify；**Then** 對齊「拍板 scope 內 hits 全 fix、out-of-scope hits 已登記 errata」狀態。
 
-> [NEEDS CLARIFICATION: US7 status enum 對齊策略 — 是「全 wire 改 `enabled`/`disabled` 字串對齊 DB」（reader 一致、需改 wire endpoint）、還是「全 DB 改 BIGINT/SMALLINT 對齊 wire `1/2`」（schema migration、cascade 範圍大）、還是「定義明確 transform layer、wire 用 string 數字 `"1"/"2"` + DB 保持 string 列舉」（admin/systemManage path 已採此體例）？]
+> **Status enum 對齊策略 (per Clarifications Q3)**：採 transform layer + 明文界定。wire 端統一用 string 數字 `"1"`/`"2"`（與 W-FW5 / W-FW6 systemManage transform 體例對齊）、DB 端保持 string 列舉 `enabled`/`disabled`、transform 在 systemManage handler 或 service 邊界處理。spec 內明文紀錄哪些 path 已採此體例（in-scope verify pass）、哪些 path 直接讀寫 DB 字串列舉（acceptable、wire 內部使用）。plan 階段 grep 後若有「未走 transform layer 直接把列舉值漏到 wire 或反過來」的 path、in-scope 改正（hits ≤5 處）；hits >5 處 → out-of-scope 登記 045 hygiene pass。
 
 ---
 
@@ -126,7 +134,7 @@ base-web 與 rust-api 間 wire data 對 status enum（user / role status）的�
 - **prometheus disk usage 漸增**：8 業務 metric × 30 day retention × label cardinality 可能 > 10GB。dev 設 7 day retention 緩解。
 - **grafana_admin_password 預設不安全**：dev 用簡單 secret file、prod 走 deploy/secrets/ pattern + acme.sh 後 TLS 包裝。
 - **observability stack 啟動 30-60s**：dev default on 接受該成本、減少 restart 頻率；prod 同步生效不影響業務 service 啟動順序（observability 為 sidecar pattern）。
-- **US7 status enum 真實 hits 數 > 10**：scope 退到 errata 登記、不進本 spec 改動、避免 044 scope creep。
+- **US7 status enum 真實 hits 數 > 5**：scope 退到 errata 登記、不進本 spec 改動、避免 044 scope creep（per Clarifications Q3 + FR-014 threshold 改為 5）。
 
 ## Requirements *(mandatory)*
 
@@ -139,13 +147,13 @@ base-web 與 rust-api 間 wire data 對 status enum（user / role status）的�
 - **FR-005**：rust-api MUST 提供 `/metrics` endpoint（prometheus exposition format）、含 8 個業務 metric 全 instrument（per DESIGN-W §8.3）：`http_request_duration_seconds`、`audit_log_writes_total`、`casbin_enforcement_total`、`casbin_policy_cache_invalidate_total`、`outbox_pending_events`、`sys_tokens_active`、`cleanup_job_rows_deleted_total`、`backup_completed_total`。
 - **FR-006**：系統 MUST 提供 prometheus 服務、scrape rust-api 自身 `/metrics`、3 個 exporter（postgres / redis / nginx）以及 loki / promtail / prometheus 自身。
 - **FR-007**：系統 MUST 提供 postgres_exporter / redis_exporter / nginx-exporter 3 個 sidecar；front-nginx MUST 暴 internal-only `stub_status` 位置（不對 host 暴露）供 nginx-exporter scrape。
-- **FR-008**：系統 MUST 提供 grafana 服務、auto-provision Loki + Prometheus datasource、auto-provision ≥1 個 dashboard、auto-provision ≥6 個 alerting rule。
+- **FR-008**：系統 MUST 提供 grafana 服務、auto-provision Loki + Prometheus datasource、auto-provision 4-6 個 dashboard（per Clarifications Q2：1 master overview + 3-5 component drill-down）、auto-provision ≥6 個 alerting rule（per Clarifications Q1、走 grafana built-in unified alerting；不引入 Prometheus alertmanager）。
 - **FR-009**：alerting rules MUST 至少含：rust-api HTTP 5xx rate > 1%/min、audit_log_writes_total 停滯（5 分鐘無 increment）、outbox_pending_events > 1000、postgres connection saturation > 80%、redis memory > 80%、log volume drop > 50%。
 - **FR-010**：observability stack（7 service：loki / promtail / prometheus / grafana / postgres_exporter / redis_exporter / nginx-exporter）在 dev stack 預設啟動（dev default on、Q3 拍板）、prod 走 `--profile observability`。
 - **FR-011**：`extract_entity_id_from_url` MUST 對 `/systemManage/<verb>/<id>` path 取 `<id>` 而非 `<verb>`、同時保持 `/role/<id>` 等 native path 行為不變（hybrid rule：第 1 segment 為 `systemManage` 取 nth(2)；否則 nth(1)、依 filter empty segment 後計算）。
 - **FR-012**：`OperationLogContext.module_name` 與 `description` 兩欄 MUST 不再寫 `"TODO"` placeholder、改實值推導（module_name 從 entity_type 取；description 走 `"HTTP {method} {url}"` 對齊 042 既有 fallback）。
 - **FR-013**：rust-api 3 處 pre-existing `print!("user is {:#?}", user)` callsite（sys_user_api / sys_menu_api / sys_authorization_service）MUST 改 `tracing::debug!` 或拿掉、避免 bypass tracing JSON formatter 產 non-JSON garbage line。
-- **FR-014**：US7 status enum 對齊 scope MUST 在 plan 階段 grep 後界定（in-scope hits 全 fix；out-of-scope 登記 errata 留下一個 hygiene pass）。
+- **FR-014**：US7 status enum 對齊策略 MUST 採 transform layer + 明文界定（per Clarifications Q3、與既有 W-FW5/W-FW6 體例對齊）；plan 階段 grep 識別「未走 transform layer 漏出列舉/數字」的 path、in-scope hits ≤5 處全 fix；hits >5 處 → out-of-scope 登記 errata 留 045 spec-hygiene-pass-3 候選。
 - **FR-015**：本 feature MUST 0 base-web 改動（與 W-WEBUI 軌道無關、不觸發 Constitution Principle IV 受管例外）。
 - **FR-016**：本 feature MUST 0 schema migration、0 新 entity（observability service 用既有 storage / 第三方 sidecar 自帶 storage）。
 - **FR-017**：本 feature 完成後 `docs/INTEGRATION-CHECKLIST.md` MUST 從衍生 follow-up table 移除 042-N2 / 042-N6 / F3-N4 / 041-N1 四 row（US7 視 scope 拍板可能保留 errata）、從規劃中 table 移除 W-F12/W-F13/W-F14 三 row（合進 044）、已完成里程碑加 044 entry、Current Focus 「下一步」指向 P3 F-facade-atomicity-pass 或下個排程。
@@ -163,7 +171,7 @@ base-web 與 rust-api 間 wire data 對 status enum（user / role status）的�
 - **SC-003**：POST /api/role 後 grafana Loki query `{service="rust-api"} | json | request_id != ""` 在 1 分鐘內含該 request 的 ≥3 row、且該 request_id 與 sys_operation_log 雙視角 row 對得起來。
 - **SC-004**：curl rust-api `/metrics` 回 200 OK + prometheus exposition format、含 8 個業務 metric 名（即使 zero traffic 也暴 zero series）。
 - **SC-005**：POST /api/role + 2s wait 後 `audit_log_writes_total{operation="Create",entity_type="sys_role"}` counter 較 baseline +2（INTERNAL + HTTP 雙視角）。
-- **SC-006**：grafana UI 開啟後 Loki + Prometheus 兩個 datasource 自動載入、health check pass、≥1 dashboard 自動 provisioned、≥6 alert rule 自動 load。
+- **SC-006**：grafana UI 開啟後 Loki + Prometheus 兩個 datasource 自動載入、health check pass、4-6 dashboard 自動 provisioned（per Clarifications Q2）、≥6 alert rule 自動 load（per Clarifications Q1 grafana built-in）。
 - **SC-007**：POST `/api/systemManage/deleteMenu/<id>` 後 `SELECT entity_id FROM sys_operation_log` 命中 `<id>` 而非 `<verb>`（US4 / FR-011 PASS）；同時 POST `/api/role/<id>` 後 entity_id 仍 = `<id>`（不退化）。
 - **SC-008**：任一 admin write 後 `SELECT module_name, description FROM sys_operation_log` 兩欄無 `"TODO"` 值（US5 / FR-012 PASS）。
 - **SC-009**：`docker compose logs rust-api | grep "user is" -i` 0 hit（US6 / FR-013 PASS）。
@@ -180,4 +188,4 @@ base-web 與 rust-api 間 wire data 對 status enum（user / role status）的�
 - **rust-api log 既有 plain text 體例 0 backwards-compat 顧慮** — 044 之前 rust-api log 為 dev / 內部 debug 用、無 downstream consumer 依賴；JSON migration 改動 stdout 格式 100% 接受。
 - **8 業務 metric 既有 instrument 點假設既有** — `audit_log::write_in_txn` / casbin enforce wrapper / 042 drainer / token store / cleanup job / backup wrapper 等都已有可加 counter / gauge 的 code position；若某 metric 落點不存在（如 backup wrapper 從未實作）→ plan 階段重評是否 defer。
 - **Constitution v1.4.0 5/5 PASS** — observability 純觀察、不動 enforce / audit / endpoint / base-web；軌道外、預設原則涵蓋；無 amendment 需求。
-- **`/speckit-clarify` 必跑** — 本 spec 含 3 個 NEEDS CLARIFICATION（alerting infra / dashboard 設計風格 / US7 status enum scope）。
+- **`/speckit-clarify` 已完成** — Session 2026-05-24 拍板 3 Q（alerting infra → grafana built-in / dashboard 設計風格 → 1 master + drill-down / US7 status enum → transform layer + 明文界定 + threshold 5）；spec 內 0 retains clarification 標記、Clarifications § 完整紀錄。
