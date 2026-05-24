@@ -119,6 +119,8 @@ echo "  (expect: 看到 'message api_key:invalidate 1' 在 output)"
 
 對應 SC-004、FR-004/005/006/007。
 
+> **post-047 PASS（2026-05-25）**：045 acceptance 階段本 C-V5 blocked-by-045-N1 — sandbox `/sandbox/simple-api-key` 對任何非空 `x-api-key` header 都回 200、無法端到端驗 in-memory invalidation。047 sandbox-protect-route-fix 結案 045-N1（middleware 兩 error 分支 HTTP 200 → 401 + WWW-Authenticate header + body envelope 保留），本 C-V5 line 147 `[ "$POST" = "401" ]` 條件現可正常驗證；045 F3-N2 redis pub-sub + clear/reload 機制本身 045 階段已經 C-V4 / C-V6 + subscriber log + DB `deleted_at` 三方證實正常，047 後本 C-V5 即可在 dev stack 端到端跑通。
+
 ```bash
 TOKEN=$(curl -fsS -X POST "http://127.0.0.1:11080/api/auth/login" -H 'Content-Type: application/json' -d '{"identifier":"Soybean","password":"123456"}' | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['token'])")
 

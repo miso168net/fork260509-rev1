@@ -324,8 +324,8 @@ git commit -m "bump base-web: rebase on upstream <短 SHA>"
 <!-- SPECKIT START -->
 **Active Spec**: —
 **Active Plan**: —
-**Phase**: idle
-**下一步**: 047 sandbox-protect-route-fix (045-N1) 或 base-web TS id 型別債 cleanup sprint
+**Phase**: idle（047 已完成、見 `docs/INTEGRATION-CHECKLIST.md` 已完成里程碑）
+**下一步**: base-web TS `id` 型別債 cleanup sprint（user 2026-05-25 拍板的 follow-up bundle 順序第 1 段）
 <!-- SPECKIT END -->
 
 ## 7. 整合設計文件索引
