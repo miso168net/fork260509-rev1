@@ -116,9 +116,13 @@ echo ""
 echo "--- Case 5: valid signed query ---"
 TS=$(date +%s%3N)
 NONCE="nonce_${TS}"
-# AccessKeyId=test-access-key, sorted params, HMAC-SHA256 with "test-secret-key"
+# AccessKeyId=test-access-key, sorted params (A < n < t), default ApiKeyConfig
+# algorithm = Md5 (per rust-api/server/core/src/sign/api_key.rs L29-34 default)
+# signing string format: sorted_params + "&key=" + secret, then MD5 hex
+# （此處 C-V3 Case 5 algorithm erratum 修正：047 落地 T011 wire test 發現原寫
+#  HMAC-SHA256 是錯的、實際 default 是 MD5+`&key=` 後綴；參 api_key.rs L198）
 SIGNING_STR=$(printf "AccessKeyId=test-access-key&n=%s&t=%s" "$NONCE" "$TS")
-SIGN=$(printf '%s' "$SIGNING_STR" | openssl dgst -sha256 -hmac "test-secret-key" -hex | awk '{print $2}')
+SIGN=$(printf '%s&key=test-secret-key' "$SIGNING_STR" | md5sum | awk '{print $1}')
 curl -s -o /tmp/resp.txt -D /tmp/h.txt -w "HTTP %{http_code}\n" \
   "http://127.0.0.1:11080/api/sandbox/complex-api-key?${SIGNING_STR}&sign=${SIGN}"
 cat /tmp/resp.txt | head -3
