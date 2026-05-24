@@ -293,7 +293,7 @@ SELECT
   COUNT(DISTINCT (audit_event_json->>'request_id')) AS unique_requests
 FROM sys_audit_outbox
 WHERE audit_event_json->'actor'->>'username' = 'Soybean'
-  AND created_at > NOW() - INTERVAL '10 seconds';
+  AND created_at > (NOW() AT TIME ZONE 'UTC')::timestamp - INTERVAL '10 seconds';
 "
 
 echo ""
@@ -304,7 +304,7 @@ SELECT
   COUNT(DISTINCT id) AS unique_log_id
 FROM sys_operation_log
 WHERE entity_id IN (SELECT id::text FROM sys_role WHERE code LIKE 'ROLE_CV042_7_%')
-  AND created_at > NOW() - INTERVAL '10 seconds';
+  AND created_at > (NOW() AT TIME ZONE 'UTC')::timestamp - INTERVAL '10 seconds';
 "
 
 echo ""
@@ -430,7 +430,7 @@ echo "=== entity_type 對應驗證 ==="
 $PC exec -T postgres psql -U soybean -d soybean_admin_rust -c "
 SELECT url, entity_type, method
 FROM sys_operation_log
-WHERE created_at > NOW() - INTERVAL '5 seconds'
+WHERE created_at > (NOW() AT TIME ZONE 'UTC')::timestamp - INTERVAL '5 seconds'
   AND method != 'INTERNAL'
 ORDER BY created_at DESC
 LIMIT 10;
@@ -509,7 +509,7 @@ $PC exec -T postgres psql -U soybean -d soybean_admin_rust -c "
 SELECT method, url, user_id, username, ip, user_agent IS NOT NULL AS has_ua
 FROM sys_operation_log
 WHERE url = '/api/auth/login'
-  AND created_at > NOW() - INTERVAL '5 seconds'
+  AND created_at > (NOW() AT TIME ZONE 'UTC')::timestamp - INTERVAL '5 seconds'
 ORDER BY created_at DESC
 LIMIT 1;
 "

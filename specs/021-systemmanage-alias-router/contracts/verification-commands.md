@@ -327,11 +327,11 @@ curl -s -w "\n---HTTP %{http_code}\n" \
 ```bash
 echo "=== C-V7: batchDelete audit log ==="
 docker compose exec -T postgres psql -h 127.0.0.1 -p 5432 -U soybean -d soybean_admin_rust \
-  -c "SELECT user_id, operation, created_at FROM sys_operation_log WHERE created_at > NOW() - INTERVAL '5 minutes' AND operation LIKE '%delete%user%' ORDER BY created_at DESC LIMIT 10"
+  -c "SELECT user_id, operation, created_at FROM sys_operation_log WHERE created_at > (NOW() AT TIME ZONE 'UTC')::timestamp - INTERVAL '5 minutes' AND operation LIKE '%delete%user%' ORDER BY created_at DESC LIMIT 10"
 
 echo "---COUNT verify---"
 docker compose exec -T postgres psql -h 127.0.0.1 -p 5432 -U soybean -d soybean_admin_rust \
-  -c "SELECT COUNT(*) FROM sys_operation_log WHERE created_at > NOW() - INTERVAL '5 minutes' AND operation LIKE '%delete%user%'"
+  -c "SELECT COUNT(*) FROM sys_operation_log WHERE created_at > (NOW() AT TIME ZONE 'UTC')::timestamp - INTERVAL '5 minutes' AND operation LIKE '%delete%user%'"
 ```
 
 **Expected**:

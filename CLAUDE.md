@@ -322,10 +322,10 @@ git commit -m "bump base-web: rebase on upstream <短 SHA>"
 下方 `<!-- SPECKIT -->` marker 區為 Claude 在每個 feature 啟動 / 收尾時手動維護的當前 feature 快照 —— **只使用簡潔 4 行、不擴張內容**（歷史 merge SHA 在 `docs/INTEGRATION-CHECKLIST.md` 「已完成里程碑」單獨記、本檔不重複；marker 名稱保留供 spec-kit 將來自動同步、**勿刪**）：
 
 <!-- SPECKIT START -->
-**Active Spec**: [`specs/042-audit-outbox-and-http-mount/spec.md`](specs/042-audit-outbox-and-http-mount/spec.md)
-**Active Plan**: [`specs/042-audit-outbox-and-http-mount/plan.md`](specs/042-audit-outbox-and-http-mount/plan.md)
+**Active Spec**: [`specs/043-spec-hygiene-pass-2/spec.md`](specs/043-spec-hygiene-pass-2/spec.md)
+**Active Plan**: [`specs/043-spec-hygiene-pass-2/plan.md`](specs/043-spec-hygiene-pass-2/plan.md)
 **Phase**: plan complete — ready for `/speckit-tasks`
-**下一步**: 042 收尾後接 W-F12/13/14（observability，subscriber 即可消費 audit:events stream）
+**下一步**: 043 收尾後接 W-F12/13/14（observability、Phase W deploy P5）
 <!-- SPECKIT END -->
 
 ## 7. 整合設計文件索引

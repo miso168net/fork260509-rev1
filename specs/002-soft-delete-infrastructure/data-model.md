@@ -155,7 +155,7 @@ pub trait SoftDeletable: EntityTrait {
 
 ```rust
 // server/model/src/admin/soft_delete_impls.rs（model crate、避循環依賴 per F3 R6）
-use server_model::admin::entities::{
+use crate::admin::entities::{
     sys_user, sys_role, sys_menu, sys_domain, sys_organization, sys_endpoint, sys_access_key
 };
 

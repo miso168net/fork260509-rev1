@@ -1,1 +1,3 @@
-{"feature_directory": "specs/042-audit-outbox-and-http-mount"}
+{
+  "feature_directory": "specs/043-spec-hygiene-pass-2"
+}

@@ -207,3 +207,46 @@
 - 4 個 endpoint 的 path / method / request body / response shape 在 F5.1 後**穩定**、與 base-web `Api.Auth.*` / `Api.Route.*` typings 100% 對齊
 - 既有 deployed token（F1.1 之前 + F5.1 之前簽的）F5.1 後仍可解（JWT secret + algorithm 不變、JWT validation path 不動）
 - F5.1 後新加 endpoint（如 F8 `/authorization/*`）不破壞 F5.1 既有 4 個 endpoint contract
+
+---
+
+## 7. Logout (no server endpoint by design)
+
+### Current Design (DESIGN-B baseline)
+
+- rust-api: **無 `/auth/logout` endpoint**（HTTP 404）
+- base-web client-side: token discard 透過 `VITE_SERVICE_LOGOUT_CODES` env 配 4xx 響應碼判斷、localStorage 移除 token
+- 機制：JWT stateless、token 過期靠 `exp` claim、client-side discard 即等效 logout
+- 適用範圍：rev1 為 admin-heavy + low-throughput 場景、token 洩漏風險低 / 合規未硬性要求 server-side revocation
+
+### Token Revocation Research（未來 server-side 補強 3 方案）
+
+**Pattern A — Redis token blacklist**
+
+- 機制：active JWT 加入 Redis blacklist key（值 = exp 時間）；middleware 驗證時先查 blacklist、命中即拒
+- 優點：與 042 `audit:events` Redis Stream 同基礎設施、複用度高；revoke 立即生效
+- 缺點：每 request 多 1 次 Redis lookup（middleware overhead）；blacklist 自動 expire 需設 TTL
+
+**Pattern B — Short-TTL access token + refresh token rotation**
+
+- 機制：access token TTL 短（e.g. 5 分鐘）、client 用 refresh token 換新；revoke 透過撤銷 refresh token
+- 優點：access token validation 無 Redis lookup（純 JWT verify）；revoke 半延遲（最多 TTL 時間）
+- 缺點：refresh flow 複雜度；token rotation 失敗易導致 UX 中斷
+- 現況：rust-api 已有 refresh token flow（F10 / F13）、可直接擴展
+
+**Pattern C — JWT versioning**
+
+- 機制：每 user 維護 `token_version` 欄位；JWT 內含 user version；middleware 驗證時比對 DB / cache、不符即拒
+- 優點：force-logout-all-sessions 1 行 SQL `UPDATE sys_user SET token_version = token_version + 1`
+- 缺點：每 request 多 1 次 user version lookup（除非 cached）；schema 改動
+
+### 何時需要 server-side revocation（trigger scenarios）
+
+1. **Admin-driven**: admin 強制撤權 / 停用帳號（合規 / 安全事件）
+2. **Anomaly-driven**: W-F12 session anomaly detection（異地登入、暴衝 request rate 等）
+
+### W-F12/13/14 Observability Hook
+
+W-F12 observability feature brainstorm 時可從本 § 直接取 design input。若 W-F12 決定加入 session anomaly detection、推薦 Pattern A（Redis blacklist）——與 042 `audit:events` Redis Stream 同基礎設施、複用度高。
+
+> Spec hygiene reference: 本 § 為 R5 follow-up 結案（per 043 spec hygiene pass 2）。
