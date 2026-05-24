@@ -62,9 +62,12 @@ deploy/.env
 *.key
 .dev.vars
 
-# W-F4 Docker secrets — 實際 secret 檔 gitignored、.txt.example 範本 git-tracked
+# W-F4 Docker secrets — 實際 secret 檔 gitignored、.example 範本 git-tracked
+# 044 W-F13 加 .json（redis_exporter 需要 JSON 格式 password file、無法用 plain text）
 /deploy/secrets/*.txt
 !/deploy/secrets/*.txt.example
+/deploy/secrets/*.json
+!/deploy/secrets/*.json.example
 
 # W-F6 dev 自簽憑證 — 只在本機 dev 用，勿 commit
 deploy/dev-certs/*.pem
