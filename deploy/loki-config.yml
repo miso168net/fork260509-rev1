@@ -1,0 +1,55 @@
+# 044 W-F12: Loki single-binary mode config
+# - BoltDB shipper index + filesystem chunk store (single-node, no S3 etc)
+# - Retention 7d (dev default; prod can tune via env or override file)
+# - Single tenant (no auth — internal network only)
+
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+  grpc_listen_port: 9096
+  log_level: info
+
+common:
+  instance_addr: 127.0.0.1
+  path_prefix: /loki
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+
+schema_config:
+  configs:
+    - from: 2024-01-01
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
+limits_config:
+  metric_aggregation_enabled: true
+  retention_period: 168h           # 7d retention (dev default)
+  reject_old_samples: true
+  reject_old_samples_max_age: 168h
+  allow_structured_metadata: true
+  volume_enabled: true
+
+compactor:
+  working_directory: /loki/compactor
+  compaction_interval: 10m
+  retention_enabled: true
+  retention_delete_delay: 2h
+  retention_delete_worker_count: 150
+  delete_request_store: filesystem
+
+ruler:
+  alertmanager_url: ""             # 044 用 grafana built-in alerting, not loki ruler
+
+analytics:
+  reporting_enabled: false

@@ -1,8 +1,15 @@
 # docker-compose.prod.yml — W-F6 prod override(per specs/012-tls-cert-management/)
 # 用法:docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --wait
-#       (加 --profile prod 才啟 acme service)
+#       (加 --profile prod 才啟 acme service;加 --profile observability 才啟 obs 7 service)
 # 對外 binding 0.0.0.0(prod 需 LAN/公網可達)、80 強制 redirect 443、443 ssl
 # cert 來源:named volume front_nginx_certs(acme.sh 寫進 / 或手動 seed)
+#
+# 044 新增:include docker-compose.observability.yml + 對 7 obs service 加
+# profiles: ["observability"] gating(prod 維持 opt-in、不自動啟動 obs stack;
+# 與 dev default-on 對稱 — base observability.yml 預設 always-on,gating 在 prod 加)
+
+include:
+  - docker-compose.observability.yml
 
 services:
   front-nginx:
@@ -18,3 +25,21 @@ services:
     deploy:
       replicas: 2
 
+  # ---------------------------------------------------------------------------
+  # 044: prod obs gating — 對 7 obs service 加 profiles: ["observability"]
+  # 須顯式 --profile observability 才會啟動(prod opt-in,避免無謂資源占用)
+  # ---------------------------------------------------------------------------
+  loki:
+    profiles: ["observability"]
+  promtail:
+    profiles: ["observability"]
+  prometheus:
+    profiles: ["observability"]
+  grafana:
+    profiles: ["observability"]
+  postgres_exporter:
+    profiles: ["observability"]
+  redis_exporter:
+    profiles: ["observability"]
+  nginx-exporter:
+    profiles: ["observability"]

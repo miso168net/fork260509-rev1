@@ -3,6 +3,15 @@
 # 不寫進主 docker-compose.yml(避免 prod 誤暴露);僅 dev / debug 場景使用
 # 4 個 port 全綁 127.0.0.1(loopback only、不暴露 LAN)
 # 11443 HTTPS 留 W-F6 TLS feature;0.0.0.0 LAN binding 不支援
+#
+# 044 新增:include docker-compose.observability.yml
+# observability.yml 本身 7 obs service 無 profiles:(預設 always-on),
+# 故 dev 直接 include 即得 dev-default-on 7 service(per spec Q3 clarification);
+# prod 反過來在 prod.yml 對每 obs service 加 profiles: ["observability"] gating。
+# 新暴露 host port:grafana 13000 / prometheus 13090(127.0.0.1 loopback)
+
+include:
+  - docker-compose.observability.yml
 
 services:
   front-nginx:
@@ -24,3 +33,14 @@ services:
     ports:
       - "127.0.0.1:16379:6379"        # redis-cli / RedisInsight 直連
 
+  # ---------------------------------------------------------------------------
+  # 044: dev-default-on obs host port forward(Q3 clarification)
+  # prometheus / grafana UI 暴露到 host(127.0.0.1 loopback)、其他 5 obs service
+  # 只在 obs 內部網路 — Phase 3-5 配置內部 scrape / dashboard 連線
+  # ---------------------------------------------------------------------------
+  prometheus:
+    ports:
+      - "127.0.0.1:13090:9090"        # prometheus UI + /metrics
+  grafana:
+    ports:
+      - "127.0.0.1:13000:3000"        # grafana UI

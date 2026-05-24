@@ -1,0 +1,241 @@
+# =============================================================================
+# rev1 observability docker-compose(044 observability-and-cleanup-pass)
+#
+# 7 service obs stack(per specs/044-observability-and-cleanup-pass/):
+#   - loki(grafana/loki:3.4) — 日誌儲存
+#   - promtail(grafana/promtail:3.4) — 日誌採集 → loki
+#   - prometheus(prom/prometheus:v2.55.1) — metrics scrape + 儲存
+#   - grafana(grafana/grafana:11.3.0) — 視覺化 + dashboards + alerting
+#   - postgres_exporter(prometheuscommunity/postgres-exporter:v0.16.0) — postgres metrics
+#   - redis_exporter(oliver006/redis_exporter:v1.66.0) — redis metrics
+#   - nginx-exporter(nginx/nginx-prometheus-exporter:1.3.0) — front-nginx stub_status metrics
+#
+# 設計重點:
+# - 全 7 service 預設「always on」(無 profiles:)
+#   dev override 直接 include(default-on,per Q3 dev 「forced on」語義);
+#   prod override(docker-compose.prod.yml)逐 service 加 profiles: ["observability"]
+#   gating(prod 維持 opt-in,須 --profile observability)。
+#   注意:Compose 不支援以 override 把已有 profiles: 的服務「強制脫掉 profile」、
+#   故 base 必須是 always-on,profile gating 統一由 prod.yml 加上,而非 base 加 / dev 拿掉。
+# - 雙網路:internal(scrape app service)+ observability(obs 之間通訊)
+#   internal 宣告 external: true,從主 docker-compose.yml 借用、不重複定義。
+# - 2 個新 secret(grafana_admin_password / postgres_exporter_dsn);
+#   實際 service 引用留 Phase 4(本檔僅 top-level 宣告 skeleton)。
+# - 3 個 named volume(loki_data / prometheus_data / grafana_data)— stateful 服務。
+#
+# 本檔範疇(Phase 2 — 044 T008-T010 compose skeleton):
+# - service image pin + profiles + networks + restart + TZ environment + 最小 depends_on stub
+# - top-level networks / volumes / secrets 宣告
+#
+# 不在本檔範疇(留 Phase 3-5 implementer subagents 填):
+# - service-specific command: / volumes:(bind mount 進 deploy/* config)/ healthcheck:
+# - service-specific environment(GF_*、--config.file= 等)
+# - service-level secrets ref(grafana / postgres_exporter)
+# - prometheus scrape_configs / loki retention / grafana provisioning / alerting rules
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # loki — 日誌聚合儲存(044 W-F12 T013:command + volumes + healthcheck)
+  # ---------------------------------------------------------------------------
+  loki:
+    image: grafana/loki:3.4
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+    volumes:
+      - loki_data:/loki
+      - ./deploy/loki-config.yml:/etc/loki/local-config.yaml:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3100/ready || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - internal
+      - observability
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # promtail — 日誌採集 agent → loki(044 W-F12 T014:command + docker.sock + config)
+  # ---------------------------------------------------------------------------
+  promtail:
+    image: grafana/promtail:3.4
+    command: ["-config.file=/etc/promtail/config.yml"]
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./deploy/promtail-config.yml:/etc/promtail/config.yml:ro
+    depends_on:
+      loki:
+        condition: service_healthy
+    networks:
+      - internal
+      - observability
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # prometheus — metrics scrape + storage(044 W-F13 T030:config + retention + rules dir)
+  # ---------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+    volumes:
+      - prometheus_data:/prometheus
+      - ./deploy/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./deploy/prometheus-rules:/etc/prometheus/rules:ro
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+      - --web.console.libraries=/usr/share/prometheus/console_libraries
+      - --web.console.templates=/usr/share/prometheus/consoles
+      - --web.enable-lifecycle
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9090/-/ready || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - internal
+      - observability
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # grafana — 視覺化 + dashboards + alerting(044 W-F14 T049:provisioning + secret + healthcheck)
+  # ---------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:11.3.0
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      GF_SECURITY_ADMIN_PASSWORD__FILE: /run/secrets/grafana_admin_password
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_INSTALL_PLUGINS: ""
+    secrets:
+      - grafana_admin_password
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deploy/grafana-provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      loki:
+        condition: service_healthy
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - internal
+      - observability
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # postgres_exporter — postgres metrics(044 W-F13 T031:DSN secret + healthcheck)
+  # ---------------------------------------------------------------------------
+  postgres_exporter:
+    image: prometheuscommunity/postgres-exporter:v0.16.0
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      DATA_SOURCE_NAME_FILE: /run/secrets/postgres_exporter_dsn
+    secrets:
+      - postgres_exporter_dsn
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9187/metrics > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - internal
+      - observability
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # redis_exporter — redis metrics(044 W-F13 T031:REDIS_ADDR + REDIS_PASSWORD_FILE 復用既有 secret)
+  # ---------------------------------------------------------------------------
+  redis_exporter:
+    image: oliver006/redis_exporter:v1.66.0
+    # REDIS_PASSWORD_FILE 預期 JSON `{"redis://addr":"pwd"}` 格式（非 plain text）。
+    # image 為 distroless（無 sh、無法用 shell entrypoint wrapper），故另建 JSON
+    # secret file `redis_exporter_password.json`（dev gitignored、.example 進 git）。
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      REDIS_ADDR: redis://redis:6379
+      REDIS_PASSWORD_FILE: /run/secrets/redis_exporter_password
+    secrets:
+      - redis_exporter_password
+    depends_on:
+      redis:
+        condition: service_healthy
+    # Distroless image 無 wget/curl/sh — docker healthcheck 無 in-image probe 可用。
+    # 改由 prometheus scrape 驗證健康（target 在 prometheus targets UI 看 up/down）。
+    healthcheck:
+      disable: true
+    networks:
+      - internal
+      - observability
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # nginx-exporter — front-nginx stub_status metrics(044 W-F13 T031:scrape-uri 指 internal 8081)
+  # ---------------------------------------------------------------------------
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:1.3.0
+    command:
+      - --nginx.scrape-uri=http://front-nginx:8081/stub_status
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+    depends_on:
+      front-nginx:
+        condition: service_healthy
+    # Distroless image 同樣無 in-image probe；改靠 prometheus target up/down 驗。
+    healthcheck:
+      disable: true
+    networks:
+      - internal
+      - observability
+    restart: unless-stopped
+
+# =============================================================================
+# Networks
+# - observability: 新建 bridge — obs 之間通訊
+# - internal: external: true — 從主 docker-compose.yml 借用(scrape app service)
+# =============================================================================
+networks:
+  observability:
+    driver: bridge
+  # 不在這裡宣告 internal — 由 parent docker-compose.yml 統一定義（driver: bridge）。
+  # include + override merge 後、internal 仍為 same network；compose down 一併移除、up 一併建立。
+  # 早期試 `internal: external: true` 會在 down 後找不到 network、up 報錯。
+
+# =============================================================================
+# Volumes(stateful obs 服務 — 實際 mount 在 Phase 3-5 補)
+# =============================================================================
+volumes:
+  loki_data:
+  prometheus_data:
+  grafana_data:
+
+# =============================================================================
+# Secrets(044 Phase 1 已建檔;實際 service 引用留 Phase 4)
+# =============================================================================
+secrets:
+  grafana_admin_password:
+    file: ./deploy/secrets/grafana_admin_password.txt
+  postgres_exporter_dsn:
+    file: ./deploy/secrets/postgres_exporter_dsn.txt
+  # redis_exporter 專屬 JSON 格式 password file（非 plain text、image 無 sh 不能 wrap shell）
+  redis_exporter_password:
+    file: ./deploy/secrets/redis_exporter_password.json
