@@ -1,7 +1,8 @@
 # =============================================================================
 # rev1 deploy docker-compose 主檔(W-F4)
 #
-# 8 service stack:postgres + redis + migration(one-shot)+ rust-api + base-web + front-nginx + acme(prod profile)+ cleanup(jobs profile)
+# 主 stack 8 service:postgres + redis + migration(one-shot)+ rust-api + base-web + front-nginx + acme(prod profile)+ cleanup(jobs profile)
+# 與 docker-compose.observability.yml(044 加 7 service:promtail + Loki + prometheus + grafana + postgres_exporter + redis_exporter + nginx-exporter)合計 dev stack 12 service。
 # 1 bridge network:internal
 # 2 named volumes:postgres_data + redis_data
 # 5 secrets(W-F4):jwt_secret / database_url / redis_url / postgres_password / redis_password

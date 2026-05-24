@@ -176,15 +176,15 @@ assert_eq!(audit.module_name, "sys_user");
 
 ## E4. US4 — 12 個 ignored test 改寫對應（FR-010）
 
-**注意**：實際 callsite 數 = ignored test 數 + 每 test 可能多 helper call（如驗多 row）；total ~12-13 helper call across 4 file。implementer subagent 階段 grep 替換、不在 plan 列每 callsite。
+**注意**：實際 callsite 數 = polling-needs 測試數 × 每測 1-2 helper call；total ~6 helper call across 4 file（implementer 階段發現原 plan estimate 13 過高、因 audit_basics 3 個 audit_snapshot 純單測不 query DB、audit_transaction_rollback 2 個 + soft_delete_audit_integration 2 個為 absence assertion 用 helper 無語意）。落地後**所有 12 個 `#[ignore]` 標註更新**（保持一致）、**只有 polling-needs 測試**改用 helper（其餘保留原 query pattern 不動）。
 
-| File | `#[ignore]` test 數 | helper call 預估 | 備註 |
+| File | `#[ignore]` test 數 | helper call 實際 | 備註 |
 |---|---|---|---|
-| `audit_basics.rs` | 5 | 5 | 每 test 1 helper call（驗 1 audit row） |
-| `audit_http_middleware.rs` | 2 | 3-4 | HTTP request 一次寫 2 row、用 wait_for_audit_count |
-| `audit_transaction_rollback.rs` | 2 | 2 | 驗 rollback 前後 row 數 |
-| `soft_delete_audit_integration.rs` | 3 | 3 | 驗 soft-delete row + audit row 同 commit |
-| **合計** | **12** | **~13** | 一致用 closure pattern per E1.3 |
+| `audit_basics.rs` | 5 | 2 | Scenarios 4/12 改 `wait_for_audit_row`；Scenarios 7/8/9 為 audit_snapshot 純單測、不 query DB、helper 不適用 |
+| `audit_http_middleware.rs` | 2 | 3 | 第 1 test 1 call；第 2 test 2 call（INTERNAL + HTTP 各 1）|
+| `audit_transaction_rollback.rs` | 2 | 0 | 兩 test 皆 assert `count == 0`（rollback absence）、helper poll until appear 對「不出現」無語意 |
+| `soft_delete_audit_integration.rs` | 3 | 1 | Scenario `audit_row_count_matches_operations` 用 `wait_for_audit_count(min=3)`；其餘 2 個僅 assert 業務 code 6001、不 query audit row |
+| **合計** | **12** | **6** | closure pattern per E1.3 |
 
 **`#[ignore]` 註解更新**（12 處）：
 

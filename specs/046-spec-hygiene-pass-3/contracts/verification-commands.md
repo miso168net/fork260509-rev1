@@ -94,10 +94,10 @@ echo "  (expect ≥1)"
 
 echo ""
 echo "=== 2c addUser body shape userName + status='1' ==="
-grep -cE '"username":"cv[89]user"' specs/045-facade-atomicity-pass/contracts/verification-commands.md || true
-echo "  (expect 0 — body field 應改 userName)"
-grep -cE '"userName":"cv[89]user"' specs/045-facade-atomicity-pass/contracts/verification-commands.md
-echo "  (expect ≥2)"
+grep -cE 'curl.*POST.*addUser' specs/045-facade-atomicity-pass/contracts/verification-commands.md
+echo "  (curl POST addUser lines: expect 2)"
+grep -cE 'curl.*POST.*addUser.*userName' specs/045-facade-atomicity-pass/contracts/verification-commands.md
+echo "  (其中含 userName 的: expect 2 — 全部 addUser body 改 camelCase；psql 'WHERE username=' 為 DB column 保留不算)"
 
 echo "=== status: 'enabled' → '1' in addUser/updateUser body ==="
 grep -cE '"status":"enabled"' specs/045-facade-atomicity-pass/contracts/verification-commands.md || true
@@ -158,11 +158,12 @@ grep -nE "pub mod audit_pipeline" rust-api/server/model/tests/common/mod.rs
 echo "  (expect 1)"
 
 echo ""
-echo "=== 4 test file 改用 helper ==="
+echo "=== 4 test file 改用 helper（僅 polling-needs 測試）==="
 for f in audit_basics audit_http_middleware audit_transaction_rollback soft_delete_audit_integration; do
     HITS=$(grep -cE "wait_for_audit_row|wait_for_audit_count" rust-api/server/model/tests/$f.rs || true)
     echo "  $f.rs: $HITS helper call"
 done
+echo "  (expect: audit_basics 2 + audit_http_middleware 3 + audit_transaction_rollback 0 + soft_delete_audit_integration 1 = 合計 ≥6)"
 
 echo ""
 echo "=== #[ignore] 註解全更新為 'requires dev stack drainer running' ==="
@@ -170,10 +171,10 @@ for f in audit_basics audit_http_middleware audit_transaction_rollback soft_dele
     HITS=$(grep -cE 'ignore = "requires dev stack drainer running' rust-api/server/model/tests/$f.rs || true)
     echo "  $f.rs: $HITS hits"
 done
-echo "  (expect total ≥12)"
+echo "  (expect total ≥12 — 12 個 #[ignore] 標註全改、含不需 drainer 的純單測 / absence 測試)"
 ```
 
-**Expected**：helper file 存在 + 2 fn signature 命中；mod.rs `pub mod audit_pipeline` 1 hit；4 file 合計 ≥12 helper call；12 個 `#[ignore]` 註解全改新文。
+**Expected**：helper file 存在 + 2 fn signature 命中；mod.rs `pub mod audit_pipeline` 1 hit；4 file 合計 ≥6 helper call（**僅 polling-needs 測試 migrate**：audit_basics 2 + audit_http_middleware 3 + soft_delete_audit_integration 1；audit_transaction_rollback 2 個 absence-assertion 測試 + audit_basics 3 個 audit_snapshot 純單測**保留原 query pattern 不動**、helper 對「assert 不出現」/ 純 in-memory 函式無語意）；12 個 `#[ignore]` 註解全改新文（不論是否依賴 drainer、保持註解一致）。
 
 ---
 
