@@ -65,7 +65,7 @@ description: "Task list for 044 observability-and-cleanup-pass"
 - [ ] T016 [US1] grep 並 enumerate `tokio::spawn` 9 個 callsite（[research.md R-7](./research.md)）+ 每個加 `.instrument(tracing::Span::current())` 包裹：`server/global/src/global.rs:163/176/265/274/331`、`server/initialize/src/audit_outbox_initialization.rs:53`、`server/initialize/src/casbin_sync_initialization.rs:34`、`server/core/src/web/operation_log.rs:143`。`spawn_blocking` 不加（CPU-bound、不需 span）。對應 FR-004。
 - [ ] T017 [US1] C-V2 acceptance — dev stack restart rust-api 後 `$PC logs --tail=50 rust-api | grep '^{'` 採樣 ≥5 row JSON、每 row 含必要 5 欄（timestamp / level / service / request_id / msg）；per [contracts/verification-commands.md C-V2](./contracts/verification-commands.md)。對應 SC-002、FR-002。
 - [ ] T018 [US1] C-V3 acceptance — POST /api/role + 抽 X-Request-ID response header + grep log JSON 該 request_id + psql 查 sys_operation_log 同 request_id ≥2 row；per [contracts/verification-commands.md C-V3](./contracts/verification-commands.md)。對應 SC-003、FR-003。
-- [ ] T019 [US1] C-V10 acceptance — grep ratio `tokio::spawn` async vs `.instrument()` callsite ≈ 1:1；per [contracts/verification-commands.md C-V10](./contracts/verification-commands.md)。對應 SC-013、FR-004。
+- [ ] T019 [US1] C-V10 + C-V20 acceptance — (a) grep ratio `tokio::spawn` async vs `.instrument()` callsite ≈ 1:1；(b) trigger 1 個 admin write (POST /api/role) + sleep 1s（>drainer sleep_interval_ms=50）+ grep drainer log JSON 對該 request_id propagation（per `server/initialize/src/audit_outbox_initialization.rs:53` drainer + `.instrument()` 包裹）；per [contracts/verification-commands.md C-V10 + C-V20](./contracts/verification-commands.md)。對應 SC-013、FR-004。
 
 **Checkpoint**：US1 完成 — log JSON 對齊 + grafana Loki 可查 + request_id 跨 log + audit row 串聯。MVP-worthy（log infra 對 incident response 已可獨立 deliver、metrics + dashboards 未做也 OK）。
 
@@ -204,8 +204,9 @@ description: "Task list for 044 observability-and-cleanup-pass"
 - [ ] T068 outer feature branch commit — 依 [quickstart Step 6.2](./quickstart.md) 拆多 commit（compose + deploy/ + grafana + nginx + SHA pins + INTEGRATION-CHECKLIST cleanup）；push origin 044-observability-and-cleanup-pass 須 user 同意。對應 CLAUDE.md §4.1。
 - [ ] T069 git merge 044 → rev1-admin-root — **user 同意才執行**：`git checkout rev1-admin-root && git merge --no-ff 044-observability-and-cleanup-pass -m "Merge feature 044-observability-and-cleanup-pass"`；merge 後 push origin rev1-admin-root 須 user 再次同意。
 - [ ] T070 backfill outer/merge/rust-api SHA + push — merge 後拿 outer SHA + merge SHA + rust-api worktree latest SHA、回填進 INTEGRATION-CHECKLIST 044 entry 的 `<SHA>` placeholders、small chore commit（per 041/042/043 體例）+ push 須 user 同意。
+- [ ] T071 [P] FR-015 + FR-016 + SC-011 explicit boundary verify — 跑 `git diff --stat base-web/` 0 lines（FR-015 / SC-011 0 base-web 改動）+ `find rust-api/migration/src/ -newer <044 start commit> -name "*.rs"` 0 hit（FR-016 / SC-011 0 schema migration）+ `git diff rust-api/server/model/src/admin/entities/` 0 lines for new entity 模式（FR-016 / SC-011 0 新 entity）；per [contracts/verification-commands.md C-V23](./contracts/verification-commands.md) extended scope。對應 SC-011、FR-015/016。
 
-**Checkpoint**：044 整 feature 落地、acceptance 全綠、backlog 已 cleanup、merge 回 default、Phase W deploy P5 close-out。
+**Checkpoint**：044 整 feature 落地、acceptance 全綠、backlog 已 cleanup、boundary verify PASS、merge 回 default、Phase W deploy P5 close-out。
 
 ---
 
@@ -308,9 +309,10 @@ User 偏好（per project memory v2）：Full feature 一次到位、Phase W dep
 
 ## Summary
 
-- **Total tasks**: 70
-- **By phase**: Setup 3 / Foundational 7 / US1 9 / US2 19 / US3 14 / US4 2 / US5 2 / US6 2 / US7 1 / Polish 11
-- **By user story**: US1 = 9 / US2 = 19 / US3 = 14 / US4 = 2 / US5 = 2 / US6 = 2 / US7 = 1（共 49 user story tasks）+ Setup 3 + Foundational 7 + Polish 11
+- **Total tasks**: 71
+- **By phase**: Setup 3 / Foundational 7 / US1 9 / US2 19 / US3 14 / US4 2 / US5 2 / US6 2 / US7 1 / Polish 12
+- **By user story**: US1 = 9 / US2 = 19 / US3 = 14 / US4 = 2 / US5 = 2 / US6 = 2 / US7 = 1（共 49 user story tasks）+ Setup 3 + Foundational 7 + Polish 12
+- **Analyze remediation applied**: C1 (T071 boundary verify added)、C4 (T019 補強 C-V20 drainer log propagation verify)、A1 (spec.md US3 Independent Test 補 grafana password 來源)
 - **Parallel opportunities**：
   - Phase 1 Setup T001/T002/T003 全並行
   - Phase 3-9 7 個 user story 可全部 subagent parallel

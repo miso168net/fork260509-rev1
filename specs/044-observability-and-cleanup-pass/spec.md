@@ -55,7 +55,7 @@
 
 **Why this priority**：dashboards + alerts 是 observability 的「決策 / 應變」層，把 W-F12 log + W-F13 metrics 的原始資料轉成 operator 看得懂的視覺與通知。沒有 dashboard + alert、log + metric 雖然就位但實際無人查、退化為「事後 forensic」用途。
 
-**Independent Test**：dev stack healthy + grafana 啟動完成（health probe OK）後、開 grafana UI `http://127.0.0.1:13000`、使用 provisioned admin password 登入、看 Loki + Prometheus datasource 連線健康、provisioned dashboard 至少 1 個正常渲染、alerting rules 至少 1 個 load 進 grafana。
+**Independent Test**：dev stack healthy + grafana 啟動完成（health probe OK）後、開 grafana UI `http://127.0.0.1:13000`、使用 `deploy/secrets/grafana_admin_password.txt` 內 provisioned admin password 登入、看 Loki + Prometheus datasource 連線健康、provisioned dashboard 至少 1 個正常渲染、alerting rules 至少 1 個 load 進 grafana。
 
 **Acceptance Scenarios**：
 
