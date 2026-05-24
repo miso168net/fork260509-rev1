@@ -17,6 +17,8 @@ description: "Task list for 046 spec-hygiene-pass-3"
 - **[Story]**：對應 spec.md user story（Setup / Foundational / Polish 無 story 標籤）
 - 每 task 含 exact file path 與具體動作
 
+**Same-file `[P]` 紀律**：T011/T012（同 045 data-model.md 不同區段）+ T014-T017（同 045 contracts/verification-commands.md 不同 C-V section）標 `[P]` 是「邏輯獨立、無 inter-task dependency」、**不是**「subagent 並行 dispatch」；executing-plans subagent dispatcher **MUST** 對同檔 task 序列化（per file sequential edit、避 race condition / Edit tool old_string 失效）。跨檔 `[P]` 才真正並行。
+
 ---
 
 ## Phase 1: Setup (Shared Infrastructure)

@@ -89,7 +89,7 @@ W-F12 落地後 rust-api stdout 由 tracing fmt::json formatter 接管、所有�
 **Acceptance Scenarios**：
 
 1. **Given** docker-compose.yml；**When** grep `^# 8 service stack`；**Then** 0 hit。
-2. **Given** 同檔；**When** grep `12 service`（或「stack」附近 12 出現）；**Then** ≥1 hit（與 044 後 reality 對齊）。
+2. **Given** 同檔；**When** grep `主 stack 8 service|12 service|observability\.yml`；**Then** ≥2 hit（含主檔 scope 8 service 描述 + observability.yml overlay 引用 + dev 12 service 合計、per [contracts C-V7](./contracts/verification-commands.md)）。
 
 ---
 
@@ -113,14 +113,14 @@ W-F12 落地後 rust-api stdout 由 tracing fmt::json formatter 接管、所有�
 - **FR-005**：`specs/045-facade-atomicity-pass/contracts/verification-commands.md` C-V8/V9 addUser body MUST 改：field name `username` → `userName`；status enum `"enabled"` → `"1"`（systemManage transform 約定）；userRoles type `[<i64 display_id>]` → `["ROLE_..."]`（Vec<String> role code）。
 - **FR-006**：`specs/045-facade-atomicity-pass/contracts/verification-commands.md` C-V10 updateUser MUST 改：HTTP verb `PUT` → `POST`；URL `/systemManage/updateUser/{display_id}` → `/systemManage/updateUser`（無 path param、display_id 在 body `id`）。
 - **FR-007**：`rust-api/server/service/src/admin/sys_authorization_service.rs` lines 140/154/168 MUST 移除 3 處 `println!("…: {:?}", var)` 並改為 `tracing::debug!(?var, "assign_permission: <name>")` structured field 形式。
-- **FR-008**：System MUST 新增 `rust-api/server/model/tests/common/audit_pipeline.rs` 模組、提供 `pub async fn wait_for_audit_row(db: &DatabaseConnection, predicate_sql: &str, timeout_ms: u64) -> Result<i64, String>` —— 輪詢 `SELECT COUNT(*) FROM sys_operation_log WHERE <predicate_sql>` 直到回非零 count 或 timeout；輪詢 interval 50ms；timeout 撞牆回 `Err(format!("timeout {timeout_ms}ms waiting for {predicate_sql}"))`。
+- **FR-008**：System MUST 新增 `rust-api/server/model/tests/common/audit_pipeline.rs` 模組、提供 closure-based 輪詢 helper（per [plan data-model §E1.1](./data-model.md) + [research R-2](./research.md) refinement）：`pub async fn wait_for_audit_row<F, Fut>(find_fn: F, timeout_ms: u64) -> Result<sys_operation_log::Model, String>`（輪詢 closure 直到回 `Ok(Some(model))` 或 timeout）+ 變體 `pub async fn wait_for_audit_count<F, Fut>(count_fn: F, min_count: u64, timeout_ms: u64) -> Result<u64, String>`（HTTP middleware 多 row 場景）；輪詢 interval 50ms；timeout 撞牆回 `Err(format!("timeout {timeout_ms}ms waiting for ..."))`。Signature 採 closure-based 而非 raw SQL string 因實際 ignored test 用 Sea-ORM `Entity::find().one()` pattern、closure 更貼 type-safe 體例（per research R-2.2 拍板）。
 - **FR-009**：`rust-api/server/model/tests/common/mod.rs` MUST 加 `pub mod audit_pipeline;` 暴 helper 給其他 test file。
 - **FR-010**：4 個 test file（`audit_basics.rs` / `audit_http_middleware.rs` / `audit_transaction_rollback.rs` / `soft_delete_audit_integration.rs`）內共 12 個 `#[ignore = "requires real postgres + migration up"]` test 標註 MUST 改為 `#[ignore = "requires dev stack drainer running (audit outbox → sys_operation_log async pipeline)"]`，且 test body 內既有「`SELECT COUNT(*) FROM sys_operation_log WHERE ...`+ assert」pattern MUST 改用 helper `wait_for_audit_row(db, predicate_sql, 500).await.unwrap()` 並 assert helper 回的 count。
 - **FR-011**：`docker-compose.yml` line 4 區段 MUST 改寫 `# 8 service stack:...` 為描述「12 service stack（dev）」並補上 044 加入的 7 obs service 名稱（promtail / Loki / prometheus / grafana / postgres_exporter / redis_exporter / nginx-exporter）。
 - **FR-012**：本 feature MUST 0 base-web 改動（與 W-WEBUI 軌道無關、不觸發 Constitution Principle IV 受管例外）。
 - **FR-013**：本 feature MUST 0 schema migration、0 新 application entity、0 新 workspace cargo dep、0 新 redis channel、0 新 metric pre-declare（純 cleanup pass）。
 - **FR-014**：本 feature 完成後 `docs/INTEGRATION-CHECKLIST.md` MUST 從衍生 follow-up table 移除 045-N2 + 044-N1 + 042-N1 三 row、已完成里程碑加 046 entry、Current Focus「下一步」改向後續 backlog（047 sandbox-protect-route-fix 為首要 + base-web sprint）。
-- **FR-015**：implementer-stage expansion 拾取上限 MUST ≤ 3 處；若拾取超限 → 拒絕並登記 047+ follow-up（per 041/043 體例）。
+- **FR-015**：implementer-stage expansion 拾取上限 MUST ≤ 3 處；若拾取超限 → 拒絕並登記 047+ follow-up（per 041/043 體例）。**Note**：此為 policy constraint（由 executing-plans subagent dispatcher / controller enforce）、不對應 buildable task；plan / tasks 階段不主動列任何 expansion 候選為 task，僅 implementer subagent grep 階段觸發 + user 確認後手動 enforce 上限。
 
 ### Key Entities
 
