@@ -12,7 +12,12 @@
 
 **Active feature**：—（045 facade-atomicity-pass 已完成、見已完成里程碑）
 
-**下一步**：base-web TS `id` 型別債 cleanup sprint 或其他 follow-up backlog（042-N1 ignored test 補 / 044-N1 println! cleanup / 045-N1 sandbox protect_route 根因 / 045-N2 spec docs erratum / W-F15/16 backup-job 真實 instrument）。
+**下一步**（user 2026-05-25 拍板的 follow-up bundle 順序）：
+1. **046 spec-hygiene-pass-3**：045-N2 + 044-N1 + (042-N1 可選) + 2 footnote trivial（spec md + rust-api 小修、體例對齊 041/043）
+2. **047 sandbox-protect-route-fix**：045-N1 + 補無效 key → 401 真實 test（security adjacency、scope 清晰）
+3. **base-web TS `id` 型別債 cleanup sprint**：base-web 軌道內獨立 feature
+4. 條件觸發：042-N1（若 046 未收）/ 042-N5 / 042-N4 各自獨立
+5. 長期：F1.2 / W-F6b / W-F15/16 各自獨立
 
 ---
 
