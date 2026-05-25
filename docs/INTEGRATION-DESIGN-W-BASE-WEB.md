@@ -421,8 +421,15 @@ TS-DepGraph-Hygiene 為 Constitution Principle IV「base 不改動邊界」**v1.
 
 - **日期**：2026-05-25 落地
 - **commit**：outer `<TBD post-merge>` + merge `<TBD>` + base-web `<TBD>` + rust-api `<TBD>`
-- **scope**（軌道內限）：
-  - 049-R1 base-web/Dockerfile line 35-42 stale comment block 改為「pnpm 11+ 預設 strict isolation 紀律 (per 049 FR-004/005)」描述（撤回 047.5 retro 期間 outdated hoisted reference + .npmrc shamefully-hoist=true 註解）
+- **scope**：050 為 post-merge code review 衍生 comprehensive hygiene-pass、bundled 6 issues（5 Important + 1 Polish）：
+  - **軌道內（TS-DepGraph-Hygiene §4 範圍）**：
+    - 049-R1 base-web/Dockerfile line 35-42 stale comment block 改為「pnpm 11+ 預設 strict isolation 紀律 (per 049 FR-004/005)」描述（撤回 047.5 retro 期間 outdated hoisted reference + .npmrc shamefully-hoist=true 註解）
+  - **軌道外（per 050 FR-001 sprint 全景列舉、由 spec.md 主管、非本軌道成員）**：
+    - 036-R1 sys_menu partial update selective merge（`Option<Option<T>>` double-option DTO + service handler）
+    - 037-R1 Casbin grouping rule (`ptype='g'`) defensive UPDATE + audit `g_rules_updated_count` + GeneralUser deny C-V
+    - 044-R1 install prometheus pushgateway service (`prom/pushgateway:v1.10.0`) + cleanup binary recorder + scrape job
+    - 044-R2 instrument middleware 改用 axum `MatchedPath` template route label（取代 raw URI path、cardinality 控制）
+    - 046-R1 046 spec FR-015 wording generalized amend（base ≤3 + user 拍板可加大、commit msg 紀錄）
 - **觸發**：050 sprint 為 post-merge code review 衍生 follow-up 結案載體（5 Important + 1 Polish bundled mixed sprint）；軌道內 049-R1 為其 Polish 條目
 - **acceptance**：C-V1~C-V10 全 PASS（含軌道紀律 boundary verify、grep base-web/Dockerfile 確認 stale ref 清乾淨）
 - **spec**：[`specs/050-spec-hygiene-pass-4/`](../specs/050-spec-hygiene-pass-4/)
