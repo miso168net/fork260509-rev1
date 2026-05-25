@@ -26,8 +26,9 @@
 
 | ID | 發現來源 | 項目 | 規劃去向 |
 |---|---|---|---|
-| 042-N4 | 042 C-V12 Part B | SC-005 stretch p50 ≤ 100ms 未達（p50=175ms with `drainer_sleep_interval_ms=50`、p95=188ms）；spec C-V12 預測 100-200ms 落點正常、p95 ≤ 500ms PASS | 可選優化：（a）middleware → drainer channel notify 替代 polling、（b）publish_audit_event inline in drainer per-row txn、（c）lower fetch txn overhead；defer 至 044 落地後觀測需求驅動再決定 |
+| 042-N4 | 042 C-V12 Part B | SC-005 stretch p50 ≤ 100ms 未達（p50=175ms with `drainer_sleep_interval_ms=50`、p95=188ms）；spec C-V12 預測 100-200ms 落點正常、p95 ≤ 500ms PASS | 可選優化：（a）middleware → drainer channel notify 替代 polling、（b）publish_audit_event inline in drainer per-row txn、（c）lower fetch txn overhead；觀測需求驅動觸發後再決定（044/045/046 落地後仍未撞為 bottleneck、留條件觸發）|
 | 042-N5 | 042 C-V7 multi-replica | `docker compose -f docker-compose.dev.yml up --scale rust-api=2` 因 dev compose 將 host port 11081 bind 到單一 rust-api instance、scale 第二 instance 起來時 fail；無法在 dev stack 走真實多 replica，042 以單實例 50 並發代理驗 SKIP LOCKED + per-row idempotency 邏輯 | 改 dev compose 把 host port bind 改 profile/scaled-aware、或 W-F11 prod env load balancer 才能跑真多 replica；非 042 issue、屬 dev stack 配置缺口 |
+| 048-N1 (d) | 048 / 049 follow-up | (a)+(b)+(c) 已於 049 結案：strict isolation + explicit devDeps + packageManager pin；剩 (d) 「下次 pnpm 升級重新檢視」；詳細歷史脈絡見下方 footnote | 下次 pnpm 升級（pnpm 12 或 newer corepack 強制 sha hash 等）觸發後 spec hygiene 軌道內 review |
 > **base-web TS `id` 型別債（已分階段完成）**：原 030–034 W-WEBUI 軌道遺留（`src/typings` 與 rust wire 真實型不一致）已分三階段結案：
 > - **039 rust-entity-id-numeric-migration**（2026-05-24）：rust 端 5 業務 entity 加 `display_id BIGINT` 副欄 + Snowflake 53-bit generator + wire 邊界 transform，post-039 wire `id` 為 i64 number 而非 ULID string；`CommonRecord.id: number` 與 `Menu.parentId: number` 因此**自然對齊**（不需 TS 改）。
 > - **040 wire-id-consistency**（2026-05-24）：base-web W-WEBUI 軌道修 service inline type + button-auth-modal / menu-auth-modal 內部 cascade；拆掉 032 留下的 `deserialize_i32_or_string` workaround；W-FW9 條目。
