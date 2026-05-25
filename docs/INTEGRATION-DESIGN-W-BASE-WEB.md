@@ -420,7 +420,7 @@ TS-DepGraph-Hygiene 為 Constitution Principle IV「base 不改動邊界」**v1.
 #### §4.4.3 050 spec-hygiene-pass-4（post-merge review-derived hygiene、TS-DepGraph-Hygiene 軌道 dynamic 行使首例）
 
 - **日期**：2026-05-25 落地
-- **commit**：outer `<TBD post-merge>` + merge `<TBD>` + base-web `<TBD>` + rust-api `<TBD>`
+- **commit**：outer `3243fe6` + merge `dd872ce` + base-web `64af823b` + rust-api `1a7ef2a`
 - **scope**：050 為 post-merge code review 衍生 comprehensive hygiene-pass、bundled 6 issues（5 Important + 1 Polish）：
   - **軌道內（TS-DepGraph-Hygiene §4 範圍）**：
     - 049-R1 base-web/Dockerfile line 35-42 stale comment block 改為「pnpm 11+ 預設 strict isolation 紀律 (per 049 FR-004/005)」描述（撤回 047.5 retro 期間 outdated hoisted reference + .npmrc shamefully-hoist=true 註解）
