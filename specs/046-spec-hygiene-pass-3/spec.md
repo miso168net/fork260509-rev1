@@ -120,7 +120,9 @@ W-F12 落地後 rust-api stdout 由 tracing fmt::json formatter 接管、所有�
 - **FR-012**：本 feature MUST 0 base-web 改動（與 W-WEBUI 軌道無關、不觸發 Constitution Principle IV 受管例外）。
 - **FR-013**：本 feature MUST 0 schema migration、0 新 application entity、0 新 workspace cargo dep、0 新 redis channel、0 新 metric pre-declare（純 cleanup pass）。
 - **FR-014**：本 feature 完成後 `docs/INTEGRATION-CHECKLIST.md` MUST 從衍生 follow-up table 移除 045-N2 + 044-N1 + 042-N1 三 row、已完成里程碑加 046 entry、Current Focus「下一步」改向後續 backlog（047 sandbox-protect-route-fix 為首要 + base-web sprint）。
-- **FR-015**：implementer-stage expansion 拾取上限 MUST ≤ 3 處；若拾取超限 → 拒絕並登記 047+ follow-up（per 041/043 體例）。**Note**：此為 policy constraint（由 executing-plans subagent dispatcher / controller enforce）、不對應 buildable task；plan / tasks 階段不主動列任何 expansion 候選為 task，僅 implementer subagent grep 階段觸發 + user 確認後手動 enforce 上限。
+- **FR-015**：implementer-stage expansion 拾取上限 base **≤ 3 處**；user 拍板可加大、需於 commit message body 明示拍板原委 + budget enlargement 計數；候選由 Phase 0 research grep 後拍板；超限（無 user 拍板）拒絕並登記 047+ follow-up（per 041/043 體例）。**Note**：此為 policy constraint（由 executing-plans subagent dispatcher / controller enforce）、不對應 buildable task；plan / tasks 階段不主動列任何 expansion 候選為 task，僅 implementer subagent grep 階段觸發 + user 確認後手動 enforce 上限。
+
+> **2026-05-25 retro footnote（050 sprint 補 retro）**：046 sprint US4 implementer-stage expansion 實際 18 sites（17 display_id ActiveModel/Model field + 1 home_route_name）+ dev-dep `tokio "time"` feature flag 為 pre-existing E0063 build-gate fix、user 拍板加大、屬本 generalized wording 首次行使。
 
 ### Key Entities
 

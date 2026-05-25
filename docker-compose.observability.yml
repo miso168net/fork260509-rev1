@@ -107,6 +107,24 @@ services:
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
+  # pushgateway — 短任務 metrics 中介(050 FR-006:cleanup binary 等 ephemeral job push 點)
+  # ---------------------------------------------------------------------------
+  pushgateway:
+    image: prom/pushgateway:v1.10.0
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:9091/-/healthy || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - internal
+      - observability
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
   # grafana — 視覺化 + dashboards + alerting(044 W-F14 T049:provisioning + secret + healthcheck)
   # ---------------------------------------------------------------------------
   grafana:
