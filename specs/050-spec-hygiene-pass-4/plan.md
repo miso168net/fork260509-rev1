@@ -26,6 +26,8 @@ post-merge code review (specs 030~049 跑 superpowers:requesting-code-review) �
 - **commit shape**：base-web worktree 1 commit (049-R1 Dockerfile) + rust-api worktree 1 commit (036/037/044-R1/044-R2 bundled) + outer 5-6 commit (Phase 0 governance / Phase 2 infra / 2 SHA pin / INTEGRATION-CHECKLIST + SPECKIT / SHA backfill)
 - **expansion budget**：follow 新 wording（per Phase 0 完成 046-R1 amend 後）—base ≤3 + user 拍板可加大（commit msg 明示）
 
+> **Phase 命名對照**：plan.md 內「Phase 0 governance / Phase 1 rust-api / Phase 2 infra / Phase 3 polish」(brainstorm 4-phase 模式) 對應 tasks.md「Phase 1 Setup / Phase 2 Foundational skip / Phase 3 US1 / Phase 4 US2 / Phase 5 Polish」(spec-kit 5-phase 模式)；語意一致、僅 prefix 不同。
+
 ## Technical Context
 
 **Language/Version**：Rust 1.7x（rust-api 既有 toolchain）；TypeScript 5.x（base-web 不動 src/）；YAML / TOML（infra config）
