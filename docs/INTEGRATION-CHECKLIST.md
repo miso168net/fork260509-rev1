@@ -12,8 +12,8 @@
 
 **Active feature**：—（048 base-typings-sync 已完成、見已完成里程碑）
 
-**下一步**（user 2026-05-25 拍板的 follow-up bundle 順序、048 後接條件觸發第 2 段）：
-1. 條件觸發：042-N4 / 042-N5 各自獨立（trigger driven）
+**下一步**（user 2026-05-25 拍板的 5 階段 follow-up bundle 順序、046/047/048 三階段已完成、現處第 4 階段條件觸發）：
+1. 條件觸發：042-N4 / 042-N5 / 048-N1（半 resolved、留 4 項 long-term review）各自獨立（trigger driven）
 2. 長期：F1.2 / W-F6b / W-F15/16 各自獨立
 
 ---
