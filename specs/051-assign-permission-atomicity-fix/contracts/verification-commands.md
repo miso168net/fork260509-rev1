@@ -160,6 +160,14 @@ echo "happy path regression after revert:"
 # 跑一次 C-V2 簡化版確認沒留 fault injection 殘渣
 ```
 
+**Fallback（若 step 7 revert 失敗 / step 8 happy path regression fail）**：
+
+- `cd rust-api && git checkout server/model/src/admin/audit_log.rs` 完整還原 fault injection（git tree 強制乾淨）
+- `cd .. && docker build -t rust-api:rev1-admin-rust-api ./rust-api 2>&1 | tail -3`
+- `$PCO up -d --force-recreate --no-deps rust-api` + 等 healthy
+- `cd rust-api && git diff -- server/model/src/admin/audit_log.rs` 確認 0 line（fault injection 永不 commit、永不 push）
+- 重跑 C-V2 happy path；若仍 fail → escalate（可能 audit_log internal 行為與 spec 假設不符、需 brainstorm + spike 再評估）；當前 sprint 不繼續 implement、回退 plan
+
 **Expected**：
 - response code != 0（5xx 或 audit 失敗訊息）
 - `casbin_rule` count AFTER == BEFORE（rollback 完整）

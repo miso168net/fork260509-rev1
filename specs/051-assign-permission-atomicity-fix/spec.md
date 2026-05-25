@@ -89,6 +89,7 @@
 - **SC-007**：boundary verify — grep `fn sync_role_permissions\b` 全 rust-api source 0 hit + grep `enforcer:` in `assign_permission` 4 params signature 0 hit（drop 確認）+ rust-api `migration/` 0 diff + 0 base-web 改動 + 0 Constitution amendment。
 - **SC-008**：INTEGRATION-CHECKLIST 更新 — `038-R1` row 從 active table 移為 footnote「038-R1 結案 via 051」+ `039-R1` 仍留 active + 051 milestone entry 加入已完成里程碑 + Current Focus 「現狀」+「下一步」反映 post-051 狀態 + CLAUDE.md SPECKIT marker idle。
 - **SC-009**：Constitution Check post-fix — 5/5 PASS（Principle I/II/III/IV/V 皆無 violation；Principle II「業務寫入 + audit 同 txn」承諾從 violation → fulfillment 收斂）；`Complexity Tracking` 空白；0 Constitution amendment。
+  > **驗證性質**：結構性 design-time gate、由 plan.md `Constitution Check` 段斷言；無 runtime task；對齊 050 / 049 / 046 spec-hygiene-pass 既有體例。
 
 ## Assumptions
 
