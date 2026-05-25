@@ -272,7 +272,7 @@ RUN corepack enable
 
 **下一步** update：
 ```markdown
-**下一步**（user 2026-05-25 拍板的 5 階段 follow-up bundle 順序、046/047/048/049 四階段已完成、現處第 4 階段條件觸發 - 048-N1 已結案 (a)+(b)+(c)）：
+**下一步**（user 2026-05-25 拍板的 follow-up bundle 順序、046/047/048/049 四 sprint 已完成、剩條件觸發 + 長期兩段、048-N1 已結案 (a)+(b)+(c)）：
 1. 條件觸發：042-N4 / 042-N5 / 048-N1 (d) 各自獨立（trigger driven、剩 048-N1 (d) 留 pnpm 升級觸發）
 2. 長期：F1.2 / W-F6b / W-F15/16 各自獨立
 ```
@@ -284,7 +284,7 @@ RUN corepack enable
 **Active Spec**: —
 **Active Plan**: —
 **Phase**: idle
-**下一步**: 條件觸發 follow-up backlog 順序第 1 階段（042-N4 / 042-N5 / 048-N1 (d) 各自獨立、wait for trigger）
+**下一步**: 條件觸發 follow-up backlog active items（042-N4 / 042-N5 / 048-N1 (d) 各自獨立、wait for trigger）
 <!-- SPECKIT END -->
 ```
 
