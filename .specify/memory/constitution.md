@@ -1,34 +1,40 @@
 <!--
 Sync Impact Report (2026-05-25)
 ================================================================
-Version change: 1.4.0 → 1.5.0 (MINOR — 新增 TS-Typing-Sync 軌道受管例外)
+Version change: 1.5.0 → 1.6.0 (MINOR — 新增 TS-DepGraph-Hygiene 軌道 +
+                                unified DESIGN doc 結構)
 Modified principles:
-  - IV. base 不改動邊界 — 新增第二條受管例外軌道:
-    (a) 既有「W-WEBUI 軌道」例外不變（仍不得動 typings/...）
-    (b) 新增「TS-Typing-Sync 軌道」例外:
-        - 軌道權威：docs/INTEGRATION-DESIGN-W-TYPING-ALIGN.md
-        - 可動範圍：src/typings/api/*.d.ts (only)
-        - 動機限定：對齊 rust wire 真實序列化型 (TS lying-to-itself 修正)
-        - 仍不得動：typings/app.d.ts / typings/router.d.ts /
-          typings/components.d.ts / typings/elegant-router.d.ts / 其他 typings
-        - 仍不得動：W-WEBUI 軌道範圍 (src/views / components / service / store / router)
-        - 兩段式 commit 紀律同 W-WEBUI
-    其餘 principle（I / II / III / V）皆**不變**
+  - IV. base 不改動邊界:
+    (a) 軌道權威從各軌道獨立 DESIGN doc 合併為單一 DESIGN-W-BASE-WEB.md
+        (W-WEBUI / TS-Typing-Sync / TS-DepGraph-Hygiene 三軌道各 § 章節)
+    (b) 新增第 3 條受管例外軌道「TS-DepGraph-Hygiene」:
+        - 軌道權威: docs/INTEGRATION-DESIGN-W-BASE-WEB.md §4
+        - 可動範圍: base-web build/dep config (Dockerfile / package.json /
+          pnpm-workspace.yaml / .npmrc / packages/*/package.json;
+          **不**含 src/)
+        - 動機限定: pnpm / node / Vite / TS 工具鏈 hygiene (依賴宣告齊全、
+          版本 pin 一致、phantom dep elimination)
+        - 仍不得動: src/ 任何檔 (W-WEBUI / TS-Typing-Sync 範圍亦排除)
+        - 兩段式 commit 紀律同 W-WEBUI / TS-Typing-Sync
+    (c) 048 sprint d521c819 + b4453385 retrospective 認定為
+        TS-DepGraph-Hygiene 軌道之 047.5 retro-member
 Added sections: None
 Removed sections: None
 Templates requiring updates:
-  - ✅ .specify/templates/plan-template.md — Constitution Check 段加軌道辨識條目
-  - ✅ docs/INTEGRATION-DESIGN-W-TYPING-ALIGN.md — 新文件 (本 amendment 同步建)
-  - ✅ docs/INTEGRATION-CHECKLIST.md — Current Focus 加 TS-Typing-Sync 軌道條目
-  - ✅ CLAUDE.md — §1 / §7 索引補 DESIGN-W-TYPING-ALIGN
+  - ✅ .specify/templates/plan-template.md 軌道辨識條目 2 → 3 軌道
+  - ✅ docs/INTEGRATION-DESIGN-W-BASE-WEB.md 新 unified doc (rename + merge)
+  - ✅ docs/INTEGRATION-DESIGN-W-WEBUI.md → git mv rename to BASE-WEB.md
+  - ✅ docs/INTEGRATION-DESIGN-W-TYPING-ALIGN.md → git rm (內容 merged 進 §3)
+  - ✅ docs/INTEGRATION-CHECKLIST.md 048 milestone entry / 048-N1 / 049 entry
+  - ✅ CLAUDE.md §1 / §7 索引 update
 Follow-up TODOs: None
 Prior reports:
-  - (2026-05-23) 1.3.0 → 1.4.0: 受管例外授權模型從「具名列舉」改為「DESIGN 文件 = 軌道權威」
-    (W-WEBUI 軌道整體為受管例外、軌道範圍以 INTEGRATION-DESIGN-W-WEBUI.md
-    為單一真相、新 W-FW 子項只需在該 DESIGN 文件登記、不再需要 amend constitution)
+  - (2026-05-25) 1.4.0 → 1.5.0: 新增 TS-Typing-Sync 軌道受管例外
+    (W-WEBUI 軌道之外的第二受控軌道、限 src/typings/api/*.d.ts)
+  - (2026-05-23) 1.3.0 → 1.4.0: 受管例外授權模型從「具名列舉」改為
+    「DESIGN 文件 = 軌道權威」
   - (2026-05-23) 1.2.0 → 1.3.0: 受管例外列舉延伸（W-FW1–W-FW7 → W-FW1–W-FW8）
   - (2026-05-22) 1.1.0 → 1.2.0: 受管例外條款範圍擴充
-    (W-FW1–W-FW4 → W-FW1–W-FW7、准動範圍擴「最小 UI 新增」)
   - (2026-05-21) 1.0.0 → 1.1.0: 新增受管例外條款
   - (2026-05-14) (initial template) → 1.0.0 initial ratification
 ================================================================
@@ -87,18 +93,18 @@ base-web source code 為「對齊目標」；後端與 nginx 須適應 base 既�
 - response shape 對齊：rust HTTP **永遠**回 200 + body `code` 為 business code（路線 II）；camelCase 透過 rust struct 加 `#[serde(rename_all = "camelCase")]`
 - success code 對齊由 base `.env` 微調（`VITE_SERVICE_SUCCESS_CODE=0`）+ rust handler 統一改 error code path
 
-**受管例外 — W-WEBUI 軌道**：唯一得修改 base-web source 的例外為 **W-WEBUI 軌道**（[`docs/INTEGRATION-DESIGN-W-WEBUI.md`](../../docs/INTEGRATION-DESIGN-W-WEBUI.md)）：
+**受管例外 — W-WEBUI 軌道**：唯一得修改 base-web source 的例外為 **W-WEBUI 軌道**（[`docs/INTEGRATION-DESIGN-W-BASE-WEB.md §2`](../../docs/INTEGRATION-DESIGN-W-BASE-WEB.md)）：
 
-- W-WEBUI 軌道**整體**為受管例外；**軌道範圍以 [`INTEGRATION-DESIGN-W-WEBUI.md`](../../docs/INTEGRATION-DESIGN-W-WEBUI.md) 整份文件為單一真相**——含 §5 主軌（目前 W-FW1–W-FW4）、§7 follow-up 切分（目前 W-FW5–W-FW7，含 W-FW6 brainstorm Q1 拆分新增的 W-FW8），以及未來在該文件 §5 / §7 / 後續 amendment 內登記的新 W-FW 子項。落入軌道的 feature **得修改 base-web source**，範圍受 `INTEGRATION-DESIGN-W-WEBUI.md §4`（含其後續 amendment）嚴格限定；§4 為 base-web 准動範圍的唯一細節權威
-- 新 W-FW 子項 MUST 先在 `INTEGRATION-DESIGN-W-WEBUI.md` 內登記（§5 主軌 / §7 follow-up / 或新增子節）；登記本身**不**觸發本憲法 amendment（避免「每加新 W-FW 都需 bump constitution」的歷史擴張）
-- 准動範圍以接線為主 —— 把既有 stub 表單的 `handleSubmit` / list 頁 delete handler 接到 service API、補 `src/service/api/*.ts` 寫入 function；並得在 §4 明文授權下，為接通既有後端能力做**必需的最小 UI 新增**（如表單欄位、既有占位頁補面板）
+- W-WEBUI 軌道**整體**為受管例外；**軌道範圍以 [`INTEGRATION-DESIGN-W-BASE-WEB.md §2`](../../docs/INTEGRATION-DESIGN-W-BASE-WEB.md) 為單一真相**——含 §2.4 W-FW 子項（目前 W-FW1–W-FW9、含 W-FW6 brainstorm Q1 拆分新增的 W-FW8），以及未來在該文件 §2 內登記的新 W-FW 子項。落入軌道的 feature **得修改 base-web source**，範圍受 `INTEGRATION-DESIGN-W-BASE-WEB.md §2.3`（含其後續 amendment）嚴格限定；§2.3 為 base-web 准動範圍的唯一細節權威
+- 新 W-FW 子項 MUST 先在 `INTEGRATION-DESIGN-W-BASE-WEB.md §2` 內登記（§2.4 主軌 / §2.4 follow-up / 或新增子節）；登記本身**不**觸發本憲法 amendment（避免「每加新 W-FW 都需 bump constitution」的歷史擴張）
+- 准動範圍以接線為主 —— 把既有 stub 表單的 `handleSubmit` / list 頁 delete handler 接到 service API、補 `src/service/api/*.ts` 寫入 function；並得在 §2.3 明文授權下，為接通既有後端能力做**必需的最小 UI 新增**（如表單欄位、既有占位頁補面板）
 - W-WEBUI 軌道**仍不得**改動 base-web 的型別定義（`src/typings/`）、表格 column render 邏輯、`src/router/` / `src/store/`、i18n key、版面重構 / 設計風格
 - 此例外**僅適用 W-WEBUI 軌道**；軌道外所有 feature 的 Constitution Check 對 base-web source 改動仍 MUST 為 0 diff
 - W-WEBUI 軌道對 base-web 的修改一律走兩段式 commit（base-web worktree → push fork → outer 更新 SHA pin）
 
-**受管例外 — TS-Typing-Sync 軌道**（v1.5.0 起）：第二條得修改 base-web source 的例外為 **TS-Typing-Sync 軌道**（[`docs/INTEGRATION-DESIGN-W-TYPING-ALIGN.md`](../../docs/INTEGRATION-DESIGN-W-TYPING-ALIGN.md)）：
+**受管例外 — TS-Typing-Sync 軌道**（v1.5.0 起）：第二條得修改 base-web source 的例外為 **TS-Typing-Sync 軌道**（[`docs/INTEGRATION-DESIGN-W-BASE-WEB.md §3`](../../docs/INTEGRATION-DESIGN-W-BASE-WEB.md)）：
 
-- TS-Typing-Sync 軌道**整體**為受管例外；軌道權威為 [`INTEGRATION-DESIGN-W-TYPING-ALIGN.md`](../../docs/INTEGRATION-DESIGN-W-TYPING-ALIGN.md)
+- TS-Typing-Sync 軌道**整體**為受管例外；軌道權威為 [`INTEGRATION-DESIGN-W-BASE-WEB.md §3`](../../docs/INTEGRATION-DESIGN-W-BASE-WEB.md)
 - 可動範圍**嚴格限定**於 `base-web/src/typings/api/*.d.ts`（即 `route.d.ts` / `system-manage.d.ts` / `common.d.ts` / `auth.d.ts` 等 4 檔，未來新增 typings/api/ 檔同此規則）
 - 軌道目的：對齊 base-web TS 宣告與 rust-api wire 真實序列化型（TS lying-to-itself 修正、編譯期型別安全恢復）
 - 動機限定：每個 feature 必須舉證「TS 宣告 vs rust wire 不一致」（grep rust 對應 output struct 為證、spec.md FR 內明示對齊規格）；純命名統一 / refactor 無 mismatch 證據者 reject
@@ -107,9 +113,18 @@ base-web source code 為「對齊目標」；後端與 nginx 須適應 base 既�
 - TS-Typing-Sync 軌道對 base-web 的修改一律走兩段式 commit（base-web worktree → push fork → outer 更新 SHA pin），同 W-WEBUI 紀律
 - 此例外**僅適用 TS-Typing-Sync 軌道**；軌道外所有 feature 的 Constitution Check 對 base-web source 改動仍 MUST 為 0 diff
 
-**Rationale**：post-039 entity id migration（display_id i64 from Snowflake 53-bit）+ post-040 wire DTO 變更後、base-web 與 rust wire 真實型出現 type lie（如 `MenuRoute.id: string` vs rust 序列化 number）；W-WEBUI 軌道 FR-015 禁碰 `src/typings/` 無法修。設立 TS-Typing-Sync 為**第二受控軌道**、補回編譯期型別安全；非常駐軌道、觸發訊號驅動（rust wire shape 重大變動後）、預期 1-3 feature/year。
+**受管例外 — TS-DepGraph-Hygiene 軌道**（v1.6.0 起）：第三條得修改 base-web source 的例外為 **TS-DepGraph-Hygiene 軌道**（[`docs/INTEGRATION-DESIGN-W-BASE-WEB.md §4`](../../docs/INTEGRATION-DESIGN-W-BASE-WEB.md)）：
 
-**Rationale**: base example 是上游持續演化的 starter；rev1 為使用者，不為改寫者 — 此立場在「後端適應 API GAP」範疇內成立，使未來 base 升級（pull upstream rebase）阻力最小。但 base example 的管理後台操作表單本質為未接線的 UI stub，僅靠後端適應無法讓其運作；F14 cutover 後 rev1 成為自有產品，base-web 即 rev1 自有前端，補接線為必要的產品工作而非「改寫上游」。W-WEBUI 為此設**受控例外**：例外範圍明文受限（接線為主，並僅在 §4 明文授權下做必需的最小 UI 新增，不碰型別 / column render / router / store / 版面重構），使「預設不動 base」對其餘所有 feature 維持完整效力，同時不讓管理後台永久停在 demo 殼。
+- TS-DepGraph-Hygiene 軌道**整體**為受管例外；軌道權威為 [`INTEGRATION-DESIGN-W-BASE-WEB.md §4`](../../docs/INTEGRATION-DESIGN-W-BASE-WEB.md)
+- 可動範圍**嚴格限定**於 base-web build/dep config（即 `Dockerfile` / `package.json` / `pnpm-workspace.yaml` / `.npmrc` / `packages/*/package.json` 及子 package 對應 config）
+- 軌道目的：base-web 工具鏈 hygiene — pnpm/node/Vite/TS 依賴宣告齊全、版本 pin 一致、phantom dep elimination
+- 動機限定：每個 feature 必須舉證 build/dep config 紀律違反（如 phantom transitive use、雙 source-of-truth 版本 pin、pnpm major upgrade adjacency）；純 dep refactor 無紀律證據者 reject
+- **仍不得動**：`src/` 任何檔（views / components / typings / store / router / locales / service / 等）
+- **仍不得動**：W-WEBUI 軌道範圍 + TS-Typing-Sync 軌道範圍
+- TS-DepGraph-Hygiene 軌道對 base-web 的修改一律走兩段式 commit（base-web worktree → push fork → outer 更新 SHA pin）、同 W-WEBUI / TS-Typing-Sync 紀律
+- 此例外**僅適用 TS-DepGraph-Hygiene 軌道**；軌道外所有 feature 的 Constitution Check 對 base-web 改動仍 MUST 為 0 diff
+
+**Rationale**（unified 三軌道）：base example 是上游持續演化的 starter；rev1 為使用者、不為改寫者 — 此立場在「後端適應 API GAP」範疇內成立、使未來 base 升級阻力最小。但 base example 管理後台操作表單本質為未接線的 UI stub、僅靠後端適應無法讓其運作；F14 cutover 後 rev1 成為自有產品、base-web 即 rev1 自有前端、補接線為必要的產品工作（W-WEBUI 軌道、v1.1.0 起）。post-039+040 wire DTO 變更後 TS 與 rust wire 真實型出現 type lie；W-WEBUI FR-015 禁碰 typings 無法修、設立 TS-Typing-Sync 為第二受控軌道（v1.5.0 起）。pnpm 11+ best practice 推 strict isolation + packageManager pin、host + container 工具鏈紀律需求出現；設立 TS-DepGraph-Hygiene 為第三受控軌道（v1.6.0 起）。三軌道**互斥不重疊**、軌道權威統一為 `INTEGRATION-DESIGN-W-BASE-WEB.md`、各軌道 §2/§3/§4 章節範圍嚴格限定；軌道外 feature Constitution Check 對 base-web 改動仍維持 0 diff 預設效力。
 
 ### V. 漸進收縮（DESIGN-A 過渡 → DESIGN-B 終局）
 
@@ -149,7 +164,7 @@ DESIGN-A（rust + nestjs）為過渡形態；DESIGN-B（rust-only）為終局目
 - **Commit message**：[Conventional Commits](https://www.conventionalcommits.org/) 格式，**subject 用中文**；body 必要時補 why；footer 含 `Co-Authored-By` 標示協作來源
 - **Push 確認紀律**：push 到 remote 之前 MUST 取得 user 明確授權（沿用全域 `~/.claude/CLAUDE.md §5`）；branch protection 例外見全域守則
 - **TLS 紀律**：dev 環境可用自簽 cert；prod / staging **不容**跳過 TLS（HTTP only 在 prod 為違憲）
-- **DESIGN 文件權威**：rev1 整合相關設計決策以 [`docs/INTEGRATION-DESIGN-A-RUST-NESTJS.md`](../../docs/INTEGRATION-DESIGN-A-RUST-NESTJS.md) / [`-B-RUST-ONLY.md`](../../docs/INTEGRATION-DESIGN-B-RUST-ONLY.md) / [`-W-DEPLOYMENT.md`](../../docs/INTEGRATION-DESIGN-W-DEPLOYMENT.md) / [`-W-WEBUI.md`](../../docs/INTEGRATION-DESIGN-W-WEBUI.md) 為權威；spec-kit feature 階段 `spec.md` 引用對應 DESIGN 章節
+- **DESIGN 文件權威**：rev1 整合相關設計決策以 [`docs/INTEGRATION-DESIGN-A-RUST-NESTJS.md`](../../docs/INTEGRATION-DESIGN-A-RUST-NESTJS.md) / [`-B-RUST-ONLY.md`](../../docs/INTEGRATION-DESIGN-B-RUST-ONLY.md) / [`-W-DEPLOYMENT.md`](../../docs/INTEGRATION-DESIGN-W-DEPLOYMENT.md) / [`-W-BASE-WEB.md`](../../docs/INTEGRATION-DESIGN-W-BASE-WEB.md) 為權威；spec-kit feature 階段 `spec.md` 引用對應 DESIGN 章節
 - **抽離項升級紀律**：抽離項 stub 升級為實作時 MUST 同步：(a) 換真 handler 實作；(b) Casbin policy 擴 allow 對象；(c) audit log 與 soft delete 自動繼承 §1.5（無需特別配置）；(d) nginx / 前端 **零改動**
 
 ## Governance
@@ -167,8 +182,8 @@ DESIGN-A（rust + nestjs）為過渡形態；DESIGN-B（rust-only）為終局目
   - [`docs/INTEGRATION-DESIGN-A-RUST-NESTJS.md`](../../docs/INTEGRATION-DESIGN-A-RUST-NESTJS.md)：DESIGN-A 拍板
   - [`docs/INTEGRATION-DESIGN-B-RUST-ONLY.md`](../../docs/INTEGRATION-DESIGN-B-RUST-ONLY.md)：DESIGN-B 拍板（最終形態）
   - [`docs/INTEGRATION-DESIGN-W-DEPLOYMENT.md`](../../docs/INTEGRATION-DESIGN-W-DEPLOYMENT.md)：部署統合
-  - [`docs/INTEGRATION-DESIGN-W-WEBUI.md`](../../docs/INTEGRATION-DESIGN-W-WEBUI.md)：W-WEBUI 軌道拍板（base-web 管理後台接線、Principle IV 受管例外範圍）
+  - [`docs/INTEGRATION-DESIGN-W-BASE-WEB.md`](../../docs/INTEGRATION-DESIGN-W-BASE-WEB.md)：base-web 改動 3 條受管例外軌道（W-WEBUI / TS-Typing-Sync / TS-DepGraph-Hygiene）unified 拍板（Principle IV 受管例外範圍）
 - **衝突解決**：Constitution 與 DESIGN 文件衝突時，以本憲法為最終權威；DESIGN 文件如有不一致需同步修正
 - **Runtime guidance**：日常開發決策參考 `CLAUDE.md`（workspace）+ `~/.claude/CLAUDE.md`（全域）；當 runtime guidance 與本憲法衝突，以本憲法為準
 
-**Version**: 1.5.0 | **Ratified**: 2026-05-14 | **Last Amended**: 2026-05-25
+**Version**: 1.6.0 | **Ratified**: 2026-05-14 | **Last Amended**: 2026-05-25
