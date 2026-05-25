@@ -11,6 +11,13 @@
 - [`docs/INTEGRATION-DESIGN-W-BASE-WEB.md`](../../docs/INTEGRATION-DESIGN-W-BASE-WEB.md)（§4.4.3 將新增 050 entry、dynamic 文件權威首次行使）
 - [`docs/INTEGRATION-CHECKLIST.md`](../../docs/INTEGRATION-CHECKLIST.md)（8 R-row follow-up 來源）
 
+## Clarifications
+
+### Session 2026-05-25
+
+- Q: pushgateway image version pin policy？ → A: pin specific stable tag `prom/pushgateway:v1.10.0`（對齊 rev1 既有 service 版本 pin 體例 + `~/.claude/CLAUDE.md §6 Tool installation discipline`）
+- Q: 037-R1 audit_log payload `g_rules_updated_count` strictness（MUST vs MAY）？ → A: MUST include（per Constitution Principle II audit completeness、未來 g rule 觸發時可 forensic、cost 微）
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 — Maintainer 開 unified DESIGN doc 看到 050 sprint 取得 dynamic 授權、046 spec FR-015 已 amend 為 generalized expansion budget（Priority: P1）🎯 MVP
@@ -69,9 +76,9 @@
 - **FR-001**：`docs/INTEGRATION-DESIGN-W-BASE-WEB.md` §4 章節 MUST 新增 `### §4.4.3 050 spec-hygiene-pass-4` sub-section、含 scope 描述（comprehensive review-derived hygiene + 6 issues 列舉）+ commit SHA placeholder（`<TBD post-merge>`）+ trigger 描述（post-merge code review 衍生 follow-up 結案載體）+ acceptance ref（C-V1~C-V10 全 PASS）+ spec ref（`specs/050-spec-hygiene-pass-4/`）；對齊 §4.4.1 047.5 retro + §4.4.2 049 sprint 既有體例。
 - **FR-002**：`specs/046-spec-hygiene-pass-3/spec.md` FR-015 wording MUST amend 為「base ≤3 expansion budget；user 拍板可加大、需於 commit message body 明示拍板原委 + budget enlargement 計數」；046 spec entry footnote MUST 加 retro 紀錄此次 budget enlargement（17 display_id + 1 home_route_name + dev-dep `tokio "time"` feature 為 pre-existing E0063 build-gate fix、user 拍板）。
 - **FR-003**：`rust-api/server/service/src/admin/sys_menu_service.rs` MUST 改 `update_menu_for_systemmanage` handler 為 selective merge：incoming missing/null field 則 preserve `before_row` 值；DTO `SystemManageUpdateMenuInput` 改為支援「未送」與「explicit null」二態區分（`Option<Option<T>>` double-option pattern 或 update mask + per-field check）；對 `query` / `buttons` / `fixed_index_in_tab` 3 nullable field 同步施作。
-- **FR-004**：`rust-api/server/service/src/admin/sys_role_service.rs` MUST 在 `update_role` txn 內、既有 `UPDATE casbin_rule SET v0=$1 WHERE ptype='p' AND v0=$2` 後加 `UPDATE casbin_rule SET v1=$1 WHERE ptype='g' AND v1=$2`（idempotent on empty set）；audit_log payload MAY 加 `g_rules_updated_count`（optional）；補 GeneralUser deny C-V（Casbin 拒絕 GeneralUser POST `/systemManage/updateRole`）。
+- **FR-004**：`rust-api/server/service/src/admin/sys_role_service.rs` MUST 在 `update_role` txn 內、既有 `UPDATE casbin_rule SET v0=$1 WHERE ptype='p' AND v0=$2` 後加 `UPDATE casbin_rule SET v1=$1 WHERE ptype='g' AND v1=$2`（idempotent on empty set）；audit_log payload MUST 加 `g_rules_updated_count` 數值欄（per Clarifications Session 2026-05-25 Q2、Constitution Principle II audit completeness、未來 g rule 觸發時可 forensic）；補 GeneralUser deny C-V（Casbin 拒絕 GeneralUser POST `/systemManage/updateRole`）。
 - **FR-005**：`rust-api/server/cleanup/src/main.rs` MUST 加 prometheus pushgateway recorder install（`metrics-exporter-prometheus` crate）+ on-exit flush（每 cron run 末端 push 一次到 pushgateway service `pushgateway:9091`）；`rust-api/server/cleanup/Cargo.toml` MUST 加對應 dep（同 workspace cargo dep / 或 per-crate dep 視 spike 結果）。
-- **FR-006**：`docker-compose.observability.yml` MUST 新增 `pushgateway` service（image `prom/pushgateway:latest` 或近期 stable tag、port 9091:9091、healthcheck、network alias `pushgateway`）；`deploy/prometheus.yml` MUST 新增 scrape job `pushgateway`（target `pushgateway:9091`、interval 15s 對齊 prometheus 既有 scrape）；`deploy/grafana-provisioning/dashboards/*.json` 對應 `cleanup_job_rows_deleted_total` panel 的「no data」placeholder 註解 MAY 移除。
+- **FR-006**：`docker-compose.observability.yml` MUST 新增 `pushgateway` service（image `prom/pushgateway:v1.10.0`、port 9091:9091、healthcheck、network alias `pushgateway`；per Clarifications Session 2026-05-25 Q1 pin specific stable tag）；`deploy/prometheus.yml` MUST 新增 scrape job `pushgateway`（target `pushgateway:9091`、interval 15s 對齊 prometheus 既有 scrape）；`deploy/grafana-provisioning/dashboards/*.json` 對應 `cleanup_job_rows_deleted_total` panel 的「no data」placeholder 註解 MAY 移除。
 - **FR-007**：`rust-api/server/core/src/web/operation_log.rs`（或 instrument middleware 對應檔）MUST 改 `http_request_duration_seconds` histogram 的 `route` label 為 axum `MatchedPath` extractor 取得的 route template（如 `/role/{id}` `/menu/{id}`）而非 raw URI path（含 numeric ID）；若 MatchedPath 取不到（layer 順序問題）、降級 fallback 為 `"unmatched"` 避免 cardinality leak。
 - **FR-008**：`specs/044-observability-and-cleanup-pass/spec.md` FR-005 wording MAY polish（補明示 `route` label 為 axum template path、含 path params placeholder）；本 polish 為輕量 doc 對齊、屬軌道外 spec md edit。
 - **FR-009**：`base-web/Dockerfile` line 35-42 註解 block MUST 整段 replace 為新 wording（per brainstorm Q7 拍板）：
