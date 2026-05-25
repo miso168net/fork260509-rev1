@@ -68,7 +68,7 @@ TS-Typing-Sync 為 Constitution Principle IV「base 不改動邊界」**v1.5.0 �
 ### §4.1 048 base-typings-sync（首發 sprint）
 
 - **日期**：2026-05-25 落地
-- **commit**：outer `<TBD post-merge>` + merge `<TBD>` + base-web `<TBD>`
+- **commit**：outer `b903ead` + merge `f2e2177` + base-web `4e05d478`
 - **scope**：
   - **M1**: `Route.MenuRoute.id` 改 `string` → `number`（rust `i32` → JSON number）
   - **M2**: `Route.MenuRoute` 加 `pid: string`（rust `pid: String` 序列化但 TS 未宣告）
