@@ -417,6 +417,17 @@ TS-DepGraph-Hygiene 為 Constitution Principle IV「base 不改動邊界」**v1.
 - **acceptance**：C-V1~C-V10 全 PASS（含 CDP browser smoke 8 路徑）
 - **spec**：[`specs/049-base-web-dep-hygiene/`](../specs/049-base-web-dep-hygiene/)
 
+#### §4.4.3 050 spec-hygiene-pass-4（post-merge review-derived hygiene、TS-DepGraph-Hygiene 軌道 dynamic 行使首例）
+
+- **日期**：2026-05-25 落地
+- **commit**：outer `<TBD post-merge>` + merge `<TBD>` + base-web `<TBD>` + rust-api `<TBD>`
+- **scope**（軌道內限）：
+  - 049-R1 base-web/Dockerfile line 35-42 stale comment block 改為「pnpm 11+ 預設 strict isolation 紀律 (per 049 FR-004/005)」描述（撤回 047.5 retro 期間 outdated hoisted reference + .npmrc shamefully-hoist=true 註解）
+- **觸發**：050 sprint 為 post-merge code review 衍生 follow-up 結案載體（5 Important + 1 Polish bundled mixed sprint）；軌道內 049-R1 為其 Polish 條目
+- **acceptance**：C-V1~C-V10 全 PASS（含軌道紀律 boundary verify、grep base-web/Dockerfile 確認 stale ref 清乾淨）
+- **spec**：[`specs/050-spec-hygiene-pass-4/`](../specs/050-spec-hygiene-pass-4/)
+- **軌道授權說明**：本 sprint 為 TS-DepGraph-Hygiene 軌道 **dynamic 文件權威首次行使**（per Constitution v1.6.0 既有設計、無需 amendment）—— 加本 §4.4.3 entry 至 DESIGN 文件即取得授權；同 W-FW9 對 DESIGN-W-WEBUI.md §7 dynamic 體例
+
 ### §4.5 與其他軌道邊界
 
 詳見 §1.1 三軌道並列 table；TS-DepGraph-Hygiene 與 W-WEBUI / TS-Typing-Sync 範圍**互斥不重疊**（見 §3.5 三軌道對照 table）。

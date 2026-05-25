@@ -148,6 +148,9 @@ base-web 與 rust-api 間 wire data 對 status enum（user / role status）的�
 - **FR-005**：rust-api MUST 提供 `/metrics` endpoint（prometheus exposition format）、含 8 個業務 metric 全宣告（per DESIGN-W §8.3）、採 **pre-declare-and-defer-instrument** 模式（per plan [research.md R-2/R-11](./research.md)）：
   - **6 metric 立即 instrument**（active counter/gauge 隨 traffic 變動）：`http_request_duration_seconds`（tower-http auto histogram）、`audit_log_writes_total`（audit_log::write_in_txn）、`casbin_enforcement_total`（axum casbin middleware enforce wrapper、callsite implementer 階段 grep 確認）、`casbin_policy_cache_invalidate_total`（notify_casbin_changed）、`outbox_pending_events`（042 drainer fetch_pending）、`cleanup_job_rows_deleted_total`（cleanup binary）
   - **2 metric 宣告 0 series 待補**：`sys_tokens_active`（token store callsite 待 implementer 階段 grep 確認、可能 query `sys_tokens` table）、`backup_completed_total`（backup wrapper 在 W-F15/16 未排程 feature、044 留 dashboard panel placeholder）
+
+> **註**：`http_request_duration_seconds` 的 `route` label 為 axum template path（如 `/role/{id}`、含 path params placeholder）、非 raw URI path（per 050-R2 落地、044-R2 結案）。
+
 - **FR-006**：系統 MUST 提供 prometheus 服務、scrape rust-api 自身 `/metrics`、3 個 exporter（postgres / redis / nginx）以及 loki / promtail / prometheus 自身。
 - **FR-007**：系統 MUST 提供 postgres_exporter / redis_exporter / nginx-exporter 3 個 sidecar；front-nginx MUST 暴 internal-only `stub_status` 位置（不對 host 暴露）供 nginx-exporter scrape。
 - **FR-008**：系統 MUST 提供 grafana 服務、auto-provision Loki + Prometheus datasource、auto-provision 4-6 個 dashboard（per Clarifications Q2：1 master overview + 3-5 component drill-down）、auto-provision ≥6 個 alerting rule（per Clarifications Q1、走 grafana built-in unified alerting；不引入 Prometheus alertmanager）。
