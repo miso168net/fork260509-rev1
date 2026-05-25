@@ -33,6 +33,8 @@
 
 兩段式 commit 是日常工作流，詳見 §4 操作手冊。
 
+**base-web 改動軌道**：base-web/ source 改動受 Constitution Principle IV 約束、僅 W-WEBUI / TS-Typing-Sync 兩條受管例外軌道允許（軌道權威分別為 [`docs/INTEGRATION-DESIGN-W-WEBUI.md`](docs/INTEGRATION-DESIGN-W-WEBUI.md) 與 [`docs/INTEGRATION-DESIGN-W-TYPING-ALIGN.md`](docs/INTEGRATION-DESIGN-W-TYPING-ALIGN.md)、互斥不重疊）。軌道辨識義務由 spec-kit `plan-template.md` Constitution Check 段強制。
+
 ## 2. 目錄結構
 
 ```
@@ -333,7 +335,7 @@ git commit -m "bump base-web: rebase on upstream <短 SHA>"
 rev1 整合的研究與設計文件（authoritative，本檔不重複內容）：
 
 - **研究** — [`docs/INTEGRATION-RESEARCH.md`](docs/INTEGRATION-RESEARCH.md)
-- **設計** — DESIGN-A 過渡 rust+nestjs [`docs/INTEGRATION-DESIGN-A-RUST-NESTJS.md`](docs/INTEGRATION-DESIGN-A-RUST-NESTJS.md) ／ DESIGN-B 現行 rust-only [`docs/INTEGRATION-DESIGN-B-RUST-ONLY.md`](docs/INTEGRATION-DESIGN-B-RUST-ONLY.md) ／ DESIGN-W-DEPLOYMENT [`docs/INTEGRATION-DESIGN-W-DEPLOYMENT.md`](docs/INTEGRATION-DESIGN-W-DEPLOYMENT.md) ／ DESIGN-W-WEBUI [`docs/INTEGRATION-DESIGN-W-WEBUI.md`](docs/INTEGRATION-DESIGN-W-WEBUI.md)
+- **設計** — DESIGN-A 過渡 rust+nestjs [`docs/INTEGRATION-DESIGN-A-RUST-NESTJS.md`](docs/INTEGRATION-DESIGN-A-RUST-NESTJS.md) ／ DESIGN-B 現行 rust-only [`docs/INTEGRATION-DESIGN-B-RUST-ONLY.md`](docs/INTEGRATION-DESIGN-B-RUST-ONLY.md) ／ DESIGN-W-DEPLOYMENT [`docs/INTEGRATION-DESIGN-W-DEPLOYMENT.md`](docs/INTEGRATION-DESIGN-W-DEPLOYMENT.md) ／ DESIGN-W-WEBUI [`docs/INTEGRATION-DESIGN-W-WEBUI.md`](docs/INTEGRATION-DESIGN-W-WEBUI.md) ／ DESIGN-W-TYPING-ALIGN [`docs/INTEGRATION-DESIGN-W-TYPING-ALIGN.md`](docs/INTEGRATION-DESIGN-W-TYPING-ALIGN.md)
 - **原則** — [`.specify/memory/constitution.md`](.specify/memory/constitution.md)
 - **進度** — [`docs/INTEGRATION-CHECKLIST.md`](docs/INTEGRATION-CHECKLIST.md)（見 §6）
 - **brainstorm 決策** — `docs/superpowers/<NNN>-feature-<short-name>.md`（見 §3 step 0）

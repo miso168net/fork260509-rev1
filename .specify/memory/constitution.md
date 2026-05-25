@@ -1,36 +1,31 @@
 <!--
-Sync Impact Report (2026-05-23)
+Sync Impact Report (2026-05-25)
 ================================================================
-Version change: 1.3.0 → 1.4.0 (MINOR — 受管例外授權模型從「具名列舉」改為「DESIGN 文件 = 軌道權威」)
+Version change: 1.4.0 → 1.5.0 (MINOR — 新增 TS-Typing-Sync 軌道受管例外)
 Modified principles:
-  - IV. base 不改動邊界 — 受管例外條款授權模型轉換:
-    (a) 舊：列舉具名 feature W-FW1–W-FW8（每加新 W-FW 都需 bump constitution，
-        v1.1.0 / v1.2.0 / v1.3.0 三次 amendment 均為列舉延伸）
-    (b) 新：W-WEBUI 軌道**整體**為受管例外；軌道範圍以
-        `docs/INTEGRATION-DESIGN-W-WEBUI.md`（含其 §5 / §7 / 後續 amendment）
-        為單一真相；新 W-FW 子項只要在該 DESIGN 文件內登記即落入軌道、
-        不再需要 amend constitution
-    (c) 范圍邊界仍由 `INTEGRATION-DESIGN-W-WEBUI.md §4`（含其 amendment）
-        嚴格限定（v1.2.0 起的現況不變）
-    (d) 不准動清單（typings / column render / router / store / i18n / 版面）
-        與兩段式 commit 紀律**皆不變**
+  - IV. base 不改動邊界 — 新增第二條受管例外軌道:
+    (a) 既有「W-WEBUI 軌道」例外不變（仍不得動 typings/...）
+    (b) 新增「TS-Typing-Sync 軌道」例外:
+        - 軌道權威：docs/INTEGRATION-DESIGN-W-TYPING-ALIGN.md
+        - 可動範圍：src/typings/api/*.d.ts (only)
+        - 動機限定：對齊 rust wire 真實序列化型 (TS lying-to-itself 修正)
+        - 仍不得動：typings/app.d.ts / typings/router.d.ts /
+          typings/components.d.ts / typings/elegant-router.d.ts / 其他 typings
+        - 仍不得動：W-WEBUI 軌道範圍 (src/views / components / service / store / router)
+        - 兩段式 commit 紀律同 W-WEBUI
     其餘 principle（I / II / III / V）皆**不變**
 Added sections: None
 Removed sections: None
 Templates requiring updates:
-  - ✅ .specify/templates/plan-template.md — Constitution Check runtime
-    消費 principle、無需模板改動
-  - ✅ .specify/templates/spec-template.md — 無直接 constitution ref
-  - ✅ .specify/templates/tasks-template.md — 無直接 ref
-  - ✅ .specify/templates/checklist-template.md — generic、無 change
-  - ✅ docs/INTEGRATION-DESIGN-W-WEBUI.md — 自身內容不需改動；本 amendment
-    把它**升格為**軌道範圍權威（即「在此文件 §5 / §7 / 後續 amendment 登記
-    的 W-FW 子項都自動落入受管例外」）；未來新增 W-FW 子項只需在此 DESIGN
-    文件內登記、不需動 constitution
-  - ✅ docs/INTEGRATION-CHECKLIST.md — 無直接引用此條款、無需改動
-  - ✅ CLAUDE.md — 無直接引用此條款的具名列舉、無需改動
+  - ✅ .specify/templates/plan-template.md — Constitution Check 段加軌道辨識條目
+  - ✅ docs/INTEGRATION-DESIGN-W-TYPING-ALIGN.md — 新文件 (本 amendment 同步建)
+  - ✅ docs/INTEGRATION-CHECKLIST.md — Current Focus 加 TS-Typing-Sync 軌道條目
+  - ✅ CLAUDE.md — §1 / §7 索引補 DESIGN-W-TYPING-ALIGN
 Follow-up TODOs: None
 Prior reports:
+  - (2026-05-23) 1.3.0 → 1.4.0: 受管例外授權模型從「具名列舉」改為「DESIGN 文件 = 軌道權威」
+    (W-WEBUI 軌道整體為受管例外、軌道範圍以 INTEGRATION-DESIGN-W-WEBUI.md
+    為單一真相、新 W-FW 子項只需在該 DESIGN 文件登記、不再需要 amend constitution)
   - (2026-05-23) 1.2.0 → 1.3.0: 受管例外列舉延伸（W-FW1–W-FW7 → W-FW1–W-FW8）
   - (2026-05-22) 1.1.0 → 1.2.0: 受管例外條款範圍擴充
     (W-FW1–W-FW4 → W-FW1–W-FW7、准動範圍擴「最小 UI 新增」)
@@ -101,6 +96,19 @@ base-web source code 為「對齊目標」；後端與 nginx 須適應 base 既�
 - 此例外**僅適用 W-WEBUI 軌道**；軌道外所有 feature 的 Constitution Check 對 base-web source 改動仍 MUST 為 0 diff
 - W-WEBUI 軌道對 base-web 的修改一律走兩段式 commit（base-web worktree → push fork → outer 更新 SHA pin）
 
+**受管例外 — TS-Typing-Sync 軌道**（v1.5.0 起）：第二條得修改 base-web source 的例外為 **TS-Typing-Sync 軌道**（[`docs/INTEGRATION-DESIGN-W-TYPING-ALIGN.md`](../../docs/INTEGRATION-DESIGN-W-TYPING-ALIGN.md)）：
+
+- TS-Typing-Sync 軌道**整體**為受管例外；軌道權威為 [`INTEGRATION-DESIGN-W-TYPING-ALIGN.md`](../../docs/INTEGRATION-DESIGN-W-TYPING-ALIGN.md)
+- 可動範圍**嚴格限定**於 `base-web/src/typings/api/*.d.ts`（即 `route.d.ts` / `system-manage.d.ts` / `common.d.ts` / `auth.d.ts` 等 4 檔，未來新增 typings/api/ 檔同此規則）
+- 軌道目的：對齊 base-web TS 宣告與 rust-api wire 真實序列化型（TS lying-to-itself 修正、編譯期型別安全恢復）
+- 動機限定：每個 feature 必須舉證「TS 宣告 vs rust wire 不一致」（grep rust 對應 output struct 為證、spec.md FR 內明示對齊規格）；純命名統一 / refactor 無 mismatch 證據者 reject
+- **仍不得動**：`typings/app.d.ts` / `typings/router.d.ts` / `typings/components.d.ts` / `typings/elegant-router.d.ts` / `typings/package.d.ts` / `typings/vite-env.d.ts` / `typings/global.d.ts` / `typings/naive-ui.d.ts` / `typings/storage.d.ts` / `typings/union-key.d.ts` 等其他 typings/
+- **仍不得動**：W-WEBUI 軌道範圍（`src/views/` / `src/components/` / `src/service*/api/*.ts` / `src/store/` / `src/router/`）；TS-Typing-Sync 軌道與 W-WEBUI 軌道**互斥不重疊**、feature spec.md 須明示屬哪條軌道
+- TS-Typing-Sync 軌道對 base-web 的修改一律走兩段式 commit（base-web worktree → push fork → outer 更新 SHA pin），同 W-WEBUI 紀律
+- 此例外**僅適用 TS-Typing-Sync 軌道**；軌道外所有 feature 的 Constitution Check 對 base-web source 改動仍 MUST 為 0 diff
+
+**Rationale**：post-039 entity id migration（display_id i64 from Snowflake 53-bit）+ post-040 wire DTO 變更後、base-web 與 rust wire 真實型出現 type lie（如 `MenuRoute.id: string` vs rust 序列化 number）；W-WEBUI 軌道 FR-015 禁碰 `src/typings/` 無法修。設立 TS-Typing-Sync 為**第二受控軌道**、補回編譯期型別安全；非常駐軌道、觸發訊號驅動（rust wire shape 重大變動後）、預期 1-3 feature/year。
+
 **Rationale**: base example 是上游持續演化的 starter；rev1 為使用者，不為改寫者 — 此立場在「後端適應 API GAP」範疇內成立，使未來 base 升級（pull upstream rebase）阻力最小。但 base example 的管理後台操作表單本質為未接線的 UI stub，僅靠後端適應無法讓其運作；F14 cutover 後 rev1 成為自有產品，base-web 即 rev1 自有前端，補接線為必要的產品工作而非「改寫上游」。W-WEBUI 為此設**受控例外**：例外範圍明文受限（接線為主，並僅在 §4 明文授權下做必需的最小 UI 新增，不碰型別 / column render / router / store / 版面重構），使「預設不動 base」對其餘所有 feature 維持完整效力，同時不讓管理後台永久停在 demo 殼。
 
 ### V. 漸進收縮（DESIGN-A 過渡 → DESIGN-B 終局）
@@ -163,4 +171,4 @@ DESIGN-A（rust + nestjs）為過渡形態；DESIGN-B（rust-only）為終局目
 - **衝突解決**：Constitution 與 DESIGN 文件衝突時，以本憲法為最終權威；DESIGN 文件如有不一致需同步修正
 - **Runtime guidance**：日常開發決策參考 `CLAUDE.md`（workspace）+ `~/.claude/CLAUDE.md`（全域）；當 runtime guidance 與本憲法衝突，以本憲法為準
 
-**Version**: 1.4.0 | **Ratified**: 2026-05-14 | **Last Amended**: 2026-05-23
+**Version**: 1.5.0 | **Ratified**: 2026-05-14 | **Last Amended**: 2026-05-25
