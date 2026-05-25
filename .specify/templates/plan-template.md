@@ -33,6 +33,14 @@
 
 [Gates determined based on constitution file]
 
+**軌道辨識義務**（Constitution v1.5.0+）：若 feature 涉及 `base-web/` 改動、Constitution Check 必須在 Principle IV 評估時明示屬哪條軌道（三選一）：
+
+- **W-WEBUI 軌道**：feature 屬 [`docs/INTEGRATION-DESIGN-W-WEBUI.md`](../../docs/INTEGRATION-DESIGN-W-WEBUI.md) §5/§7 登記項；改 `src/views/` / `src/components/` / `src/service*/api/*.ts` / `src/store/` / `src/router/`；**不**動 typings/
+- **TS-Typing-Sync 軌道**：feature 屬 [`docs/INTEGRATION-DESIGN-W-TYPING-ALIGN.md`](../../docs/INTEGRATION-DESIGN-W-TYPING-ALIGN.md) §4 登記項；改 `src/typings/api/*.d.ts`；**不**動 W-WEBUI 範圍
+- **軌道外**：0 base-web diff、預設原則涵蓋
+
+跨軌道 feature 必須拆成兩個 feature。
+
 ## Project Structure
 
 ### Documentation (this feature)
