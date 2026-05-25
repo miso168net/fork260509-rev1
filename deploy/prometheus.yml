@@ -51,5 +51,14 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
+  # 050 FR-006: pushgateway — cleanup binary 等短任務 push metrics 中介。
+  # honor_labels: true 保留 push 端原始 instance / job 標籤(per research R-2.5)。
+  - job_name: pushgateway
+    honor_labels: true
+    static_configs:
+      - targets:
+          - pushgateway:9091
+    scrape_interval: 15s
+
 # Phase 5 (US3) wires alert rule files via separate rule_files: directive — leave empty here for now.
 # rule_files: []

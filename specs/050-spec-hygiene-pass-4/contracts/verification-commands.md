@@ -29,7 +29,7 @@ $PCO logs --tail=200 rust-api 2>/dev/null | grep -iE "drainer|outbox" | head -5
 
 echo ""
 echo "=== pushgateway healthy ==="
-curl -sI http://127.0.0.1:9091/-/healthy | head -3
+curl -sI http://127.0.0.1:19091/-/healthy | head -3
 ```
 
 **Expected**：13 service `Up`（既有 12 + 新 pushgateway healthy）；rust-api log 顯示 drainer / outbox 背景 task；pushgateway HTTP `/health` 200 OK。
@@ -153,7 +153,7 @@ docker compose exec rust-api /app/cleanup
 sleep 5
 
 # 看 pushgateway 收到 cleanup binary 推送的 metric
-curl -s http://127.0.0.1:9091/metrics | grep -E "^cleanup_job_rows_deleted_total"
+curl -s http://127.0.0.1:19091/metrics | grep -E "^cleanup_job_rows_deleted_total"
 
 # 看 prometheus scrape 後 series
 curl -s "http://127.0.0.1:9090/api/v1/query?query=cleanup_job_rows_deleted_total" \

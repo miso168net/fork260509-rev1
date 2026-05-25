@@ -8,7 +8,7 @@
 # observability.yml 本身 7 obs service 無 profiles:(預設 always-on),
 # 故 dev 直接 include 即得 dev-default-on 7 service(per spec Q3 clarification);
 # prod 反過來在 prod.yml 對每 obs service 加 profiles: ["observability"] gating。
-# 新暴露 host port:grafana 13000 / prometheus 13090(127.0.0.1 loopback)
+# 新暴露 host port:grafana 13000 / prometheus 13090 / pushgateway 19091(127.0.0.1 loopback)
 
 include:
   - docker-compose.observability.yml
@@ -44,3 +44,6 @@ services:
   grafana:
     ports:
       - "127.0.0.1:13000:3000"        # grafana UI
+  pushgateway:
+    ports:
+      - "127.0.0.1:19091:9091"        # pushgateway /metrics + /-/healthy
