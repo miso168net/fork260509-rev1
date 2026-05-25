@@ -14,7 +14,7 @@
 - **US2 JSDoc audit**：純註解、0 type-shape 變動、防未來語意誤判。
 - **Verification CDP browser smoke deep**：base-web image rebuild + 8 路徑 CDP smoke（per 037/038/040 體例、Edge `:9229`、無 playwright）。
 - **軌道紀律**：限 `src/typings/api/*.d.ts` 範圍；其他 typings + W-WEBUI 範圍（views/components/service/store/router）+ rust-api 全 0 diff。
-- **commit shape**：base-web worktree 1 commit（4 檔同檔不可拆）+ outer 5-6 commit（constitution+DESIGN+plan-template / SHA pin / INTEGRATION-CHECKLIST / DESIGN §4.1 / optional expansion / SHA backfill）+ merge `--no-ff` 回 `rev1-admin-root`。
+- **commit shape**：base-web worktree 1 commit（4 檔同檔不可拆）+ outer 4-5 commit（constitution+DESIGN+plan-template+CLAUDE 索引 / SHA pin / INTEGRATION-CHECKLIST / optional expansion / SHA backfill；DESIGN §4.1 條目由 T002 建檔同 commit、不獨立 commit、per /speckit-analyze O1）+ merge `--no-ff` 回 `rev1-admin-root`。
 
 implementer-stage expansion budget ≤3（per 041 / 043 / 046 / 047 體例）；候選由 Phase 0 research grep 後拍板。
 
@@ -144,7 +144,7 @@ outer/                                                   # rev1-admin-root、多
 
 **Structure Decision**：
 - **base-web worktree commits**：1 個（US1 + US2 一體：4 檔 typing edit + JSDoc 同 commit、實作上 sequential edit 同一 commit、不拆）
-- **outer rev1-admin-root commits**：5-6 個（Phase 0 amendment+DESIGN+plan-template+CLAUDE 索引 / base-web SHA pin / INTEGRATION-CHECKLIST + SPECKIT marker / DESIGN §4.1 加 048 sprint 條目 / optional expansion if 拾 / SHA backfill post-merge）
+- **outer rev1-admin-root commits**：4-5 個（Phase 0 amendment+DESIGN+plan-template+CLAUDE 索引 / base-web SHA pin / INTEGRATION-CHECKLIST + SPECKIT marker / optional expansion if 拾 / SHA backfill post-merge；DESIGN §4.1 由 T002 建檔時即落、T020 改為純 verify 不獨立 commit、per /speckit-analyze O1 remediation）
 - merge `--no-ff` 回 `rev1-admin-root`、user 同意後 push
 
 ### Commit shape (per CLAUDE.md §4.1)
@@ -155,14 +155,13 @@ outer/                                                   # rev1-admin-root、多
 |---|---|---|
 | US1+US2 base-web typings/api 對齊 rust wire 真實型（M1+M2+M3 mismatch fix + D1+D2+D3 JSDoc audit） | 1 commit | `src/typings/api/route.d.ts` + `src/typings/api/system-manage.d.ts` + `src/typings/api/common.d.ts` + `src/typings/api/auth.d.ts` |
 
-**Outer rev1-admin-root commits（estimated 5-6 個）**：
+**Outer rev1-admin-root commits（estimated 4-5 個）**：
 
 | Topic | est | files |
 |---|---|---|
 | **Phase 0** Constitution v1.4.0→v1.5.0 amendment + DESIGN-W-TYPING-ALIGN 新文件 + plan-template 軌道辨識條目 + CLAUDE.md §1/§7 索引補 | 1 commit | `.specify/memory/constitution.md` + `docs/INTEGRATION-DESIGN-W-TYPING-ALIGN.md`（新）+ `.specify/templates/plan-template.md` + `CLAUDE.md` |
 | base-web SHA pin bump | 1 commit | gitlink `base-web` |
 | INTEGRATION-CHECKLIST 048 entry + Current Focus update + CLAUDE.md SPECKIT marker idle + 衍生 follow-up inline note refresh | 1 commit | `docs/INTEGRATION-CHECKLIST.md` + `CLAUDE.md` |
-| DESIGN-W-TYPING-ALIGN §4.1 加 048 sprint 落地紀錄 | 1 commit | `docs/INTEGRATION-DESIGN-W-TYPING-ALIGN.md` |
 | (optional, ≤3 expansion budget) implementer-stage polish 拾取 | 0-1 commit | TBD per Phase 0 research |
 | SHA backfill（post-merge） | 1 commit | `docs/INTEGRATION-CHECKLIST.md` 048 entry placeholder |
 
