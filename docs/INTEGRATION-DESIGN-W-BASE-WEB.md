@@ -405,7 +405,7 @@ TS-DepGraph-Hygiene 為 Constitution Principle IV「base 不改動邊界」**v1.
 #### §4.4.2 049 base-web-dep-hygiene（首發 sprint）
 
 - **日期**：2026-05-25 落地
-- **commit**：outer `<TBD post-merge>` + merge `<TBD>` + base-web `<TBD>`
+- **commit**：outer `b860cc6` + merge `cd5114f` + base-web `f6efe906`
 - **scope**：
   - comprehensive audit grep base-web + packages 所有 phantom transitive use、提升為直接 devDeps
   - 移除 `nodeLinker: hoisted` from pnpm-workspace.yaml（回 pnpm 預設 strict isolation）
