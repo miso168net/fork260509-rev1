@@ -249,18 +249,20 @@ async function main() {
       (() => {
         const modal = document.querySelector('.n-modal-container .n-modal, .n-drawer');
         if (!modal) return { ok: false, reason: 'no modal' };
-        const inputs = Array.from(modal.querySelectorAll('input.n-input__input-el, input'));
-        // Heuristic: first input = roleName, second input = roleCode
+        // Modal has 4 form items: 角色名称 / 角色编码 (text)、角色状态 (radio "启用"/"禁用" *)、角色描述 (text)
+        const textInputs = Array.from(modal.querySelectorAll('input.n-input__input-el'));
         const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-        if (inputs[0]) {
-          setter.call(inputs[0], ${JSON.stringify(TEST_ROLE_NAME)});
-          inputs[0].dispatchEvent(new Event('input', { bubbles: true }));
+        // textInputs[0] = roleName, [1] = roleCode, [2] = roleDesc
+        if (textInputs[0]) { setter.call(textInputs[0], ${JSON.stringify(TEST_ROLE_NAME)}); textInputs[0].dispatchEvent(new Event('input', { bubbles: true })); }
+        if (textInputs[1]) { setter.call(textInputs[1], ${JSON.stringify(TEST_ROLE_CODE)}); textInputs[1].dispatchEvent(new Event('input', { bubbles: true })); }
+        if (textInputs[2]) { setter.call(textInputs[2], 'C-V6 test role'); textInputs[2].dispatchEvent(new Event('input', { bubbles: true })); }
+        // Pick the "启用" radio (角色状态 * is required). Find the radio whose enclosing label contains "启用".
+        const radios = Array.from(modal.querySelectorAll('input.n-radio-input'));
+        const enabledRadio = radios.find(r => /启用/.test((r.closest('label')?.textContent || '') + ''));
+        if (enabledRadio && !enabledRadio.checked) {
+          enabledRadio.click();
         }
-        if (inputs[1]) {
-          setter.call(inputs[1], ${JSON.stringify(TEST_ROLE_CODE)});
-          inputs[1].dispatchEvent(new Event('input', { bubbles: true }));
-        }
-        return { ok: true, filled: inputs.length };
+        return { ok: true, textFilled: textInputs.length, radioPicked: !!enabledRadio };
       })()
     `);
     await new Promise(r => setTimeout(r, 500));
@@ -334,19 +336,19 @@ async function main() {
   // ─── 12+13. Change roleName, click 确认, wait toast 修改成功 ───
   if (addPassed) {
     try {
-      // Replace first input value (roleName) with CV6_R1_EDITED
+      // Replace first text input value (roleName) with CV6_R1_EDITED
       await evaluate(ws, `
         (() => {
           const modal = document.querySelector('.n-modal-container .n-modal, .n-drawer');
           if (!modal) return null;
-          const inputs = Array.from(modal.querySelectorAll('input.n-input__input-el, input'));
+          const textInputs = Array.from(modal.querySelectorAll('input.n-input__input-el'));
           const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-          if (inputs[0]) {
-            setter.call(inputs[0], ${JSON.stringify(TEST_ROLE_EDITED)});
-            inputs[0].dispatchEvent(new Event('input', { bubbles: true }));
-            inputs[0].dispatchEvent(new Event('change', { bubbles: true }));
+          if (textInputs[0]) {
+            setter.call(textInputs[0], ${JSON.stringify(TEST_ROLE_EDITED)});
+            textInputs[0].dispatchEvent(new Event('input', { bubbles: true }));
+            textInputs[0].dispatchEvent(new Event('change', { bubbles: true }));
           }
-          return inputs[0]?.value;
+          return textInputs[0]?.value;
         })()
       `);
       await new Promise(r => setTimeout(r, 500));
