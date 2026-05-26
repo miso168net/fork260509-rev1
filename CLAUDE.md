@@ -327,7 +327,7 @@ git commit -m "bump base-web: rebase on upstream <短 SHA>"
 **Active Spec**: —
 **Active Plan**: —
 **Phase**: idle
-**下一步**: dedicated sprint 排（039-R1 Critical 獨立）+ 條件觸發 follow-up backlog（042-N4 / 042-N5 / 048-N1 (d) / 050-N1 各自獨立）+ 長期（F1.2 / W-F6b / W-F15/16）
+**下一步**: dedicated sprint Critical 全清（038-R1 由 051 結案、039-R1 由 052 結案）；條件觸發 follow-up backlog（042-N4 / 042-N5 / 048-N1 (d) / 050-N1 / C-V6-N1）+ 長期（F1.2 / W-F6b / W-F15/16）
 <!-- SPECKIT END -->
 
 ## 7. 整合設計文件索引
