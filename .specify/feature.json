@@ -1,1 +1,3 @@
-{"feature_directory": "specs/051-assign-permission-atomicity-fix"}
+{
+  "feature_directory": "specs/052-wire-shape-leak-fix"
+}
