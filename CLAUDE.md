@@ -324,10 +324,10 @@ git commit -m "bump base-web: rebase on upstream <短 SHA>"
 下方 `<!-- SPECKIT -->` marker 區為 Claude 在每個 feature 啟動 / 收尾時手動維護的當前 feature 快照 —— **只使用簡潔 4 行、不擴張內容**（歷史 merge SHA 在 `docs/INTEGRATION-CHECKLIST.md` 「已完成里程碑」單獨記、本檔不重複；marker 名稱保留供 spec-kit 將來自動同步、**勿刪**）：
 
 <!-- SPECKIT START -->
-**Active Spec**: [`specs/052-wire-shape-leak-fix/spec.md`](specs/052-wire-shape-leak-fix/spec.md)
-**Active Plan**: [`specs/052-wire-shape-leak-fix/plan.md`](specs/052-wire-shape-leak-fix/plan.md)
-**Phase**: plan complete — ready for `/speckit-tasks`
-**下一步**: 052 收尾後接條件觸發 (042-N4 / 042-N5 / 048-N1 (d) / 050-N1) + 長期 (F1.2 / W-F6b / W-F15/16)；Critical dedicated sprint backlog 全清
+**Active Spec**: —
+**Active Plan**: —
+**Phase**: idle
+**下一步**: dedicated sprint Critical 全清（038-R1 由 051 結案、039-R1 由 052 結案）；條件觸發 follow-up backlog（042-N4 / 042-N5 / 048-N1 (d) / 050-N1 / C-V6-N1）+ 長期（F1.2 / W-F6b / W-F15/16）
 <!-- SPECKIT END -->
 
 ## 7. 整合設計文件索引
