@@ -3,7 +3,7 @@
 **Phase**：1（Design & Contracts）
 **日期**：2026-05-26
 
-052 為 wire shape 對齊 impl fix、**無 application data entity 改動**（0 schema migration、0 entity 改、0 base-web src/ diff、0 新 column）。本檔以「rust-api 8 file 改動 diff」取代傳統 entity 章節、per [plan.md Phase 1 outcomes](./plan.md)。
+052 為 wire shape 對齊 impl fix、**無 application data entity 改動**（0 schema migration、0 entity 改、0 base-web src/ diff、0 新 column）。本檔以「rust-api 6 file 改動 diff」取代傳統 entity 章節、per [plan.md Phase 1 outcomes](./plan.md)。
 
 涉及既有 entity（read/write but not modified）：
 - `sys_organization` (entities/sys_organization.rs)：本 fix 對 Model 套 `OrganizationDetail::from` wire transform、Model schema 不變
@@ -452,9 +452,11 @@ per spec.md FR-010(a)：將 `039-R1` ⚠️ Critical row 從 INTEGRATION-CHECKLI
 | Phase 3 (Polish) | INTEGRATION-CHECKLIST 039-R1 結案 + 052 entry + Current Focus | `docs/INTEGRATION-CHECKLIST.md` 多處 | ~+9 line（淨） |
 | Phase 3 | SPECKIT marker idle | `CLAUDE.md` SPECKIT 區段 | refresh |
 
-**改動總計**：~+80 line rust-api + ~+10 line outer = **net ~+90 line**（主要為 2 新 DTO struct + From impl + handler transform）跨 9 file（4 rust-api source handler + 2 rust-api output DTO + 1 output mod + 1 INTEGRATION-CHECKLIST + 1 CLAUDE.md）。
+**改動總計**：~+80 line rust-api + ~+10 line outer = **net ~+90 line**（主要為 2 新 DTO struct + From impl + handler transform）跨 **8 unique file**（rust-api 6 + outer 2）：
+- rust-api 6 unique file（4 handler 改點分布 3 檔：sys_organization_api.rs / sys_endpoint_api.rs / sys_system_manage_api.rs 含 2 handler 同檔 + 2 output DTO 含 1 新 sys_organization.rs 1 擴 sys_endpoint.rs + 1 output/mod.rs re-wire）
+- outer 2 file（INTEGRATION-CHECKLIST.md + CLAUDE.md）
 
-> **注意**：本 sprint commit shape 為 rust-api 8 file bundled 1 commit（4 handler + 2 DTO + 1 output/mod.rs = 8 file，service/admin/mod.rs 0 改動不算）；outer 3 commit（SHA pin + INTEGRATION-CHECKLIST/CLAUDE.md + SHA backfill）。
+> **注意**：本 sprint commit shape 為 rust-api **6 unique 檔** bundled 1 commit（4 handler 改點 + 2 output DTO + 1 output/mod.rs；service/admin/mod.rs 0 改動因 wildcard re-export 自動暴露）；outer 3 commit（SHA pin + INTEGRATION-CHECKLIST/CLAUDE.md + SHA backfill）。
 
 ---
 

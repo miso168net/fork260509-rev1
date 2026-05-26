@@ -60,7 +60,7 @@ post-merge code review (specs 030~049 跑 `superpowers:requesting-code-review`) 
 
 **Scale/Scope**：
 - Phase 0 改動：0（pure research、無檔變）
-- Phase 1 改動：rust-api 8 file（2 新 DTO file + 2 mod re-export + 4 handler）
+- Phase 1 改動：rust-api 6 file（1 新 DTO file `output/sys_organization.rs` + 1 既有檔擴 `output/sys_endpoint.rs` 加 EndpointDetail + 1 mod re-wire `output/mod.rs` + 3 handler 檔 4 handler 改點：`sys_organization_api.rs` / `sys_endpoint_api.rs` / `sys_system_manage_api.rs` 含 2 handler 同檔；`service/admin/mod.rs` 0 改動因 wildcard re-export）
 - Phase 2 改動：0（acceptance only）
 - Phase 3 改動：INTEGRATION-CHECKLIST 8-row 微更新 ~5 line + 052 milestone +1 line + Current Focus update ~3 line + CLAUDE.md SPECKIT marker idle
 - 總計 ~+79 line rust-api diff + ~+10 line outer diff
@@ -105,7 +105,7 @@ specs/052-wire-shape-leak-fix/
 ├── spec.md                # /speckit-specify 產出（FR-001~FR-010、SC-001~SC-009、無 NEEDS CLARIFICATION、checklist 16/16 PASS）
 ├── plan.md                # 本檔（/speckit-plan 產出）
 ├── research.md            # Phase 0：040 D-pattern 既有體例 spike + entity Model schema 對齊 + base-web 0 binds grep audit + CDP smoke 體例
-├── data-model.md          # Phase 1：rust-api 8 file 完整 diff（4 handler + 2 新 DTO + 2 mod re-export）
+├── data-model.md          # Phase 1：rust-api 6 file 完整 diff（4 handler 改點分布 3 檔 + 2 output DTO 含 1 新 1 擴 + 1 output/mod.rs）
 ├── contracts/
 │   └── verification-commands.md   # Phase 1：C-V1~C-V7 acceptance commands
 ├── quickstart.md          # Phase 1：implementer 操作手冊（5 Phase 落地步驟 + commit shape）
@@ -123,11 +123,11 @@ rust-api/                                                       # worktree、單
 ├── server/model/src/admin/
 │   ├── output/
 │   │   ├── sys_organization.rs                                 # **新檔**：OrganizationDetail struct + From<sys_organization::Model> impl (FR-005)
-│   │   ├── sys_endpoint.rs                                     # **新檔**：EndpointDetail struct + From<sys_endpoint::Model> impl (FR-006)
-│   │   └── mod.rs                                              # 加 2 pub mod 暴露行 (FR-007)
+│   │   ├── sys_endpoint.rs                                     # **既有檔擴**（已含 EndpointTree/EndpointTreeNode）：加 EndpointDetail struct + From<sys_endpoint::Model> impl (FR-006)
+│   │   └── mod.rs                                              # `mod sys_*;` private + selective `pub use sys_*::Type;` 體例：改 sys_endpoint pub use list 加 EndpointDetail + 加 `mod sys_organization;` + 加 `pub use sys_organization::OrganizationDetail;` (FR-007)
 │   └── (entities/sys_organization.rs + sys_endpoint.rs + sys_role.rs 0 改動)
 ├── server/service/src/admin/
-│   └── mod.rs                                                  # 加 2 re-export 行（OrganizationDetail / EndpointDetail、per 040 體例、FR-007）
+│   └── mod.rs                                                  # **0 改動**（既有 `pub use server_model::admin::output::*;` wildcard re-export 自動暴露 output/mod.rs 內新加的 OrganizationDetail / EndpointDetail、per FR-007）
 └── server/api/src/admin/
     ├── sys_organization_api.rs                                 # get_paginated_organizations return type + .map (FR-001)
     ├── sys_endpoint_api.rs                                     # get_paginated_endpoints return type + .map (FR-004)
@@ -140,7 +140,7 @@ outer/                                                          # rev1-admin-roo
 ```
 
 **Structure Decision**：
-- **rust-api worktree commits**：1 個（4 endpoint wire DTO wrap bundled、8 file 同 commit）
+- **rust-api worktree commits**：1 個（4 endpoint wire DTO wrap bundled、6 file 同 commit；sys_system_manage_api.rs 含 2 handler 同檔改點）
 - **base-web worktree commits**：0 個（軌道外 feature、0 base-web 改動）
 - **outer rev1-admin-root commits**：3-4 個（rust-api SHA pin / INTEGRATION-CHECKLIST + SPECKIT / SHA backfill post-merge；無 base-web SHA pin、無 outer infra commit）
 - merge `--no-ff` 回 `rev1-admin-root`、user 同意後 push
@@ -151,7 +151,7 @@ outer/                                                          # rev1-admin-roo
 
 | Topic | est | files |
 |---|---|---|
-| 052 wire-shape-leak-fix（039-R1 結案）| 1 commit | 4 handler + 2 新 output DTO file + 2 mod re-export = 8 file bundled |
+| 052 wire-shape-leak-fix（039-R1 結案）| 1 commit | 3 handler 檔 (4 handler 改點：sys_organization_api.rs / sys_endpoint_api.rs / sys_system_manage_api.rs 含 2 handler 同檔) + 2 output DTO 檔 (1 新 sys_organization.rs / 1 擴 sys_endpoint.rs) + 1 output/mod.rs re-wire = 6 file bundled；service/admin/mod.rs 0 改動 |
 
 **base-web worktree commits**：**0 個**（軌道外）
 
@@ -180,7 +180,7 @@ outer/                                                          # rev1-admin-roo
 
 ## Phase 1 outcomes（reference）
 
-- [`data-model.md`](./data-model.md)：rust-api 8 file 完整 diff（2 新 DTO + 2 mod re-export + 4 handler return type 改 + .map wrap）
+- [`data-model.md`](./data-model.md)：rust-api 6 file 完整 diff（1 新 DTO + 1 擴 DTO + 1 output/mod.rs re-wire + 3 handler 檔 4 改點 return type + manual PaginatedData reconstruction / .map wrap）
 - [`contracts/verification-commands.md`](./contracts/verification-commands.md)：C-V1~C-V7 acceptance commands
 - [`quickstart.md`](./quickstart.md)：implementer 操作手冊（5 Phase 落地步驟）
 - CLAUDE.md SPECKIT marker 區更新（指向本 plan）
