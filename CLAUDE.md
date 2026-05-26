@@ -423,3 +423,39 @@ docker compose exec acme acme.sh --version    # sanity check
 - 重跑前先讀 `graphify-out/cost.json` 看是否真有需要 —— 多數時候 `graphify update`（增量）即可。
 - 不要改 `graphify-out/cache/` —— graphify 內部 LLM 擷取快取，手改破壞下次 update 的 diff。
 - 新功能設計問題先用 `graphify query "..."` 試 —— 但 NestJS / Vue component 部分警覺圖譜盲點（見 `docs/GRAPHIFY-NOTES.md`），且 base-web 來源是 example 分支、與圖譜抓取點不一致。
+
+### 8.4 CDP debug session 故障排除
+
+**Edge :9229 debug session 主要用途**：跑 acceptance CDP browser smoke（037 / 038 / 040 / 048 / 052 等 sprint 體例、per memory `reference_cdp_smoke_technique.md`）—— node global WebSocket 驅動 Edge、驗 base-web modal/form/list 互動行為。
+
+**已知 stale-token hang bug**（052 sprint T017 撞、已不只一次）：
+
+| 症狀 | 根因 | 處理 |
+|---|---|---|
+| Edge debug tab 永遠卡 splash logo（`hasVue: false` / `nprogress-busy` 永久 true / `inputs: 0`）| Edge debug session localStorage 留有舊 `SOY_refreshToken` 或 `SOY_token` entry；base-web `setupRouter` boot 階段嘗試 refresh、stale token refresh promise 卡住、`await setupRouter(app)` 永不返、`app.mount('#app')` 永不執行 | 跑 `node scripts/cdp-reset.js`（清 localStorage + sessionStorage + cookies + cache + reload + 驗 Vue hydration）|
+| CDP smoke script 第一步 `waitSelector('input')` timeout、但 base-web container healthy、curl path 全 PASS | 同上 stale-token bug | 把 `scripts/cdp-reset.js` 邏輯 inline 進 smoke script 開頭、或用 `scripts/cdp-reset.js --login` 先重置好再跑 smoke |
+| Login flow OK 但 logout 後第二次 login 又卡 | 舊 token 未完全清掉（base-web logout 邏輯不完整、屬 W-WEBUI 軌道 long-term follow-up）| 跑 `node scripts/cdp-reset.js --login` 一鍵 reset + login |
+
+**`scripts/cdp-reset.js` 常用 invocation**：
+
+```bash
+# 純 reset（清 storage + cookies + cache + reload、驗 Vue hydration）
+node scripts/cdp-reset.js                            # ~1.2s
+
+# reset + login Soybean/123456 + 等 navigate 到 /home（一鍵驗 base-web + rust-api 可登入）
+node scripts/cdp-reset.js --login                    # ~1.5s
+
+# reset + 自訂 credentials
+node scripts/cdp-reset.js --login Administrator:123456
+
+# 不 reload、只清（手動 navigate 後用）
+node scripts/cdp-reset.js --no-reload
+
+# 不同 Edge debug port
+node scripts/cdp-reset.js --port 9230
+
+# --help
+node scripts/cdp-reset.js -h
+```
+
+> 真正的修復屬 base-web init flow defensive coding（refresh promise 加 timeout / catch、stale token 不 silent hang）—— 已登 INTEGRATION-CHECKLIST follow-up backlog 長期項、待 W-WEBUI 軌道新 sprint brainstorm；當前 stage 用 utility script 解決一次性需求。

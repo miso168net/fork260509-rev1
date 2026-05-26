@@ -133,6 +133,22 @@ async function main() {
   await send(ws, 'Runtime.enable');
   await send(ws, 'Network.enable');
 
+  // ─── PROLOGUE: stale-token clear ───
+  // 已知 base-web stale-token hang bug：debug session 若留有過期 SOY_refreshToken /
+  // SOY_token、setupRouter 嘗試 refresh 會卡 promise、splash mask 永不消失。
+  // 對齊 scripts/cdp-reset.js 邏輯、smoke 開頭一定清。詳見 CLAUDE.md §8.4。
+  try {
+    const r = await send(ws, 'Runtime.evaluate', {
+      expression: 'try { localStorage.clear(); sessionStorage.clear(); JSON.stringify(Object.keys(localStorage)) } catch (e) { e.message }',
+      returnByValue: true
+    });
+    await send(ws, 'Network.clearBrowserCookies');
+    await send(ws, 'Network.clearBrowserCache');
+    console.log('[CDP smoke 052 C-V6] stale-token prologue: cleared localStorage + sessionStorage + cookies + cache');
+  } catch (e) {
+    console.log(`[CDP smoke 052 C-V6] stale-token prologue skipped: ${e.message}`);
+  }
+
   const results = [];
   function record(name, status, detail = '') {
     const sym = status === 'PASS' ? '✓' : '✗';
