@@ -51,21 +51,26 @@
 
 ### Functional Requirements
 
-- **FR-001**：`rust-api/server/api/src/admin/sys_organization_api.rs::get_paginated_organizations` handler MUST 改 return type 從 `Res<PaginatedData<SysOrganizationModel>>` 為 `Res<PaginatedData<OrganizationDetail>>`、handler body 加 `.map(|p| p.map(OrganizationDetail::from))` 對 paginated rows 套 transform；底層 service `find_paginated_organizations` 0 改動。
+- **FR-001**：`rust-api/server/api/src/admin/sys_organization_api.rs::get_paginated_organizations` handler MUST 改 return type 從 `Res<PaginatedData<SysOrganizationModel>>` 為 `Res<PaginatedData<OrganizationDetail>>`、handler body 走 manual struct reconstruction 對齊 040 D pattern：`.map(|page| PaginatedData { current: page.current, size: page.size, total: page.total, records: page.records.into_iter().map(OrganizationDetail::from).collect() })`；底層 service `find_paginated_organizations` 0 改動。
 - **FR-002**：`rust-api/server/api/src/admin/sys_system_manage_api.rs::add_role_for_systemmanage` handler MUST 改 return type 從 `Res<SysRoleModel>` 為 `Res<SystemManageRoleOutput>`、handler body 加 `.map(SystemManageRoleOutput::from)` 對 single role result 套 transform；底層 service `create_role` 0 改動。
 - **FR-003**：`rust-api/server/api/src/admin/sys_system_manage_api.rs::update_role_for_systemmanage` handler MUST 同 FR-002 pattern：return type 改 `Res<SystemManageRoleOutput>`、handler body 加 `.map(SystemManageRoleOutput::from)`；底層 service `update_role` 0 改動。
-- **FR-004**：`rust-api/server/api/src/admin/sys_endpoint_api.rs::get_paginated_endpoints` handler MUST 改 return type 從 `Res<PaginatedData<SysEndpointModel>>` 為 `Res<PaginatedData<EndpointDetail>>`、handler body 加 `.map(|p| p.map(EndpointDetail::from))`；底層 service `find_paginated_endpoints` 0 改動。
+- **FR-004**：`rust-api/server/api/src/admin/sys_endpoint_api.rs::get_paginated_endpoints` handler MUST 改 return type 從 `Res<PaginatedData<SysEndpointModel>>` 為 `Res<PaginatedData<EndpointDetail>>`、handler body 同 FR-001 pattern manual struct reconstruction（`records.into_iter().map(EndpointDetail::from).collect()`）；底層 service `find_paginated_endpoints` 0 改動。
 - **FR-005**：新增 `rust-api/server/model/src/admin/output/sys_organization.rs`（**新檔**）含：
   - `pub struct OrganizationDetail` 含 10 欄位：`id: i64`（← `m.display_id`）、`code: String`、`name: String`、`description: Option<String>`、`pid: String`、`status: Status`、`created_at: NaiveDateTime`、`created_by: String`、`updated_at: Option<NaiveDateTime>`、`updated_by: Option<String>`
   - `impl From<sys_organization::Model> for OrganizationDetail` 完整映射 10 欄位（id ← display_id）
-  - `#[serde(rename_all = "camelCase")]` derive、對齊 wire JS 慣例
+  - derive `Serialize` + `#[serde(rename_all = "camelCase")]`（對齊 040 D-pattern、wire output one-way、無 Deserialize）
+  - imports：`use crate::admin::entities::{sea_orm_active_enums::Status, sys_organization};` 對齊 040 D1 RoleDetail 體例
   - **故意不含**：`sys_organization::Model::id`（ULID string、保留 internal SoT 不上 wire）、`deleted_at`（soft-delete forensics 屬 internal、不上 wire）
-- **FR-006**：新增 `rust-api/server/model/src/admin/output/sys_endpoint.rs`（**新檔**）含：
+- **FR-006**：擴 `rust-api/server/model/src/admin/output/sys_endpoint.rs`（**既有檔**、目前含 `EndpointTree` / `EndpointTreeNode`）加：
   - `pub struct EndpointDetail` 含 9 欄位：`id: i64`（← `m.display_id`）、`path: String`、`method: String`、`action: String`、`resource: String`、`controller: String`、`summary: Option<String>`、`created_at: NaiveDateTime`、`updated_at: Option<NaiveDateTime>`
   - `impl From<sys_endpoint::Model> for EndpointDetail` 完整映射 9 欄位（id ← display_id）
-  - `#[serde(rename_all = "camelCase")]` derive
+  - derive `Serialize` + `#[serde(rename_all = "camelCase")]`（既有 `EndpointTree` 同檔同體例）
+  - imports 加：`use chrono::NaiveDateTime;` + `use crate::admin::entities::sys_endpoint;`（既有檔可能已有 serde import）
   - **故意不含**：`sys_endpoint::Model::id`（ULID）、`deleted_at`
-- **FR-007**：`rust-api/server/model/src/admin/output/mod.rs` MUST 加 2 mod 暴露行：`pub mod sys_endpoint;` + `pub mod sys_organization;`；`rust-api/server/service/src/admin/mod.rs` MUST 加 2 re-export 行對齊 040 體例：`pub use server_model::admin::output::sys_organization::OrganizationDetail;` + `pub use server_model::admin::output::sys_endpoint::EndpointDetail;`（讓 server-api crate import 簡潔）。
+- **FR-007**：`rust-api/server/model/src/admin/output/mod.rs` MUST 對齊既有 `mod sys_*; pub use sys_*::Type;` selective 體例（040 D 既有模式）：
+  - (a) 既有 `pub use sys_endpoint::{EndpointTree, EndpointTreeNode};` 行加 `EndpointDetail`、變 `pub use sys_endpoint::{EndpointDetail, EndpointTree, EndpointTreeNode};`
+  - (b) 新加 `mod sys_organization;` + `pub use sys_organization::OrganizationDetail;` 2 行（per `sys_role`/`sys_user`/`sys_access_key` 既有 mod 體例）
+  - 不需動 `rust-api/server/service/src/admin/mod.rs`（既有 `pub use server_model::admin::output::*;` 自動暴露 output/mod.rs 內所有 `pub use` 的 type、server-api crate import 路徑為 `server_service::admin::OrganizationDetail` / `EndpointDetail`、對齊 040 D handler import 體例）
 - **FR-008**：本 sprint MUST 0 Constitution amendment（純 wire shape 收斂、未引入新原則）；0 新 schema migration（沿用既有 `sys_organization` / `sys_endpoint` / `sys_role` schema）；0 新 entity（Sea-ORM Model 不動）；0 新 workspace cargo dep；0 base-web 改動（軌道外、4 endpoint base-web 0 binds response）；0 nestjs 殘留；0 新 endpoint（4 個 endpoint route 不動、只動 handler return）；0 新 redis channel；0 audit_log path 改動；0 Casbin policy 改動；0 input DTO 改動（input 已 i64 / 039 T030.5 已完）。
 - **FR-009**：本 sprint MUST 為**軌道外** feature（無 W-WEBUI / TS-Typing-Sync / TS-DepGraph-Hygiene 軌道相關 file）；plan.md Constitution Check 段 4-選一軌道辨識為「軌道外」、無 DESIGN doc 條目 add 需求。
 - **FR-010**：本 sprint 完成後 `docs/INTEGRATION-CHECKLIST.md` MUST：(a) 衍生 follow-up table 移除 `039-R1` ⚠️ Critical row、加 footnote「039-R1 結案 via 052」；(b) 已完成里程碑加 052 entry（SHA placeholder 留 SHA backfill）；(c) Current Focus「現狀」加 052 + 「下一步」更新（剩條件觸發 / 長期、無 Critical dedicated sprint 待排）；(d) CLAUDE.md SPECKIT marker 052 active during sprint、idle on completion。
@@ -104,7 +109,7 @@
 - **rust-api worktree baseline** — `rev1-admin-rust-api` 分支 HEAD = `6d64190`（051 落地後狀態）；Phase 1 驗 `cd rust-api && git rev-parse rev1-admin-rust-api` 為此 SHA、未退化。
 - **0 Constitution amendment 需要** — 軌道外、純 wire 收斂、internal SoT 保留、無新原則。對齊 brainstorm doc Section 2.2 預期。
 - **`SystemManageRoleOutput` 既成 + `From<sys_role::Model>` impl 0 改動** — 既有定義在 `output/sys_system_manage.rs`、本 sprint reuse 不擴；驗 grep 確認 impl 存在。
-- **`PaginatedData::map` helper 既備** — `server_core::web::page::PaginatedData` 既有 `.map(F)` helper（040 D5 用過）、把 `Vec<T>` → `Vec<U>` 不動 `total`；本 sprint reuse 不擴。
+- **`PaginatedData<T>` manual struct reconstruction 體例** — `server_core::web::page::PaginatedData` 為純資料 struct（`{ current, size, total, records: Vec<T> }`）、無 `.map(F)` method；040 D pattern 採 manual reconstruction：`PaginatedData { current: page.current, size: page.size, total: page.total, records: page.records.into_iter().map(Detail::from).collect() }`；本 sprint 沿用此 pattern。
 - **base-web 0 binds 4 endpoint response shape** — brainstorm 階段 grep 確認：`fetchAddRole` / `fetchUpdateRole` 無 response generic、`/org` + `/endpoint/page` 在 base-web 0 hit；wire shape 改變不觸發 base-web TS compile error / runtime regression。
 - **CDP smoke 體例可用** — 037 / 038 / 040 / 048 / 049 CDP smoke 既有體例（per memory `reference_cdp_smoke_technique.md`）；node global WebSocket 驅動 Edge :9229；登入鈕「确认」、role 表格顯示 roleName / roleCode。
 - **無新 unit test 需要** — wire shape 收斂屬 wiring/shape feature、無新純函式邏輯、acceptance C-V2~C-V5 curl + jq 即定性驗證；對齊 051 / 050 / 049 / 046 既有 acceptance-only via C-V 體例。對齊 [`CLAUDE.md §3`](../../CLAUDE.md) TDD 紀律例外條款。
